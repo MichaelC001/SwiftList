@@ -5,5 +5,8 @@
   "Plugins_DirectoryOpus_EnableQuickNavDesc": "Allow middle-clicking in Directory Opus's file list to summon the Quick Navigation menu",
   "DirectoryOpus_PluginDesc": "Directory Opus integration plugin. Reads active paths and provides quick file location services in Directory Opus.",
   "Plugin_Comp_Desc_DirectoryOpusPathCollector": "Reads and collects active folder directory paths from the Directory Opus file manager panels.",
-  "Plugin_Comp_Desc_DirectoryOpusInlineSearchAdapter": "Provides inline pinyin/letter filtering and quick navigation for the main lister window of Directory Opus."
+  "Plugin_Comp_Desc_DirectoryOpusInlineSearchAdapter": "Provides inline pinyin/letter filtering and quick navigation for the main lister window of Directory Opus.",
+  "Plugins_DirectoryOpus_Favorites_RootLabel": "Favorites",
+  "Plugins_DirectoryOpus_Favorites_Empty": "(empty)",
+  "Plugin_Comp_Desc_FavoritesProvider": "Reads Directory Opus's own Favorites menu from its configuration file and offers it as a Quick Navigation cascade."
 }
