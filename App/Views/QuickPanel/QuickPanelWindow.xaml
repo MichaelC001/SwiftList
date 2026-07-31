@@ -1,0 +1,185 @@
+<Window x:Class="SwiftList.App.Views.QuickPanel.QuickPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctrl="clr-namespace:SwiftList.App.Views.Controls"
+        xmlns:services="clr-namespace:SwiftList.App.Services"
+        xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
+        Title="SwiftList Quick Panel"
+        Width="330" Height="300" SizeToContent="Manual"
+        WindowStyle="None"
+        ResizeMode="CanResizeWithGrip"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStartupLocation="Manual"
+        Focusable="True"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        ShowActivated="False">
+    <!-- Every window property above is the inline search window's, deliberately: this is the same kind
+         of thing, a panel that appears over someone else's window and leaves on its own. ShowActivated
+         False is the load-bearing one, since taking the foreground would move focus off the very window
+         this docks itself to. -->
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/SwiftList.App;component/Resources/Styles.xaml"/>
+                <ResourceDictionary Source="../../Resources/Styles/Windows/SearchWindow.xaml"/>
+                <!-- TabHeaderButtonStyle/TabUnderlineStyle live here, and StaticResource only fails at
+                     runtime, so leaving this out built cleanly and crashed on first open. -->
+                <ResourceDictionary Source="../../Resources/Styles/Windows/SettingsWindow.xaml"/>
+                <!-- SearchResultTemplate lives here and is not part of Styles.xaml. -->
+                <ResourceDictionary Source="../../Resources/DataTemplates.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- The quick window's row container, plus the path as a tooltip. Added here rather than in
+                 the shared SearchResultTemplate because only this panel drops the directory from the row
+                 itself: the windows that still print it underneath the name have no need of a tooltip
+                 repeating what is already on screen. -->
+            <Style x:Key="QuickPanelRowStyle" TargetType="ListBoxItem" BasedOn="{StaticResource ResultItemStyle}">
+                <Setter Property="ToolTip" Value="{Binding FullPath}"/>
+                <!-- The row height this panel renders at, and the one QuickPanelWindow.RowHeight sums
+                     to size the list. ResultItemStyle picks its own from the window Title, which is how
+                     the inline window gets shorter rows than the main one; this panel is neither of
+                     those titles, so it states its own rather than inheriting the full-size default and
+                     leaving the computed height short of what actually rendered. -->
+                <Setter Property="MinHeight" Value="42"/>
+                <Setter Property="Height" Value="42"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="{DynamicResource CardBackground}"
+            BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1" Margin="8">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.2" Color="{DynamicResource ShadowColor}"/>
+        </Border.Effect>
+        <Border CornerRadius="10" helpers:RoundedClip.IsEnabled="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Drag strip, no title: the panel says what it is by what it shows, but it still needs
+                     somewhere to grab, and every other surface here is a tab or a row that does its own
+                     thing on click.
+
+                     Same construction as the full window's header drag area: the themed brush goes on
+                     the Border and the handler on a Transparent child, because an element with a null
+                     Background is not hit-testable at all, so hanging the drag region off a themed brush
+                     would make it vanish under any theme that did not define one. -->
+                <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Opacity" Value="0"/>
+                            <Setter Property="Height" Value="6"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Opacity" Value="1"/>
+                                    <Setter Property="Height" Value="20"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid x:Name="DragArea" Height="6" Background="Transparent"
+                          MouseLeftButtonDown="DragArea_MouseLeftButtonDown">
+                        <Border Width="36" Height="3" CornerRadius="1.5"
+                                Background="{DynamicResource SeparatorBrush}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Tab strip. TabStripScrollView, same as the quick window's own startup panel strip:
+                     the tabs are user-configurable and their labels are translated, so the row can
+                     overflow a panel this narrow and needs its left/right arrows. -->
+                <ctrl:TabStripScrollView Grid.Row="1" Margin="12,10,12,0">
+                    <ItemsControl ItemsSource="{Binding Tabs}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,20,0">
+                                    <Button Content="{Binding Label}" Command="{Binding SelectCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Border>
+                                        <Border.Style>
+                                            <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ctrl:TabStripScrollView>
+
+                <Border Grid.Row="2" Background="{DynamicResource ContentBg}">
+                    <Grid>
+                        <!-- The quick window's own results list, resource for resource: the same
+                             SearchResultTemplate row, the same container style, the same scrollbar and
+                             virtualization settings. These items are AppSearchResults from the same
+                             startup panel sources, so a hand-rolled row here would have been a second,
+                             slowly diverging way to draw the same thing.
+
+                             ScrollUnit is Pixel rather than the default Item: item scrolling moves a
+                             whole row at a time, so the viewport lands between rows and leaves a band of
+                             the last one cut off. CanContentScroll stays True, which is what keeps
+                             virtualization alive; ScrollUnit is the supported way to scroll smoothly
+                             without turning that off (see SleekListBoxStyle on what false costs). -->
+                        <ListBox x:Name="ItemsList" ItemsSource="{Binding Items}"
+                                 Background="Transparent" BorderThickness="0" Padding="0"
+                                 Margin="0,4,0,8"
+                                 MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.VirtualizationMode="Recycling"
+                                 VirtualizingPanel.ScrollUnit="Pixel"
+                                 Style="{StaticResource SleekListBoxStyle}"
+                                 ItemContainerStyle="{StaticResource QuickPanelRowStyle}"
+                                 ItemTemplate="{StaticResource SearchResultTemplate}"
+                                 SelectionMode="Extended"
+                                 MouseDoubleClick="ItemsList_MouseDoubleClick"/>
+
+                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Search_NoResult]}"
+                                   Foreground="{DynamicResource TextSecondary2}" FontSize="12"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Border>
+</Window>

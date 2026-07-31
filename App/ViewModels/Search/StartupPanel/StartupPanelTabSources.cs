@@ -67,7 +67,9 @@ internal sealed class RecentFilesTabSource : ITabSource
         return uiResults;
     }
 
-    private static string FormatRelativeTime(DateTime modified)
+    // internal so the quick panel can render its second line the same way, for every tab rather than
+    // just this one.
+    internal static string FormatRelativeTime(DateTime modified)
     {
         if (modified == DateTime.MinValue) return string.Empty;
 

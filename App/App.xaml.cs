@@ -32,6 +32,9 @@ public partial class App : Application
     private Mutex? _appMutex;
     public static HookIpcClient? HookClient { get; private set; }
 
+    // Held for the process lifetime so its hotkey registration and message window stay alive.
+    private Services.QuickPanel.QuickPanelManager? _quickPanelManager;
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         // SwiftList never set an explicit AppUserModelID, so Windows infers one on its own (commonly
@@ -139,6 +142,10 @@ public partial class App : Application
             }
         }));
         HookClient.Start();
+
+        // Prototype: the quick panel, on a hardcoded F2. Owns its own message-only window for the
+        // registration, so it does not depend on any real window having been created yet.
+        _quickPanelManager = new Services.QuickPanel.QuickPanelManager();
 
         // Set up global exception handlers
         AppDomain.CurrentDomain.UnhandledException += (s, args) => LogException("AppDomain UnhandledException", args.ExceptionObject as Exception);
