@@ -17,6 +17,40 @@ public partial class PluginConfigFieldRowTemplate : ResourceDictionary
             listBox.ScrollIntoView(listBox.SelectedItem);
     }
 
+    /// <summary>
+    /// Shift+wheel scrolls the object array table sideways; a plain wheel goes back to the page.
+    /// </summary>
+    /// <remarks>
+    /// A ScrollViewer does not scroll sideways on the wheel of its own accord, so without the Shift
+    /// branch the horizontal bar this table can grow is reachable only by dragging it. The rest is a
+    /// separate problem: a ScrollViewer swallows the wheel even with its vertical scrolling disabled,
+    /// so a plain scroll anywhere over the table would stall the page rather than move it, and nothing
+    /// bubbles out on its own to fix that. The event has to be re-raised at the parent by hand.
+    /// </remarks>
+    private void ArrayScroll_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.ScrollViewer scrollViewer) return;
+
+        if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Shift)
+        {
+            if (e.Delta < 0)
+                scrollViewer.LineRight();
+            else
+                scrollViewer.LineLeft();
+
+            e.Handled = true;
+            return;
+        }
+
+        e.Handled = true;
+        var bubbled = new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = UIElement.MouseWheelEvent,
+            Source = sender,
+        };
+        (scrollViewer.Parent as UIElement)?.RaiseEvent(bubbled);
+    }
+
     // Keeps an array field's master list column exactly as tall as its detail panel, so only the
     // ListBox itself scrolls (not the whole page). Driven from code rather than a pure Grid Auto-row
     // + ElementName height binding, because that combination feeds back on itself: an unresolved

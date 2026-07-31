@@ -77,8 +77,26 @@
                     <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
 
                     <!-- Object-array master/detail: a compact selectable list on the left,
-                         the selected item's full editable fields on the right -->
-                    <Grid Margin="8,0,0,0" Visibility="{Binding IsObjectArray, Converter={StaticResource BoolToVis}}">
+                         the selected item's full editable fields on the right.
+
+                         This one table can be wider than the pane (its columns come to 496 before
+                         anything inside them is measured), so it gets a scroller of its own. Only
+                         it: a scroller around the whole field list hands every row an unbounded
+                         width, and a row's wrapping description measures itself against exactly
+                         that, so the descriptions would stop wrapping again.
+
+                         The same reason is why the Grid's width is pinned to the viewport rather
+                         than left to the content. Inside a horizontally scrolling viewer the Grid
+                         would otherwise be measured against infinity too, and the detail panel's
+                         Star column would resolve to whatever its widest line of text wants,
+                         re-inflating the nested descriptions this whole change was about. MinWidth
+                         is what keeps it scrollable rather than squeezed once the pane drops below
+                         the column total. -->
+                    <ScrollViewer x:Name="ArrayScroll" Margin="8,0,0,0"
+                                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                                  PreviewMouseWheel="ArrayScroll_PreviewMouseWheel"
+                                  Visibility="{Binding IsObjectArray, Converter={StaticResource BoolToVis}}">
+                    <Grid MinWidth="496" Width="{Binding ViewportWidth, ElementName=ArrayScroll}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="220"/>
                             <ColumnDefinition Width="16"/>
@@ -93,8 +111,15 @@
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
+                            <!-- No horizontal scrolling of its own. Left at the default it hands each
+                                 row an unbounded width, the row's Star column resolves to however
+                                 long the title happens to be, and the list grows a second horizontal
+                                 bar inside the table's own. Bounding it to the list width is also
+                                 what lets the title's TextTrimming ellipsize, which is the behaviour
+                                 the item template was written for. -->
                             <ListBox Grid.Row="0" ItemsSource="{Binding ArrayItems}" SelectedItem="{Binding SelectedArrayItem, Mode=TwoWay}"
                                      BorderThickness="0" Background="Transparent"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ItemContainerStyle="{StaticResource ArrayMasterListItemStyle}"
                                      SelectionChanged="ArrayMasterList_SelectionChanged"
                                      helpers:DragReorder.IsEnabled="True">
@@ -174,6 +199,7 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                    </ScrollViewer>
 
                     <!-- Scalar-array list: a single value column, no header needed -->
                     <Border BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="1,0,0,0" Margin="8,0,0,0" Padding="12,0,0,0"
