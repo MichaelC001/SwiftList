@@ -173,6 +173,9 @@ public class InlineSearchManager : IDisposable
         _window = new InlineSearchWindow(viewModel, this);
         _currentHostHwnd = _explorerTracker.ActiveHwnd;
         _keyboardHook.IsInlineSearchVisible = true;
+        // Set alongside it here but, unlike it, not cleared when the window takes focus below: this one
+        // tracks the window being on screen, which both of those paths leave true.
+        _keyboardHook.IsInlineWindowOnScreen = true;
         _mouseHook.Start();
 
         // Force the native HWND into existence now (still invisible -- EnsureHandle doesn't set
@@ -305,6 +308,7 @@ public class InlineSearchManager : IDisposable
 
         _mouseHook.Stop();
         _keyboardHook.IsInlineSearchVisible = false;
+        _keyboardHook.IsInlineWindowOnScreen = false;
         _keyboardHook.Start();
         _searchText = string.Empty;
 

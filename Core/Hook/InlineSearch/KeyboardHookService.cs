@@ -48,6 +48,10 @@ public class KeyboardHookService : IDisposable
 
     public bool IsQuickSearchWindowVisible { get; set; }
     public bool IsInlineSearchVisible { get; set; }
+
+    // "The inline window is on screen", which stays true after IsInlineSearchVisible is cleared by the
+    // window taking focus for itself. Suppressions that must last as long as the window is up use this.
+    public bool IsInlineWindowOnScreen { get; set; }
     public uint AppProcessId { get; set; }
     public bool IsHotkeysDisabledTemporarily { get; set; }
 
@@ -117,6 +121,32 @@ public class KeyboardHookService : IDisposable
             if (vkCode == KeyboardNativeMethods.VK_APPS || isShiftF10)
             {
                 MarkPendingContextMenuTrigger(time);
+            }
+
+            // Alt+Space and Alt+F4 while the inline window is up, giving it the same two suppressions
+            // SystemMenuBlocker gives the quick window. It carries that blocker itself, but the block
+            // only takes when it holds the foreground: if a text input was already focused,
+            // InlineSearchManager shows it without stealing focus and puts the foreground back on the
+            // host dialog, so the keys go to Explorer (or whatever dialog it is attached to), which
+            // opens its own system menu over the search box or closes itself out from under it. The
+            // window's own hook never sees those messages, which is why they have to be caught here.
+            //
+            // Swallowing keys aimed at another process is worth it only for these two combinations and
+            // only while our own UI is on screen: with the search box showing and taking every other
+            // keystroke, both are a misfire rather than an intent.
+            //
+            // Gated on IsInlineWindowOnScreen, not IsInlineSearchVisible: that one means "forward
+            // keystrokes to me" and is cleared the moment the window takes focus for itself, which is
+            // the very case this has to cover.
+            //
+            // Alt comes from the event's own flags, not GetKeyState: that reports the calling thread's
+            // key state, and this callback runs on the hook owner's thread rather than the one the
+            // keystroke was headed for, so it reports nothing useful here.
+            var isAltDown = (hookStruct.flags & KeyboardNativeMethods.LLKHF_ALTDOWN) != 0;
+            if (IsInlineWindowOnScreen && isAltDown
+                && (vkCode == KeyboardNativeMethods.VK_SPACE || vkCode == KeyboardNativeMethods.VK_F4))
+            {
+                return (IntPtr)1;
             }
 
             // 1. Detect Toggle Window Hotkey

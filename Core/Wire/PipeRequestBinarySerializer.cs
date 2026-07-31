@@ -67,6 +67,7 @@ public static class PipeRequestBinarySerializer
 
             case IpcMessageId.SetQuickSearchVisible:
             case IpcMessageId.SetInlineSearchVisible:
+            case IpcMessageId.SetInlineWindowOnScreen:
             case IpcMessageId.SetHotkeysDisabled:
                 writer.Write(msg.BoolVal);
                 break;
@@ -163,6 +164,7 @@ public static class PipeRequestBinarySerializer
 
             case IpcMessageId.SetQuickSearchVisible:
             case IpcMessageId.SetInlineSearchVisible:
+            case IpcMessageId.SetInlineWindowOnScreen:
             case IpcMessageId.SetHotkeysDisabled:
                 msg.BoolVal = reader.ReadBoolean();
                 break;

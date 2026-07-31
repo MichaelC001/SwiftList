@@ -103,6 +103,8 @@ internal static class KeyboardNativeMethods
     public const int VK_SHIFT = 0x10;
     public const int VK_CONTROL = 0x11;
     public const int VK_MENU = 0x12;
+    public const int VK_SPACE = 0x20;
+    public const int VK_F4 = 0x73;
     public const int VK_LWIN = 0x5B;
     public const int VK_RWIN = 0x5C;
     public const int VK_APPS = 0x5D; // The physical context-menu/"Menu" key, not VK_MENU (which is Alt).
@@ -131,6 +133,12 @@ internal static class KeyboardNativeMethods
     // some process rather than coming from real hardware -- e.g. a third-party automation tool's own
     // virtual-key-based hotkey scheme, as opposed to the user's own typing.
     public const uint LLKHF_INJECTED = 0x00000010;
+
+    // KBDLLHOOKSTRUCT.flags bit: set when Alt was held for this key event. The event carries its own
+    // Alt state precisely because a low-level hook cannot ask for it: GetKeyState reports the calling
+    // thread's input state, and this callback runs on the hook owner's thread, which is not the thread
+    // the keystroke was headed for and has no key state of its own to report.
+    public const uint LLKHF_ALTDOWN = 0x00000020;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct KBDLLHOOKSTRUCT

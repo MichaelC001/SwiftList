@@ -16,6 +16,10 @@ public enum IpcMessageId : byte
     ExecuteInlineItem = 15,
     InlineSelectionChanged = 16,
     InlineSearchFinished = 17,
+    // Distinct from SetInlineSearchVisible, which means "forward keystrokes to me" and is cleared the
+    // moment the inline window takes focus for itself. This one means the window is simply on screen,
+    // which stays true either way, and is what a suppression that has to outlive that handover needs.
+    SetInlineWindowOnScreen = 18,
 
     // Hook -> App
     Activate = 20,

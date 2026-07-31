@@ -30,6 +30,20 @@ public class KeyboardHookService : IDisposable
         }
     }
 
+    // "The inline window is on screen", as opposed to IsInlineSearchVisible above, which means "forward
+    // keystrokes to me" and is cleared as soon as that window takes focus for itself. Anything that has
+    // to stay in effect for as long as the window is up has to hang off this one instead.
+    private bool _isInlineWindowOnScreen;
+    public bool IsInlineWindowOnScreen
+    {
+        get => _isInlineWindowOnScreen;
+        set
+        {
+            _isInlineWindowOnScreen = value;
+            App.HookClient?.SendMessage(new IpcMessage { Id = IpcMessageId.SetInlineWindowOnScreen, BoolVal = value });
+        }
+    }
+
     private bool _isQuickSearchWindowVisible;
     public bool IsQuickSearchWindowVisible
     {
