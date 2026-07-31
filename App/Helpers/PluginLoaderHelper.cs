@@ -71,8 +71,24 @@ public static class PluginLoaderHelper
             result.Add(new PluginInfoViewModel(pluginName, pluginVersion, dllName, sdkVersion, components, configFields, description));
         }
 
-        return result;
+        // Sorted here rather than at the one list that displays it, so the settings search index, which
+        // builds from this same call, offers plugins in the order the page will show them.
+        return result
+            .OrderBy(p => DisplayRank(p.HasConfigFields, p.RawComponents.Any(c => c.IsToggleable)))
+            .ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
     }
+
+    /// <summary>Which band a plugin sorts into: what you can act on first, alphabetical within each.</summary>
+    /// <remarks>
+    /// Deliberately not PluginInfoViewModel.HasToggleableComponents, which is "more than one" because it
+    /// gates the Select All link. A plugin with exactly one switch is still a plugin with something to
+    /// switch, and reusing that property would have filed it under "nothing to do here".
+    /// </remarks>
+    internal static int DisplayRank(bool hasConfigFields, bool hasAnyToggleableComponent) =>
+        hasConfigFields ? 0
+        : hasAnyToggleableComponent ? 1
+        : 2;
 
     /// <summary>Resolves the display name shown for a plugin -- Plugin Management's card header, and
     /// any other UI that groups components by their owning plugin (e.g. Startup Panel's reopenable-tabs

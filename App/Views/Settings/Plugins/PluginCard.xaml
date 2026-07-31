@@ -48,7 +48,7 @@
                      the taller that gets and stops lining up with the name it belongs to. -->
                 <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" VerticalAlignment="Top"
                         Background="{DynamicResource HoverBackground}" Margin="0,0,12,0">
-                    <TextBlock Text="&#xECAA;" FontFamily="Segoe MDL2 Assets"
+                    <TextBlock Text="&#xEA86;" FontFamily="Segoe MDL2 Assets"
                                FontSize="16" Foreground="{DynamicResource AccentBlue}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>

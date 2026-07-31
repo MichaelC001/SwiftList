@@ -99,6 +99,7 @@
             <ListBox x:Name="PluginsList" Grid.Column="0" ItemsSource="{Binding Plugins}"
                      SelectedItem="{Binding SelectedPlugin, Mode=TwoWay}"
                      ItemContainerStyle="{StaticResource PluginListItemStyle}"
+                     SelectionChanged="PluginsList_SelectionChanged"
                      BorderThickness="0" Background="Transparent" Margin="0,0,8,0"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -141,7 +142,7 @@
                                         </Style>
                                     </Border.Style>
                                 </Border>
-                                <TextBlock Text="&#xECAA;" FontFamily="Segoe MDL2 Assets"
+                                <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets"
                                            FontSize="19" Foreground="{DynamicResource AccentBlue}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
