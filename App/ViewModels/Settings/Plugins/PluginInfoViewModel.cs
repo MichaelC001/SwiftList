@@ -153,6 +153,22 @@ public class PluginInfoViewModel : ViewModelBase
         set => SetProperty(ref _isExpanded, value);
     }
 
+    private bool _isConfigOpen;
+
+    /// <summary>
+    /// Whether this plugin's config fields are showing inside its card.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="IsExpanded"/>, which shows the component list: a plugin can have
+    /// components worth toggling and no config at all, or the reverse, and collapsing one should not
+    /// take the other with it. Both start closed, so a card opens showing the same summary it always did.
+    /// </remarks>
+    public bool IsConfigOpen
+    {
+        get => _isConfigOpen;
+        set => SetProperty(ref _isConfigOpen, value);
+    }
+
     // A plugin schema with 2+ top-level Group fields renders them as tabs (like the Hotkeys page)
     // instead of stacking every group's contents vertically down the page. A single group, or none,
     // isn't worth a tab bar, so those still render inline via ConfigFields as before.

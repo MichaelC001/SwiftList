@@ -37,9 +37,9 @@ public partial class PluginConfigFieldRowTemplate : ResourceDictionary
 
     private static void TriggerWindowResizeToFit(object sender)
     {
-        if (sender is FrameworkElement element && Window.GetWindow(element) is PluginConfigWindow configWindow)
+        if (sender is FrameworkElement element && Window.GetWindow(element) is Controls.Dialogs.PluginFieldPromptWindow promptWindow)
         {
-            configWindow.ResizeToFit();
+            promptWindow.ResizeToFit();
         }
     }
 

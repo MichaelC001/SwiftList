@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:services="clr-namespace:SwiftList.App.Services"
              xmlns:conv="clr-namespace:SwiftList.App.Converters"
+             xmlns:local="clr-namespace:SwiftList.App.Views.Settings.Plugins"
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="660">
     <UserControl.Resources>
@@ -99,9 +100,10 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
                 </Border>
 
-                <!-- Configure Button -->
+                <!-- Configure Button: opens the fields inside this card rather than in a modal window,
+                     which is why it toggles rather than launching anything. -->
                 <Button Grid.Column="3"
-                        Command="{Binding DataContext.ConfigurePluginCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                        Command="{Binding DataContext.ToggleConfigCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         CommandParameter="{Binding}"
                         Visibility="{Binding HasConfigFields, Converter={StaticResource BoolToVis}}"
                         Style="{StaticResource SettingsButton}"
@@ -129,6 +131,10 @@
                     </TextBlock.Style>
                 </TextBlock>
             </Grid>
+
+            <!-- Config section (collapsible, independent of the component list below: a plugin can have
+                 config and no toggleable components, or the reverse). -->
+            <local:PluginConfigSection Visibility="{Binding IsConfigOpen, Converter={StaticResource BoolToVis}}"/>
 
             <!-- Components section (collapsible) -->
             <StackPanel Margin="0,12,0,0"

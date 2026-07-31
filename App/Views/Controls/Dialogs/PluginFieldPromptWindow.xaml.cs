@@ -28,6 +28,37 @@ public partial class PluginFieldPromptWindow : Window
 
     private bool _isSaved;
 
+    /// <summary>
+    /// Re-fits the window after its content changed height, and recentres it on its owner.
+    /// </summary>
+    /// <remarks>
+    /// Called by FieldRowTemplate when an array field's detail panel resizes. It used to live on
+    /// PluginConfigWindow, which was the only host that had it; that window is gone now that plugin
+    /// config renders inline in its own card, where the settings page simply scrolls. This window has the
+    /// same shape (the same ContentRow, switched from Auto to Star once SizeToContent has locked in a
+    /// real size), so the behaviour moved here rather than being lost.
+    /// </remarks>
+    public void ResizeToFit()
+    {
+        if (SizeToContent != SizeToContent.Manual) return;
+
+        // Temporarily reset row height to Auto to avoid the WPF degenerate size-to-content case
+        ContentRow.Height = GridLength.Auto;
+        SizeToContent = SizeToContent.WidthAndHeight;
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            SizeToContent = SizeToContent.Manual;
+            ContentRow.Height = new GridLength(1, GridUnitType.Star);
+
+            if (Owner != null)
+            {
+                Left = Owner.Left + (Owner.ActualWidth - ActualWidth) / 2;
+                Top = Owner.Top + (Owner.ActualHeight - ActualHeight) / 2;
+            }
+        }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+    }
+
     // Mirrors PluginConfigWindow.Window_Loaded: SizeToContent has already computed a real, finite
     // size against ContentRow's initial Auto height by the time this fires (deferred to ContextIdle so
     // every nested element's own Loaded/layout pass has settled first) -- switching to Star now lets

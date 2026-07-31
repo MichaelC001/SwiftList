@@ -3,6 +3,7 @@ using System.Windows.Input;
 using SwiftList.App.Helpers;
 using SwiftList.App.Services;
 using SwiftList.Core;
+using SwiftList.Core.Wire;
 using SwiftList.PluginSdk.Abstractions.Plugins;
 
 namespace SwiftList.App.ViewModels.Settings.Plugins;
@@ -23,25 +24,8 @@ public class PluginManagementViewModel : ViewModelBase
             p.PropertyChanged += OnPluginIsExpandedChanged;
         ToggleExpandCommand = new RelayCommand<PluginInfoViewModel>(p => p?.IsExpanded = !p.IsExpanded);
         ToggleExpandAllCommand = new RelayCommand(ToggleExpandAll);
-        ConfigurePluginCommand = new RelayCommand<PluginInfoViewModel>(p =>
-        {
-            if (p == null) return;
-            var window = new Views.Settings.Plugins.PluginConfigWindow(p);
-            var activeWindow = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive)
-                               ?? System.Windows.Application.Current.MainWindow;
-            if (activeWindow != null && activeWindow != window)
-            {
-                window.Owner = activeWindow;
-            }
-            window.ShowDialog();
-            if (!window.IsSaved)
-            {
-                foreach (var field in p.ConfigFields)
-                {
-                    field.Reload();
-                }
-            }
-        });
+        ToggleConfigCommand = new RelayCommand<PluginInfoViewModel>(ToggleConfig);
+        SaveConfigCommand = new RelayCommand<PluginInfoViewModel>(SaveConfig);
 
         // Dynamically refresh the plugin list when language changes to dynamically apply localized plugin names
         TranslationManager.Instance.PropertyChanged += (s, e) =>
@@ -70,7 +54,50 @@ public class PluginManagementViewModel : ViewModelBase
 
     public ICommand ToggleExpandCommand { get; }
     public ICommand ToggleExpandAllCommand { get; }
-    public ICommand ConfigurePluginCommand { get; }
+
+    /// <summary>Shows or hides a plugin's config fields inside its own card.</summary>
+    public ICommand ToggleConfigCommand { get; }
+
+    /// <summary>The card's OK button: writes the config fields the user edited.</summary>
+    public ICommand SaveConfigCommand { get; }
+
+    // Opening the config used to mean a modal window, and closing that window without OK rolled the
+    // fields back. Inline there is no close, so hiding the section takes its place -- otherwise edits
+    // abandoned by collapsing would sit in the view models, and the next card to open would show them as
+    // if they had been saved.
+    private void ToggleConfig(PluginInfoViewModel? plugin)
+    {
+        if (plugin == null) return;
+
+        if (plugin.IsConfigOpen)
+        {
+            RollbackConfig(plugin);
+            plugin.IsConfigOpen = false;
+            return;
+        }
+
+        plugin.IsConfigOpen = true;
+    }
+
+    internal static void RollbackConfig(PluginInfoViewModel plugin)
+    {
+        foreach (var field in plugin.ConfigFields)
+            field.Reload();
+    }
+
+    // Same three steps the modal's OK did: commit every field, persist once through the settings object
+    // they share, and tell the hook process to re-read what just changed.
+    private void SaveConfig(PluginInfoViewModel? plugin)
+    {
+        if (plugin == null || plugin.ConfigFields.Count == 0) return;
+
+        foreach (var field in plugin.ConfigFields)
+            field.Commit();
+
+        plugin.ConfigFields[0].Settings.Save();
+        App.HookClient?.SendMessage(new IpcMessage { Id = IpcMessageId.ReloadSettings });
+        plugin.IsConfigOpen = false;
+    }
 
     public bool IsEmpty => Plugins.Count == 0;
 

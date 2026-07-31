@@ -1,0 +1,117 @@
+<UserControl x:Class="SwiftList.App.Views.Settings.Plugins.PluginConfigSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:services="clr-namespace:SwiftList.App.Services"
+             xmlns:conv="clr-namespace:SwiftList.App.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="620">
+    <!-- The plugin config editor, lifted out of the modal PluginConfigWindow it used to be the body of
+         so it can render inline in the plugin's own card instead. Nothing about the fields themselves
+         changed: they are still the recursive, schema-driven rows from FieldRowTemplate.xaml, which
+         PluginFieldPromptWindow also uses. What changed is only the host, and with it the two bindings
+         that used to reach for an ancestor Window. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/SwiftList.App;component/Resources/Styles.xaml"/>
+                <ResourceDictionary Source="../../../Resources/Styles/Windows/SearchWindow.xaml"/>
+                <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
+                <ResourceDictionary Source="FieldRowTemplate.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- RefEquals is not declared here: FieldRowTemplate.xaml above merges Templates.xaml, which
+                 already registers it under that key, and a second declaration would be a second instance
+                 of the same stateless converter. -->
+            <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:BoolToVisibilityConverter x:Key="InvertBoolToVis" Invert="True"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!-- IsSharedSizeScope lets every field row's label column (SharedSizeGroup="FieldLabel") sync to the
+         widest label currently on screen, so their editors all start at the same X instead of each row
+         sizing its own label independently. Scoped to this control rather than the page, so one plugin's
+         long label cannot push another plugin's editors across. -->
+    <StackPanel Grid.IsSharedSizeScope="True" Margin="0,12,0,0">
+        <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
+
+        <!-- Any fields outside a Group render directly, same as always -->
+        <ItemsControl ItemsSource="{Binding NonGroupConfigFields}"/>
+
+        <!-- 2+ top-level Groups: render as tabs (like the Hotkeys page) instead of stacking every
+             group's contents down the page -->
+        <StackPanel Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource BoolToVis}}">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <ItemsControl ItemsSource="{Binding ConfigGroups}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,28,0">
+                                <Button Content="{Binding Label}"
+                                        Command="{Binding DataContext.SelectConfigGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource RefEquals}">
+                                                            <Binding/>
+                                                            <Binding Path="DataContext.SelectedConfigGroup" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Border>
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource RefEquals}">
+                                                            <Binding/>
+                                                            <Binding Path="DataContext.SelectedConfigGroup" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+            <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,15"/>
+
+            <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"/>
+        </StackPanel>
+
+        <!-- 0 or 1 Groups: not worth a tab bar, fall back to the flat rendering used everywhere else
+             (a lone Group still renders its own bold title inline) -->
+        <ItemsControl ItemsSource="{Binding ConfigGroups}" Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}"/>
+
+        <!-- The modal's OK button, kept rather than switching to save-as-you-type: this page's other
+             sections commit immediately, but a plugin's fields are free-form text that is only valid
+             once, and the modal's contract was always "nothing is written until OK". Collapsing the
+             section without pressing it rolls the fields back, which is what closing the window did. -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Style="{StaticResource PrimarySettingsButton}" MinWidth="80"
+                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_OK]}"
+                    Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>
