@@ -38,6 +38,20 @@ public class QuickPanelViewModel : ViewModelBase
 
     }
 
+    /// <summary>Reloads before the panel is shown. Nothing to reload yet.</summary>
+    /// <remarks>
+    /// Deliberately still here with no source behind it. The panel shows what is recent and where you
+    /// currently are, so it has to reload on every open rather than once: a version that loaded at
+    /// construction would keep showing whatever was true the first time it was ever opened, and the
+    /// panel is reused rather than rebuilt.
+    ///
+    /// That decision was made and tested while the startup panel was standing in as a source, and
+    /// removing the source would otherwise have taken it with it, leaving whoever attaches the real one
+    /// to rediscover it. Awaited before the panel opens, not after, because whether it opens at all
+    /// depends on what this turns up.
+    /// </remarks>
+    public Task RefreshAsync() => Task.CompletedTask;
+
     /// <summary>Whether there is anything worth opening the panel for.</summary>
     /// <remarks>
     /// Distinct from IsEmpty below, which they are easy to mistake for each other. This one gates

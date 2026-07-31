@@ -68,10 +68,14 @@ public sealed class QuickPanelManager : IDisposable
         Show(host);
     }
 
-    private void Show(IntPtr host)
+    private async void Show(IntPtr host)
     {
         _viewModel ??= new QuickPanelViewModel();
 
+        // Every open, not just the first: the panel is reused rather than rebuilt, so without this it
+        // would keep showing whatever was true the first time it was ever opened. Awaited before the
+        // window appears because the decision below depends on the result.
+        await _viewModel.RefreshAsync();
 
         // Nothing to show, nothing to open: the panel exists to put content over the window in front,
         // and flashing an empty shell over it would only be in the way.
