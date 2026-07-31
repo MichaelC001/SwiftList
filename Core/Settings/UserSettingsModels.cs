@@ -119,6 +119,11 @@ public class SearchWindowSettings
     // When the quick window is already open, pressing the global toggle hotkey again normally hides
     // it -- this opts into opening the full SearchWindow (carrying over the current query) instead.
     public bool ReopenAsFullWindowOnRepeatHotkey { get; set; } = false;
+    // Refuses to start a drag of the quick window, so a stray press on it while reaching for the search
+    // box cannot nudge it off the spot it was put on. Only the drag: right-clicking the status icon
+    // still resets the position, which is the way back if it is already somewhere unwanted. Off by
+    // default, since being able to move the window is the behavior everyone already has.
+    public bool LockPosition { get; set; } = false;
 }
 
 public class PreviewWindowSettings

@@ -3,6 +3,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using System.Windows.Controls;
 using SwiftList.App.Services;
+using SwiftList.Core;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using TextBox = System.Windows.Controls.TextBox;
@@ -131,6 +132,16 @@ public partial class QuickSearchWindow : Window, ISearchWindow, IHasVisibleConte
         SearchBox.IconDragCompleted += SaveWindowPosition;
         SearchBox.IsIconClickable = true;
         SearchBox.IsIconDraggable = true;
+        // The logo is a SECOND way to drag this window, and it lives in SearchBoxControl rather than
+        // here, so gating Border_MouseLeftButtonDown alone left it moving while "Lock position" was on.
+        //
+        // Refreshed from a tunnelling handler on the window rather than set once above: PreviewMouse...
+        // reaches the window before SearchBoxControl's own bubbling icon handler reads the flag, so the
+        // logo obeys a toggle the moment it is applied -- the same per-press freshness the border drag
+        // gets from reading the setting inline. Anchoring it to a per-show refresh instead would have
+        // left the two paths disagreeing for as long as the window stayed open.
+        PreviewMouseLeftButtonDown += (_, _) =>
+            SearchBox.IsIconDraggable = ShouldAllowIconDrag(UserSettings.Load().SearchWindow.LockPosition);
         SearchBox.IconClickHint = TranslationManager.Instance["QuickSearch_LogoDragResetHint"];
         LstResults.PreviewMouseLeftButtonUp += (s, e) => _resultExecutor.HandlePreviewMouseLeftButtonUp(e);
         LstResults.PreviewMouseRightButtonUp += (s, e) => _resultExecutor.HandlePreviewMouseRightButtonUp(e);
@@ -260,9 +271,26 @@ public partial class QuickSearchWindow : Window, ISearchWindow, IHasVisibleConte
     // effect immediately (constrain to vertical-only movement while held) -- see WindowDragTracker.
     private readonly WindowDragTracker _borderDragTracker;
 
+    // Pulled out of the handler so the gate can be unit tested without a live window, the same reason
+    // DetermineToggleAction exists next door.
+    //
+    // Gating the press rather than the move is what makes the lock complete: without a Start there is no
+    // drag for MouseMove to continue and no position for MouseLeftButtonUp to save, so one check covers
+    // all three handlers. Nothing else moves this window, so there is no second path to close.
+    internal static bool ShouldStartDrag(MouseButton changedButton, bool lockPosition)
+        => changedButton == MouseButton.Left && !lockPosition;
+
+    /// <summary>
+    /// The same answer for the window's other drag handle, the search box logo, whose handler lives in
+    /// SearchBoxControl and is gated by its IsIconDraggable property.
+    /// </summary>
+    internal static bool ShouldAllowIconDrag(bool lockPosition) => !lockPosition;
+
     private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton != MouseButton.Left) return;
+        // Read per press rather than cached in a field: the setting can change in the Settings window
+        // while this window exists, and UserSettings.Load() is served from memory after the first call.
+        if (!ShouldStartDrag(e.ChangedButton, UserSettings.Load().SearchWindow.LockPosition)) return;
 
         if (sender is IInputElement el) el.CaptureMouse();
         _borderDragTracker.Start(PointToScreen(e.GetPosition(this)));

@@ -152,6 +152,12 @@
                            IsChecked="{Binding General.Layout.ReopenAsFullWindowOnRepeatHotkey, Mode=TwoWay}"
                            Margin="0,8,0,0"/>
 
+                <CheckBox x:Name="RowLayoutLockPosition" Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[General_LayoutLockPosition]}"
+                           IsChecked="{Binding General.Layout.LockPosition, Mode=TwoWay}"
+                           Margin="0,8,0,0"/>
+                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[General_LayoutLockPositionHint]}"
+                           Foreground="{DynamicResource TextSecondary}" FontSize="12" TextWrapping="Wrap" Margin="24,4,0,0"/>
+
                 <Grid x:Name="RowLayoutReset" Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="GeneralLabel"/>
