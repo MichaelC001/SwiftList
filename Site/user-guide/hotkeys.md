@@ -97,7 +97,7 @@ These always behave the same way regardless of your hotkey settings:
 | `Ctrl+Shift+Enter` | Result list | Opens the result elevated (Run as administrator). |
 | `Left` / `Right` arrow | Actions menu | Go back a menu level / enter a submenu. |
 | `Backspace` | Actions menu | Exits the actions menu when the search box is already empty. |
-| `Alt+Space` / `Alt+F4` | Quick, main, and settings windows, the QuickLook preview pane, plugin configuration dialogs, and SwiftList's own message box dialogs | Both are suppressed on these windows — no Windows system menu pops up, and `Alt+F4` doesn't close them. |
+| `Alt+Space` / `Alt+F4` | All of SwiftList's own windows | `Alt+Space` is suppressed on all of them: none has a real title bar for the Windows system menu to belong to. `Alt+F4` closes the main and settings windows as usual; it stays suppressed on the quick, inline and QuickLook windows and the dialogs, which are shown and hidden rather than opened and closed. |
 
 ## Plugin action hotkeys
 

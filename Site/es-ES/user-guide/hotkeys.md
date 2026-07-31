@@ -103,7 +103,7 @@ Estas siempre se comportan de la misma forma sin importar tu configuración de a
 | `Ctrl+Mayús+Intro` | Lista de resultados | Abre el resultado elevado (Ejecutar como administrador). |
 | Flecha `Izquierda` / `Derecha` | Menú de acciones | Retroceden un nivel de menú / entran en un submenú. |
 | `Retroceso` | Menú de acciones | Sale del menú de acciones cuando el cuadro de búsqueda ya está vacío. |
-| `Alt+Espacio` / `Alt+F4` | Las ventanas rápida, principal y de configuración, el panel de vista previa QuickLook, los diálogos de configuración de plugins y los propios cuadros de diálogo de mensaje de SwiftList | Ambos se suprimen en estas ventanas — no aparece ningún menú de sistema de Windows, y `Alt+F4` no las cierra. |
+| `Alt+Espacio` / `Alt+F4` | Todas las ventanas propias de SwiftList | `Alt+Espacio` se suprime en todas ellas: ninguna tiene una barra de título real a la que pueda pertenecer el menú de sistema de Windows. `Alt+F4` cierra la ventana principal y la de configuración con normalidad; sigue suprimido en las ventanas rápida, en línea y QuickLook y en los diálogos, que se muestran y se ocultan en lugar de abrirse y cerrarse. |
 
 ## Atajos de acción de plugins
 

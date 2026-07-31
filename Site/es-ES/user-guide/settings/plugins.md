@@ -15,6 +15,9 @@ Si no hay ningún plugin instalado, la página muestra en su lugar un mensaje de
 Una fila por plugin instalado, con su nombre y debajo su versión. Al seleccionar una fila, ese plugin se abre en
 el panel de la derecha.
 
+La lista encabeza con lo que hay que hacer: primero los plugins con ajustes propios, después los que tienen
+componentes que puedes desactivar, y luego el resto, por orden alfabético dentro de cada grupo.
+
 ## Plugin seleccionado
 
 El panel empieza con el icono, el nombre y la **descripción general de la función** del plugin.

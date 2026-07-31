@@ -15,6 +15,9 @@ If no plugins are installed, the page shows an empty-state message instead.
 One row per installed plugin, showing its name with its version underneath. Selecting a row opens
 that plugin in the pane on the right.
 
+The list leads with what there is to do: plugins with their own settings first, then plugins with
+components you can switch off, then the rest, alphabetical within each group.
+
 ## Selected plugin
 
 The pane opens on the plugin's icon, name, and **overall function description**.
