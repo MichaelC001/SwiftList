@@ -11,7 +11,10 @@
          below for the ToggleButton-based equivalent used by the search sidebar's filter items. -->
     <Style x:Key="SidebarItemStyle" TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource SidebarText}"/>
-        <Setter Property="Padding" Value="0"/>
+        <!-- The value the template actually uses, rather than the 0 that sat here while the template
+             hardcoded its own: a list that wants tighter rows can now override this instead of having
+             to restate the whole template. -->
+        <Setter Property="Padding" Value="16,11"/>
         <Setter Property="Margin" Value="0"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -24,7 +27,7 @@
                         <Rectangle x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
                                    RadiusX="1.5" RadiusY="1.5" Fill="Transparent" Margin="0,4"/>
                         <Border x:Name="ItemBorder" CornerRadius="7"
-                                Background="Transparent" Padding="16,11" Margin="8,2,8,2">
+                                Background="Transparent" Padding="{TemplateBinding Padding}" Margin="8,2,8,2">
                             <ContentPresenter/>
                         </Border>
                     </Grid>

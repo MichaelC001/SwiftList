@@ -43,7 +43,10 @@
                      page's still-colorful checkboxes and buttons, so the tile itself
                      stays neutral (HoverBackground) while the glyph keeps the accent
                      color, matching the common "neutral tile, colored icon" pattern. -->
-                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8"
+                <!-- Top, not centred: this row's height follows the description, which runs to however
+                     many lines the plugin's own summary needs, so a centred tile drifts further down
+                     the taller that gets and stops lining up with the name it belongs to. -->
+                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" VerticalAlignment="Top"
                         Background="{DynamicResource HoverBackground}" Margin="0,0,12,0">
                     <TextBlock Text="&#xECAA;" FontFamily="Segoe MDL2 Assets"
                                FontSize="16" Foreground="{DynamicResource AccentBlue}"
