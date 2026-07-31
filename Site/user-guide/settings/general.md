@@ -119,7 +119,8 @@ with content. See [Actions Menu & Preview](../actions-and-preview) for how the p
 
 Sets the order the [Quick Navigation](../hotkeys#quick-navigation-mouse) menu's root-level sections
 appear in — one section per contributing provider (e.g. Favorites/History/configured folders, Total
-Commander's Directory Hotlist, a plugin's own quick-nav entries), each labeled with its own header.
+Commander's Directory Hotlist, Directory Opus's Favorites, a plugin's own quick-nav entries), each
+labeled with its own header.
 
 **Provider Order** — the same up/down-arrow (or drag-to-reorder) list used elsewhere in Settings (see
 [Favorites](./favorites)): move a provider up or down to change where its section lands relative to

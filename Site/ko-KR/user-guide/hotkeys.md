@@ -61,7 +61,7 @@
 
 이들 트리거 중 무엇이든 즐겨찾기, 기록, 구성된 빠른 접근 폴더의 계단식 메뉴를 띄웁니다(
 [설정 → 즐겨찾기](./settings/favorites)와 [설정 → 기록](./settings/history) 참고) — 플러그인도 자체
-항목을 기여할 수 있습니다. `wincmd.ini`에 설정해 두었다면 Total Commander 자체의 Directory Hotlist,
+항목을 기여할 수 있습니다. `wincmd.ini`에 설정해 두었다면 Total Commander 자체의 Directory Hotlist, Directory Opus 자체의 즐겨찾기 메뉴,
 또는 "빠른 탐색에 표시"로 플래그된 [커스텀 명령](./instant-answers#커스텀-명령)(선택적으로 `/`로
 구분된 경로를 지정해 하위 메뉴에 중첩 가능)이 그 예입니다. 기여하는 각 플러그인은 메뉴 루트에 자체
 레이블이 붙은 섹션을 가지며, 그 섹션들이 나타나는 순서는 여러분이 직접 설정할 수 있습니다 — 자세한

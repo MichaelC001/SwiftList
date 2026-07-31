@@ -69,7 +69,8 @@ Activada por defecto, se puede alternar cada disparador por separado en la confi
 Cualquiera de estos disparadores abre un menú en cascada con tus Favoritos, Historial y carpetas de acceso rápido
 configuradas (ver [Configuración → Favoritos](./settings/favorites) y [Configuración →
 Historial](./settings/history)) — los plugins también pueden aportar sus propias entradas, como la propia lista de
-carpetas favoritas (Directory Hotlist) de Total Commander si has configurado una en `wincmd.ini`, o un [Comando
+carpetas favoritas (Directory Hotlist) de Total Commander si has configurado una en `wincmd.ini`, el propio menú
+de Favoritos de Directory Opus, o un [Comando
 personalizado](./instant-answers#comandos-personalizados) marcado como "Mostrar en Navegación rápida"
 (anidado opcionalmente en un submenú dándole una ruta separada por `/`). Cada plugin que contribuye obtiene su
 propia sección etiquetada en la raíz del menú, y el orden en que aparecen esas secciones lo defines tú — ver

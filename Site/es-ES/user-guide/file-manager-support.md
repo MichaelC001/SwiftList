@@ -48,23 +48,26 @@ Commander, comunicándose con su interfaz de control remoto documentada a travé
 la interfaz); Files y One Commander usan en su lugar UI Automation, ya que ninguno expone un protocolo de control
 remoto.
 
-## Diálogos de herramientas de compresión (plugins opcionales)
+## Diálogos propios de aplicaciones (plugins opcionales)
 
-Estos apuntan a un diálogo concreto dentro de una herramienta de compresión de terceros — no a la aplicación
+Estos apuntan a un diálogo concreto dentro de una aplicación de terceros — no a la aplicación
 entera — de la misma forma que hacen los diálogos integrados de arriba. Instálalo/habilítalo desde
 [Configuración → Plugins](./settings/plugins); cada uno distribuye un único componente con su propio interruptor
 de encendido/apagado ahí (sin diálogo Configurar independiente, ya que solo hay una cosa que activar o desactivar).
 
 | Destino | Acoplamiento de búsqueda en línea | Navegación rápida | Detección de ruta activa |
 |---|---|---|---|
+| Diálogo Abrir/Guardar de WPS Office | Sí | Clic central, o clic izquierdo en el propio logotipo de la ventana en línea | — |
 | Diálogo Extraer de WinRAR | Sí | Clic central, o clic izquierdo en el propio logotipo de la ventana en línea | — |
 | Diálogo Extraer de Bandizip | Sí | Clic central, o clic izquierdo en el propio logotipo de la ventana en línea | — |
 | Diálogo Añadir archivos de Bandizip | Sí | Clic central, o clic izquierdo en el propio logotipo de la ventana en línea | — |
 
 Se detectan por estructura de controles, no por título de ventana, así que esto funciona en todos los paquetes de
-idioma que distribuye cada herramienta. Igual que con los diálogos integrados, la detección de ruta activa no se
-aplica — SwiftList ya está acoplado dentro del propio diálogo, sin ninguna otra ventana contra la que restringir
-una búsqueda.
+idioma que distribuye cada aplicación. La entrada de WPS cubre Writer, Hojas de cálculo, Presentación y el lector
+de PDF, que comparten el mismo diálogo: WPS usa el suyo propio en lugar del de Windows, y por eso necesita un
+plugin, mientras que la mayoría de aplicaciones quedan cubiertas por los diálogos integrados de arriba. Igual que
+con ellos, la detección de ruta activa no se aplica — SwiftList ya está acoplado dentro del propio diálogo, sin
+ninguna otra ventana contra la que restringir una búsqueda.
 
 ---
 

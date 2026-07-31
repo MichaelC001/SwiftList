@@ -64,7 +64,8 @@ Enabled by default, toggled per-trigger in settings:
 Any of these triggers pops a cascading menu of your Favorites, History, and configured quick-access
 folders (see [Settings → Favorites](./settings/favorites) and [Settings → History](./settings/history))
 — plugins can contribute their own entries too, such as Total Commander's own Directory Hotlist if
-you've set one up in `wincmd.ini`, or a [Custom Command](./instant-answers#custom-commands) flagged
+you've set one up in `wincmd.ini`, Directory Opus's own Favorites menu, or a [Custom
+Command](./instant-answers#custom-commands) flagged
 "Show in Quick Navigation" (optionally nested into a submenu by giving it a `/`-separated path). Each
 contributing plugin gets its own labeled section at the root of the menu, and the order those
 sections appear in is yours to set — see

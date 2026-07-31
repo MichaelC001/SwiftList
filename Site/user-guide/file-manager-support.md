@@ -47,22 +47,26 @@ Commander, by talking to their documented remote-control interface over `WM_COPY
 scraping the UI); Files and One Commander instead use UI Automation, since neither exposes a
 remote-control protocol.
 
-## Archive tool dialogs (optional plugins)
+## Application dialogs (optional plugins)
 
-These target one specific dialog inside a third-party archive tool — not the whole application —
+These target one specific dialog inside a third-party application — not the whole application —
 the same way the built-in dialogs above do. Install/enable from [Settings →
 Plugins](./settings/plugins); each ships a single component with its own on/off switch there (no
 separate Configure dialog, since there's only one thing to toggle).
 
 | Target | Inline search docking | Quick Navigation | Active path detection |
 |---|---|---|---|
+| WPS Office's Open/Save dialog | Yes | Middle-click, or left-click the inline window's own logo | — |
 | WinRAR's Extract dialog | Yes | Middle-click, or left-click the inline window's own logo | — |
 | Bandizip's Extract dialog | Yes | Middle-click, or left-click the inline window's own logo | — |
 | Bandizip's Add Files dialog | Yes | Middle-click, or left-click the inline window's own logo | — |
 
 Detected by control structure, not window title, so this works across every language pack each
-tool ships. As with the built-in dialogs, active path detection doesn't apply — SwiftList is
-already docked inside the dialog itself, with no other window to scope a search against.
+application ships. The WPS entry covers Writer, Spreadsheets, Presentation and the PDF reader, which
+all share the one dialog — WPS uses its own rather than the Windows one, which is why it needs a
+plugin at all where most applications are covered by the built-in dialogs above. As with those,
+active path detection doesn't apply — SwiftList is already docked inside the dialog itself, with no
+other window to scope a search against.
 
 ---
 

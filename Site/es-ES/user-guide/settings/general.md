@@ -125,8 +125,9 @@ el contenido. Ver [Menú de acciones y vista previa](../actions-and-preview) par
 
 Define el orden en que aparecen las secciones de nivel raíz del menú de [Navegación
 rápida](../hotkeys#navegacion-rapida-raton) — una sección por cada proveedor que contribuye (por ejemplo,
-Favoritos/Historial/carpetas configuradas, la lista de carpetas favoritas de Total Commander, las propias entradas
-de navegación rápida de un plugin), cada una etiquetada con su propio encabezado.
+Favoritos/Historial/carpetas configuradas, la lista de carpetas favoritas de Total Commander, los Favoritos de
+Directory Opus, las propias entradas de navegación rápida de un plugin), cada una etiquetada con su propio
+encabezado.
 
 **Orden de proveedores** — la misma lista con flechas arriba/abajo (o arrastrar para reordenar) usada en otras
 partes de Configuración (ver [Favoritos](./favorites)): mueve un proveedor arriba o abajo para cambiar dónde cae
