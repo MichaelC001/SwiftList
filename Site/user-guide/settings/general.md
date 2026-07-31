@@ -49,7 +49,10 @@ Covers both the quick search bar's appearance and how its search results are pri
   toggle hotkey again while the quick window is already open just hides it; turning this on makes
   the second press switch to the full window instead (carrying over whatever query you'd already
   typed), rather than closing anything.
-- **Reset Layout Settings** button — restores all four settings above to their defaults.
+- **Lock position** — checkbox, off by default. Stops the quick window being dragged, so a stray
+  press can't nudge it off the spot you put it on. Right-clicking the logo still resets its
+  position, and **Reset Layout Settings** below clears the lock along with everything else.
+- **Reset Layout Settings** button — restores all five settings above to their defaults.
 
 Right-clicking the [quick window's logo](../hotkeys#search-box-logo-icon) resets just its on-screen
 position (not size), re-centering it the same way it centers on first launch.

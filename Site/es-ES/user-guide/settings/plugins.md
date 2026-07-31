@@ -1,32 +1,47 @@
 # Plugins
 
 Lista cada plugin instalado, con la versión del SDK de Plugins cargada actualmente mostrada como una insignia en
-la cabecera de la página (relevante si estás comparando un plugin con el [Manual de
-Desarrollador](../../dev-guide/)).
+la cabecera de la página — haz clic en ella para abrir el [Manual de Desarrollador](../../dev-guide/), que es
+justamente para lo que sirve ese número de versión.
 
-## Tarjeta por plugin
+La página se divide en dos paneles: los plugins instalados a la izquierda, y los detalles del seleccionado a la
+derecha. Cada uno se desplaza por su cuenta, así que una lista larga de plugins y un formulario largo de ajustes
+no se arrastran mutuamente.
 
-Cada plugin instalado obtiene una tarjeta que muestra su icono, nombre, versión, nombre de archivo de la DLL, y
-una **descripción general de la función**.
+Si no hay ningún plugin instalado, la página muestra en su lugar un mensaje de estado vacío.
 
-Haz clic en la tarjeta para expandirla y ver sus componentes registrados, agrupados por tipo (proveedores de
-búsqueda, proveedores de menú dinámico, etc.) — cada componente activable tiene su propia **casilla de
-habilitar/deshabilitar**; un componente marcado como obligatorio muestra en su lugar un icono de candado y no se
-puede desactivar. Pasar el cursor sobre un componente revela su **tooltip detallado de función**.
+## Lista de plugins
+
+Una fila por plugin instalado, con su nombre y debajo su versión. Al seleccionar una fila, ese plugin se abre en
+el panel de la derecha.
+
+## Plugin seleccionado
+
+El panel empieza con el icono, el nombre y la **descripción general de la función** del plugin.
+
+Debajo, un plugin que expone su propia configuración (ajustes personalizados más allá de un simple
+habilitar/deshabilitar) obtiene dos pestañas, **Detalles** y **Configurar**. Un plugin sin nada que configurar no
+muestra ninguna pestaña: sus detalles ocupan el panel entero.
+
+### Detalles
+
+Los componentes que registra este plugin, agrupados por tipo (proveedores de búsqueda, proveedores de menú
+dinámico, etc.). Cada componente activable tiene su propia **casilla de habilitar/deshabilitar**; un componente
+marcado como obligatorio muestra en su lugar un icono de candado y no se puede desactivar. Al pasar el cursor
+sobre el **(!)** junto a un componente se revela su descripción detallada de función.
 
 Cuando un grupo (o el plugin en su conjunto) tiene más de un componente activable, aparece un enlace
 **Seleccionar todo / Deseleccionar todo** junto a su encabezado, que permite marcar/desmarcar todas las casillas
 de ese ámbito a la vez en lugar de una por una.
 
-Si un plugin expone su propia configuración (ajustes personalizados más allá de un simple
-habilitar/deshabilitar), aparece un botón **Configurar** en la cabecera de la tarjeta, que abre el propio diálogo
-de configuración de ese plugin.
+### Configurar
 
-Un banner en la parte inferior de la página recuerda que algunos interruptores de componente solo surten efecto
-tras reiniciar SwiftList.
+Los ajustes propios del plugin, editados aquí mismo en lugar de en un diálogo aparte. Un plugin que reparte sus
+ajustes en dos o más grupos obtiene su propia fila de pestañas, una por grupo.
 
-Si no hay ningún plugin instalado, la página muestra en su lugar un mensaje de estado vacío.
+No se escribe nada hasta que pulsas **Aceptar**. Al salir de esta pestaña — volviendo a Detalles, o eligiendo
+otro plugin — los campos vuelven a sus valores guardados, de modo que unas ediciones que dejaste atrás no puedan
+confirmarse más tarde por descuido.
 
-Para ver un ejemplo concreto de cómo es en la práctica el propio diálogo **Configurar** de un plugin (por ejemplo,
-cambiar una palabra clave de activación), ver [Respuestas instantáneas y atajos de palabra
-clave](../instant-answers).
+Para ver un ejemplo concreto de cómo es en la práctica la configuración de un plugin (por ejemplo, cambiar una
+palabra clave de activación), ver [Respuestas instantáneas y atajos de palabra clave](../instant-answers).

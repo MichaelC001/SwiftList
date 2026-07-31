@@ -52,7 +52,11 @@ rápida:
   nuevo el atajo de mostrar/ocultar mientras la ventana rápida ya está abierta simplemente la oculta; activar esto
   hace que la segunda pulsación cambie a la ventana completa en su lugar (trasladando la consulta que ya tuvieras
   escrita), en lugar de cerrar nada.
-- Botón **Restablecer ajustes de diseño** — restaura los cuatro ajustes de arriba a sus valores predeterminados.
+- **Bloquear posición** — casilla, desactivada por defecto. Impide arrastrar la ventana rápida, para que una
+  pulsación accidental no la desplace del sitio donde la dejaste. Hacer clic derecho en el logo sigue
+  restableciendo su posición, y **Restablecer ajustes de diseño** más abajo también quita el bloqueo junto con
+  todo lo demás.
+- Botón **Restablecer ajustes de diseño** — restaura los cinco ajustes de arriba a sus valores predeterminados.
 
 Hacer clic derecho en el [logotipo de la ventana rápida](../hotkeys#icono-del-logotipo-en-el-cuadro-de-busqueda)
 restablece solo su posición en pantalla (no el tamaño), volviendo a centrarla igual que se centra en el primer
