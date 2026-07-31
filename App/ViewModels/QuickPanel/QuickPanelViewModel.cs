@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Collections.ObjectModel;
 using SwiftList.App;
@@ -64,9 +65,12 @@ public class QuickPanelViewModel : ViewModelBase
             var modified = File.GetLastWriteTime(item.FullPath);
             var relative = RecentFilesTabSource.FormatRelativeTime(modified);
 
-            // The directory is not on the row any more, it is the row's tooltip: at this width a path
-            // was truncated to uselessness anyway, and the time is what the panel is sorted and read by.
-            item.ParentDir = string.IsNullOrEmpty(relative) ? string.Empty : relative;
+            // Absolute first, interval in brackets after it. The interval alone answers "how stale is
+            // this" at a glance but never "which day was that"; the absolute alone is the reverse. The
+            // absolute half is formatted by the current culture rather than a fixed pattern, so a
+            // machine set to a language that writes the date the other way round gets its own order.
+            var absolute = modified.ToString("g", CultureInfo.CurrentCulture);
+            item.ParentDir = string.IsNullOrEmpty(relative) ? absolute : $"{absolute} ({relative})";
         }
         catch
         {

@@ -120,7 +120,18 @@ public sealed class QuickPanelManager : IDisposable
             // Losing the foreground dismisses the panel, the way the inline window goes when the user
             // clicks away. Subscribed once at construction rather than per show: the window is reused,
             // so wiring it on each Show would stack a fresh handler every time.
-            _window.Deactivated += (_, _) => Hide();
+            _window.Deactivated += (_, _) =>
+            {
+                // Not while the window is being dragged: DragMove runs a modal loop the window comes
+                // out of deactivated, which is not the user clicking away.
+                if (_window is { IsDraggingWindow: true }) return;
+
+                // Nor while the action flyout is up. It hangs its key handler on this window and
+                // needs it alive to reach it, so hiding here would take the menu down with the panel
+                // and leave every shortcut on it looking dead.
+                if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
+                Hide();
+            };
         }
 
         // Positioned before Show: placing it afterwards lets the window paint once at its old location

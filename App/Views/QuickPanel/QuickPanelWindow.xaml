@@ -33,20 +33,54 @@
                 <ResourceDictionary Source="../../Resources/DataTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- The quick window's row container, plus the path as a tooltip. Added here rather than in
-                 the shared SearchResultTemplate because only this panel drops the directory from the row
-                 itself: the windows that still print it underneath the name have no need of a tooltip
-                 repeating what is already on screen. -->
-            <Style x:Key="QuickPanelRowStyle" TargetType="ListBoxItem" BasedOn="{StaticResource ResultItemStyle}">
-                <Setter Property="ToolTip" Value="{Binding FullPath}"/>
-                <!-- The row height this panel renders at, and the one QuickPanelWindow.RowHeight sums
-                     to size the list. ResultItemStyle picks its own from the window Title, which is how
-                     the inline window gets shorter rows than the main one; this panel is neither of
-                     those titles, so it states its own rather than inheriting the full-size default and
-                     leaving the computed height short of what actually rendered. -->
-                <Setter Property="MinHeight" Value="42"/>
-                <Setter Property="Height" Value="42"/>
+            <!-- The full window's row, rebuilt for a ListBox. SearchResultItemStyle itself cannot be
+                 reused: it targets ListViewItem and presents through a GridViewRowPresenter, neither of
+                 which a plain ListBox has. Everything that makes it behave the way it does is here,
+                 though, and none of it is what ResultItemStyle does.
+
+                 A real IsMouseOver trigger, so hovering highlights without selecting. ResultItemStyle
+                 has none, because the lists it was written for select on hover instead and take their
+                 highlight from IsSelected; that indirection is also what kept fighting multi-selection
+                 here, and with a genuine hover trigger there is nothing left to fight.
+
+                 Plain Setters, no EnterActions or ExitActions. ResultItemStyle animates the selection
+                 fade, which is the flicker on every click this panel had and the full window does not. -->
+            <Style x:Key="QuickPanelRowStyle" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Margin" Value="0"/>
+                <!-- MinHeight from the item, not a fixed ListItemHeight: that constant sizes the full
+                     window's GRID rows, which are one line of text in columns. These rows carry a name
+                     and a time stacked, so pinning them to it squashed the two together. ItemHeight is
+                     the two-line figure, already accounting for the icon and its breathing room. -->
+                <Setter Property="MinHeight" Value="{Binding ItemHeight}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Grid>
+                                <Rectangle x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
+                                           RadiusX="1.5" RadiusY="1.5" Fill="Transparent" Margin="0,2"/>
+                                <Border x:Name="ItemBorder" Background="Transparent"
+                                        CornerRadius="6" Margin="6,2,6,2" Padding="12,0,12,0" Cursor="Hand">
+                                    <ContentPresenter VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                    <Setter TargetName="AccentBar" Property="Fill" Value="{DynamicResource AccentBarColor}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
+
         </ResourceDictionary>
     </Window.Resources>
 
@@ -58,7 +92,6 @@
         <Border CornerRadius="10" helpers:RoundedClip.IsEnabled="True">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
@@ -72,20 +105,23 @@
                      Background is not hit-testable at all, so hanging the drag region off a themed brush
                      would make it vanish under any theme that did not define one. -->
                 <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
-                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1">
+                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1"
+                        VerticalAlignment="Top" Panel.ZIndex="1">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Opacity" Value="0"/>
-                            <Setter Property="Height" Value="6"/>
+                            <Setter Property="Height" Value="14"/>
+                            <Setter Property="BorderThickness" Value="0"/>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Opacity" Value="1"/>
                                     <Setter Property="Height" Value="20"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
-                    <Grid x:Name="DragArea" Height="6" Background="Transparent"
+                    <Grid x:Name="DragArea" Height="14" Background="Transparent"
                           MouseLeftButtonDown="DragArea_MouseLeftButtonDown">
                         <Border Width="36" Height="3" CornerRadius="1.5"
                                 Background="{DynamicResource SeparatorBrush}"
@@ -96,7 +132,7 @@
                 <!-- Tab strip. TabStripScrollView, same as the quick window's own startup panel strip:
                      the tabs are user-configurable and their labels are translated, so the row can
                      overflow a panel this narrow and needs its left/right arrows. -->
-                <ctrl:TabStripScrollView Grid.Row="1" Margin="12,10,12,0">
+                <ctrl:TabStripScrollView Grid.Row="0" Margin="12,16,12,0">
                     <ItemsControl ItemsSource="{Binding Tabs}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -135,7 +171,7 @@
                     </ItemsControl>
                 </ctrl:TabStripScrollView>
 
-                <Border Grid.Row="2" Background="{DynamicResource ContentBg}">
+                <Border Grid.Row="1" Background="{DynamicResource ContentBg}">
                     <Grid>
                         <!-- The quick window's own results list, resource for resource: the same
                              SearchResultTemplate row, the same container style, the same scrollbar and
@@ -159,9 +195,11 @@
                                  VirtualizingPanel.ScrollUnit="Pixel"
                                  Style="{StaticResource SleekListBoxStyle}"
                                  ItemContainerStyle="{StaticResource QuickPanelRowStyle}"
+                                 VerticalContentAlignment="Center"
                                  ItemTemplate="{StaticResource SearchResultTemplate}"
                                  SelectionMode="Extended"
-                                 MouseDoubleClick="ItemsList_MouseDoubleClick"/>
+                                 MouseDoubleClick="ItemsList_MouseDoubleClick"
+                                 PreviewMouseRightButtonUp="ItemsList_PreviewMouseRightButtonUp"/>
 
                         <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Search_NoResult]}"
                                    Foreground="{DynamicResource TextSecondary2}" FontSize="12"
