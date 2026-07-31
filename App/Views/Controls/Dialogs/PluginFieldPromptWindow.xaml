@@ -4,7 +4,7 @@
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
         Title="SwiftList"
-        MinWidth="380" MinHeight="140" MaxWidth="620" MaxHeight="800"
+        MinWidth="480" MinHeight="160" MaxWidth="620" MaxHeight="800"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner"
         Background="Transparent"
@@ -82,9 +82,15 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Button Bar: OK only. Escape/the title bar's close button both cancel, matching
+                <!-- Button Bar: OK only. The title bar's close button cancels, matching
                      PluginConfigWindow's own IsSaved-defaults-false semantics, so a separate Cancel
-                     button next to OK would just be a second way to do the same thing. -->
+                     button next to OK would just be a second way to do the same thing.
+
+                     Escape is deliberately not wired up to cancel as well. Reaching the fields ahead
+                     of the focused editor means handling it in the tunnelling pass, which is exactly
+                     where an editor that wants the key for itself would be waiting for it: a hotkey
+                     recorder field takes Escape to clear what it is recording, and a window-level
+                     handler would swallow that before the field ever saw it. -->
                 <Border Grid.Row="2" Background="{DynamicResource StatusBarBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0">
                     <Grid Margin="12,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
