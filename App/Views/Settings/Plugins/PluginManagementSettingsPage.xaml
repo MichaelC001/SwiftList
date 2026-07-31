@@ -90,17 +90,80 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Margin="2,4">
-                            <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                            <!-- Same pill the SDK version uses in the page header above, so the two
-                                 version numbers on this page read as the same kind of thing. -->
-                            <Border CornerRadius="4" Background="{DynamicResource BadgeBackground}"
-                                    BorderBrush="{DynamicResource BadgeBorderBrush}" BorderThickness="1"
-                                    Padding="5,1,5,2" Margin="0,3,0,0" HorizontalAlignment="Left">
-                                <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="10"
-                                           FontWeight="SemiBold" Foreground="{DynamicResource BadgeText}"/>
-                            </Border>
-                        </StackPanel>
+                        <Grid Margin="2,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- The detail pane's icon tile at list scale. Same neutral tile and same
+                                 fallback glyph, because there is no per-plugin icon to draw: a plugin
+                                 does not supply one, so both places show the one mark that stands for
+                                 "a plugin" and the row is identifiable by its name.
+
+                                 Layered like the version pill below, and for the same reason: the tile
+                                 in the detail pane can be a flat fill because it sits on a card that
+                                 never changes colour, but here it sits on a row that tints itself when
+                                 selected, and a flat fill would sink into that tint and leave the glyph
+                                 floating on its own. -->
+                            <Grid Grid.Column="0" Width="24" Height="24" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Border CornerRadius="6" IsHitTestVisible="False"
+                                        Background="{DynamicResource HoverBackground}" Opacity="0.5"/>
+                                <Border CornerRadius="6" IsHitTestVisible="False">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource AccentBlue}"/>
+                                            <Setter Property="Opacity" Value="0"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}" Value="True">
+                                                    <Setter Property="Opacity" Value="0.05"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <TextBlock Text="&#xECAA;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="11" Foreground="{DynamicResource AccentBlue}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                <!-- The quick window's shortcut pill (ShortcutHintBadge.xaml) rather
+                                     than the header's SDK badge: one badge in a header reads as a
+                                     highlight, but those colours repeated down every row out-shout the
+                                     plugin names, which are what this list is for.
+
+                                     Built the same way that pill is, both layers included. The second
+                                     one is the point: a single fill sits on a row that carries its own
+                                     selection tint, so on the selected row the badge and the row behind
+                                     it end up the same colour and the badge disappears. The accent
+                                     overlay is what separates them again, and it is keyed off the row's
+                                     own IsSelected so the two can never drift apart. -->
+                                <Border CornerRadius="4" BorderThickness="1" BorderBrush="Transparent"
+                                        Margin="0,3,0,0" HorizontalAlignment="Left">
+                                    <Grid>
+                                        <Border CornerRadius="4" IsHitTestVisible="False"
+                                                Background="{DynamicResource HoverBackground}" Opacity="0.5"/>
+                                        <Border CornerRadius="4" IsHitTestVisible="False">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{DynamicResource AccentBlue}"/>
+                                                    <Setter Property="Opacity" Value="0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Opacity" Value="0.05"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                        </Border>
+                                        <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="10"
+                                                   Padding="7,2,7,2" Foreground="{DynamicResource ShortcutColor}"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
