@@ -66,7 +66,6 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
-        SystemMenuBlocker.Attach(this);
         var vm = new SettingsViewModel();
         DataContext = vm;
         Loaded += (_, _) =>

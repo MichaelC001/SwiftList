@@ -40,7 +40,6 @@ public partial class SearchWindow : Window, ISearchWindow, IHasVisibleContentIns
         _restorePreviewOnFirstResult = restorePreview;
 
         ThemedWindowIconHelper.Apply(this);
-        SystemMenuBlocker.Attach(this);
 
         // XAML's Height/Width are just the design-time/factory-reset default -- the real size (user's
         // last resize, or the General settings page value) comes from UiMetrics, mirroring how

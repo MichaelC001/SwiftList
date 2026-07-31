@@ -4,14 +4,22 @@ using System.Windows.Interop;
 namespace SwiftList.App.Helpers.Visuals;
 
 /// <summary>
-/// Blocks two OS-level WM_SYSCOMMAND triggers on these custom-chrome windows, neither of which has a
-/// legitimate place here: Alt+Space (SC_KEYMENU), which pops up the OS-drawn system menu (Restore/Move/
-/// Size/Minimize/Maximize/Close) as a jarring blank box clipped by the window's own borderless/rounded
-/// corners instead of a real title bar; and Alt+F4 (SC_CLOSE), which would otherwise let the OS close
-/// these windows out from under the app's own show/hide lifecycle (e.g. the quick window is only ever
-/// meant to Hide(), never actually Close()) -- every other WM_SYSCOMMAND subcommand is left untouched.
-/// Attached to the inline window too, but doesn't reliably cover it there: unresolved, not pursued further.
+/// Blocks two OS-level WM_SYSCOMMAND triggers: Alt+Space (SC_KEYMENU), which pops up the OS-drawn
+/// system menu (Restore/Move/Size/Minimize/Maximize/Close) as a jarring blank box clipped by the
+/// window's own borderless/rounded corners instead of a real title bar; and Alt+F4 (SC_CLOSE), which
+/// would let the OS close the window out from under the app's own show/hide lifecycle. Every other
+/// WM_SYSCOMMAND subcommand is left untouched.
 /// </summary>
+/// <remarks>
+/// Used by every custom-chrome window except the two the user opens and is done with, the settings
+/// window and the full search window: those are ordinary resizable windows, so Alt+F4 and Alt+Space
+/// behaving normally is the right thing there rather than something to suppress.
+///
+/// The quick window is the one that genuinely cannot do without this, being the application's
+/// MainWindow with no ShutdownMode set, so letting Alt+F4 through would take the whole tray app down
+/// with it. Attaching it to the inline window has never reliably covered that one: unresolved, and
+/// left as it is rather than pursued here.
+/// </remarks>
 public static class SystemMenuBlocker
 {
     private const int WM_SYSCOMMAND = 0x0112;
