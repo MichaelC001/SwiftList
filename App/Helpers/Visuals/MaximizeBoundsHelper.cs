@@ -2,15 +2,16 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace SwiftList.App.Views.SearchWindow;
+namespace SwiftList.App.Helpers.Visuals;
 
+// Shared by the settings window and the full search window, both of which have custom chrome.
 // A WindowStyle=None + AllowsTransparency window doesn't get the OS's normal maximize-to-work-area
 // behavior -- Windows falls back to maximizing it over the full monitor bounds, taskbar included.
 // The previous fix reacted to that after the fact (shrinking Width/Height and repositioning once
 // WindowState was already Maximized), which left a gap on whichever edge the taskbar occupies since
 // the maximize had already happened by the time the correction ran. Intercepting WM_GETMINMAXINFO
 // instead tells Windows the correct bounds *before* it maximizes, so it never gets it wrong.
-internal static class SearchWindowMaximizeBoundsHelper
+internal static class MaximizeBoundsHelper
 {
     private const int WM_GETMINMAXINFO = 0x0024;
     private const uint MONITOR_DEFAULTTONEAREST = 2;

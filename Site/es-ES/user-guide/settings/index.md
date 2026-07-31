@@ -1,5 +1,9 @@
 # Referencia de configuración
 
+La ventana de configuración se redimensiona y se maximiza como cualquier otra: arrastra sus bordes, usa el botón
+de maximizar de la barra de título, o haz doble clic en la barra de título. Merece la pena sobre todo en la página
+de Plugins, que pone una lista de plugins y los ajustes de ese plugin uno al lado del otro y aprovecha el ancho.
+
 En la barra de título de la ventana de Configuración hay un cuadro de búsqueda. Coincide de forma difusa (la misma
 coincidencia al estilo fzf que usa la ventana de búsqueda principal, con soporte de alias en pinyin), no solo
 subcadenas simples, en todas las secciones — incluidas las entradas por plugin bajo Plugins, la subpestaña

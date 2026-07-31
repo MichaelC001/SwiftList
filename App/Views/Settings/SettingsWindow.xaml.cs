@@ -70,7 +70,7 @@ public partial class SettingsWindow : Window
         SystemMenuBlocker.Attach(this, blockClose: false);
         // Same WM_GETMINMAXINFO interception the full search window uses. A borderless window maximizes
         // to the whole monitor rather than its work area, so without this it covers the taskbar.
-        Views.SearchWindow.SearchWindowMaximizeBoundsHelper.Attach(this);
+        MaximizeBoundsHelper.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
         var vm = new SettingsViewModel();

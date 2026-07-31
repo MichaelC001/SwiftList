@@ -1,5 +1,9 @@
 # Settings Reference
 
+The Settings window resizes and maximizes like any other: drag its edges, use the maximize button in
+the title bar, or double-click the title bar. Worth doing on the Plugins page in particular, which
+puts a plugin list and that plugin's settings side by side and has real use for the width.
+
 A search box sits in the Settings window's title bar. It matches fuzzily (the same fzf-style
 matching the main search window uses, with pinyin alias support), not just plain substrings, across
 every section — including the per-plugin entries under Plugins, Hotkeys' Plugin Actions tab, and
