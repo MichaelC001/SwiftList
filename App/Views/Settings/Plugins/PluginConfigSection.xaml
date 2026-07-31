@@ -31,18 +31,19 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <!-- IsSharedSizeScope lets every field row's label column (SharedSizeGroup="FieldLabel") sync to the
-         widest label currently on screen, so their editors all start at the same X instead of each row
-         sizing its own label independently. Scoped to this control rather than the page, so one plugin's
-         long label cannot push another plugin's editors across. -->
+    <!-- IsSharedSizeScope lets every field row's editor column (SharedSizeGroup="FieldEditor") sync to
+         the widest editor currently on screen, so their editors all start at the same X instead of each
+         row sizing its own independently. Scoped to this control rather than the page, so one plugin's
+         wide editor cannot push another plugin's rows across. -->
     <StackPanel Grid.IsSharedSizeScope="True" Margin="0,12,0,0">
         <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
-        <!-- Any fields outside a Group render directly, same as always -->
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
-                      PreviewMouseWheel="FieldScroll_PreviewMouseWheel">
-            <ItemsControl ItemsSource="{Binding NonGroupConfigFields}"/>
-        </ScrollViewer>
+        <!-- Any fields outside a Group render directly, same as always.
+             No ScrollViewer around these lists: one that can scroll sideways hands its content an
+             unbounded width, which is the width a field row's wrapping description then measures
+             itself against, so nothing wraps and the row grows instead. Bounding the width here is
+             what lets the descriptions wrap to the pane. -->
+        <ItemsControl ItemsSource="{Binding NonGroupConfigFields}"/>
 
         <!-- 2+ top-level Groups: render as tabs (like the Hotkeys page) instead of stacking every
              group's contents down the page -->
@@ -105,17 +106,13 @@
             </ctrl:TabStripScrollView>
             <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,15"/>
 
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="FieldScroll_PreviewMouseWheel">
-                <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"/>
-            </ScrollViewer>
+            <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"/>
         </StackPanel>
 
         <!-- 0 or 1 Groups: not worth a tab bar, fall back to the flat rendering used everywhere else
              (a lone Group still renders its own bold title inline) -->
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="FieldScroll_PreviewMouseWheel"
-                      Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}">
-            <ItemsControl ItemsSource="{Binding ConfigGroups}"/>
-        </ScrollViewer>
+        <ItemsControl ItemsSource="{Binding ConfigGroups}"
+                      Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}"/>
 
         <!-- The modal's OK button, kept rather than switching to save-as-you-type: this page's other
              sections commit immediately, but a plugin's fields are free-form text that is only valid

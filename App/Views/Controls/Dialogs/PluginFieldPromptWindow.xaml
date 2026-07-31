@@ -64,9 +64,13 @@
                 <!-- Content Area: one row per field, using the exact same DataTemplate the real
                      Configure dialog renders PluginConfigFieldViewModel with (see FieldRowTemplate.xaml,
                      merged above). -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" Margin="16,14,16,14">
-                    <!-- IsSharedSizeScope lets every field row's label column (SharedSizeGroup="FieldLabel"
-                         in FieldRowTemplate.xaml) sync to the widest label on screen, same as
+                <!-- Vertical only. Scrolling sideways would give the field rows an unbounded width,
+                     and a row's wrapping description measures itself against exactly that width, so
+                     allowing it here stops the descriptions wrapping. With it disabled the rows are
+                     bounded by the window, whose MaxWidth caps how wide SizeToContent can take it. -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" Margin="16,14,16,14">
+                    <!-- IsSharedSizeScope lets every field row's editor column (SharedSizeGroup="FieldEditor"
+                         in FieldRowTemplate.xaml) sync to the widest editor on screen, same as
                          PluginConfigWindow's own content list. -->
                     <StackPanel Grid.IsSharedSizeScope="True">
                         <ItemsControl x:Name="FieldsControl"/>

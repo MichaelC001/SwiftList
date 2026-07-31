@@ -17,22 +17,26 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <!-- Label and its editor stay glued together as one left-anchored unit;
-                         the trailing * column just absorbs whatever's left of a wide window,
-                         instead of stretching the gap between the label and its own control.
-                         SharedSizeGroup syncs this column to the widest label on screen, so
-                         every row's editor/checkbox lines up at the same X (see the page-level
-                         IsSharedSizeScope="True" this relies on). -->
-                    <ColumnDefinition Width="Auto" SharedSizeGroup="FieldLabel"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <!-- The label column is Star, not Auto, because it holds wrapping text: an Auto
+                         column measures its content against infinite width, so a wrapping label or
+                         description placed there never sees a width to wrap at and just runs out
+                         sideways. Star gives it whatever the row has left over, which is a real
+                         width, so both texts wrap to the pane and follow it as it resizes.
+
+                         That moves the job of lining every row's editor up at the same X onto the
+                         editor column itself: shared-sizing it to the widest editor on screen (see
+                         the page-level IsSharedSizeScope="True" this relies on) leaves the label
+                         column the same width in every row, which is what the old shared-sized
+                         label column achieved from the other side. -->
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="FieldEditor"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Label & Description for simple inputs -->
                 <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,12,0"
                             Visibility="{Binding IsSimpleField, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left" Visibility="{Binding Label, Converter={StaticResource StringToVis}}"/>
-                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" MaxWidth="320" HorizontalAlignment="Left" Margin="0,2,0,0" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
+                    <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" HorizontalAlignment="Left" Visibility="{Binding Label, Converter={StaticResource StringToVis}}"/>
+                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="0,2,0,0" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
                 </StackPanel>
 
                 <!-- Field Controls for simple inputs -->
@@ -40,12 +44,12 @@
                                 Style="{StaticResource FieldValueEditorStyle}"/>
 
                 <!-- Object layout -->
-                <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Margin="4,4,4,4"
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Margin="4,4,4,4"
                             Visibility="{Binding IsObject, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
                     </StackPanel>
-                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" MaxWidth="600" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
+                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
 
                     <Border BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="1,0,0,0" Margin="8,0,0,0" Padding="12,0,0,0">
                         <ItemsControl ItemsSource="{Binding Children}"/>
@@ -53,12 +57,12 @@
                 </StackPanel>
 
                 <!-- Group layout -->
-                <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Margin="4,4,4,4"
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Margin="4,4,4,4"
                             Visibility="{Binding IsGroup, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}"/>
                     </StackPanel>
-                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" MaxWidth="600" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
+                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
 
                     <Border BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="1,0,0,0" Margin="8,0,0,0" Padding="12,0,0,0">
                         <ItemsControl ItemsSource="{Binding Children}"/>
@@ -67,10 +71,10 @@
 
                 <!-- Array layout: shared heading, then either the object-array table or the
                      scalar-array list below it. -->
-                <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Margin="4,4,4,4"
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Margin="4,4,4,4"
                             Visibility="{Binding IsArray, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
-                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" MaxWidth="600" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
+                    <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" HorizontalAlignment="Left" Margin="0,0,0,6" Visibility="{Binding Description, Converter={StaticResource StringToVis}}"/>
 
                     <!-- Object-array master/detail: a compact selectable list on the left,
                          the selected item's full editable fields on the right -->
