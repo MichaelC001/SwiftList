@@ -30,8 +30,9 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         Helpers.Visuals.SystemMenuBlocker.Attach(this);
         DataContext = viewModel;
 
-        // Drag out to Explorer and friends, the one line ResultsControl uses for the same lists.
-        Views.Controls.Results.ResultsDragDropHelper.Register(ItemsList);
+        // Each group owns a list of its own, so drag registration and the "which list is this" question
+        // are both answered per list rather than once for a named one. GroupList_Loaded below does the
+        // registering as each appears.
 
 
     }
@@ -66,8 +67,8 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
                 attached = Native.AttachThreadInput(currentThread, foregroundThread, true);
 
             Activate();
-            ItemsList.Focus();
-            Keyboard.Focus(ItemsList);
+            _activeList?.Focus();
+            if (_activeList != null) Keyboard.Focus(_activeList);
 
             return IsActive;
         }
@@ -115,7 +116,7 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         if (Keyboard.Modifiers == ModifierKeys.None && !Helpers.HotkeyActionTrigger.HasBareKeyActionHotkey(e.Key))
             return;
 
-        var selection = ItemsList.SelectedItems.OfType<AppSearchResult>().ToList();
+        var selection = _activeList?.SelectedItems.OfType<AppSearchResult>().ToList() ?? new List<AppSearchResult>();
         if (selection.Count == 0) return;
 
         if (Helpers.HotkeyActionTrigger.TryExecute(e, selection, this, PluginSdk.Abstractions.SearchWindowType.Main, hideOnRun: true))
@@ -158,16 +159,73 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     // act on that row instead of on whatever was selected before it.
     private void ItemsList_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
-        var selection = ItemsList.SelectedItems.OfType<AppSearchResult>().ToList();
+        if (sender is not System.Windows.Controls.ListBox list) return;
+
+        _activeList = list;
+        var selection = list.SelectedItems.OfType<AppSearchResult>().ToList();
         if (selection.Count == 0) return;
 
         e.Handled = true;
-        ActionFlyout.Show(selection, this, this, ItemsList, System.Windows.Controls.Primitives.PlacementMode.MousePoint);
+        ActionFlyout.Show(selection, this, this, list, System.Windows.Controls.Primitives.PlacementMode.MousePoint);
+    }
+
+    /// <summary>The list the user last touched, which is what a keystroke acts on.</summary>
+    /// <remarks>
+    /// There is no single list any more: each folder group renders its own. A hotkey has to act on the
+    /// one being used, and "last interacted with" is what that means in a panel where any of them can
+    /// hold a selection.
+    /// </remarks>
+    private System.Windows.Controls.ListBox? _activeList;
+
+    private void GroupList_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.ListBox list) return;
+
+        Views.Controls.Results.ResultsDragDropHelper.Register(list);
+        _activeList ??= list;
+    }
+
+    /// <summary>Hands the wheel to the scroller around the groups.</summary>
+    /// <remarks>
+    /// A ListBox swallows the wheel even with its own scrolling disabled, and there is one of these per
+    /// folder, so the pointer resting on any group left the panel unable to scroll at all. Nothing
+    /// bubbles out on its own to fix that: the event has to be re-raised at the parent by hand. The
+    /// plugin config page carries the same handler for the same reason.
+    /// </remarks>
+    private void GroupList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.ListBox list) return;
+
+        e.Handled = true;
+        var bubbled = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = UIElement.MouseWheelEvent,
+            Source = sender,
+        };
+        (list.Parent as UIElement)?.RaiseEvent(bubbled);
+    }
+
+    // A group's own sort, taken from the button's own DataContext rather than the panel's: every header
+    // has one of these and each acts on the folder it heads.
+    private void SortToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.FrameworkElement { DataContext: QuickPanelGroupViewModel group })
+            group.ToggleSort();
+    }
+
+    // Also a group's own, alongside its sort: which view suits a folder is a property of the folder.
+    private void ViewToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.FrameworkElement { DataContext: QuickPanelGroupViewModel group })
+            group.ToggleView();
     }
 
     private void ItemsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (ItemsList.SelectedItem is not AppSearchResult result) return;
+        if (sender is not System.Windows.Controls.ListBox list) return;
+
+        _activeList = list;
+        if (list.SelectedItem is not AppSearchResult result) return;
 
         FileExecutor.OpenFileOrFolder(result.FullPath);
     }

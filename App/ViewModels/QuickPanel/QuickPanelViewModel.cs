@@ -1,3 +1,4 @@
+using System.IO;
 using System.ComponentModel;
 using System.Windows.Data;
 using System.Globalization;
@@ -7,34 +8,34 @@ using SwiftList.App.ViewModels.Search.StartupPanel;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
 
-// Backs the quick panel: a list of results grouped by the folder they sit in, shown over whatever
-// window is in front.
+/// <summary>What the panel orders its items by, within each folder group.</summary>
+public enum QuickPanelSortMode
+{
+    ModifiedDescending,
+    NameAscending,
+}
+
+// Backs the quick panel: results grouped by the folder they sit in, shown over whatever window is in
+// front.
 //
-// It has NO data source. The startup panel's tabs were wired in while the window itself was being
-// built, purely so there was something real to lay out and scroll; that was scaffolding and it is
-// gone. What remains is the shell and its behaviour, waiting for the source this panel is actually
-// for. Until one is attached, Items stays empty and the panel does not open at all.
+// It has NO data source. The startup panel's tabs were wired in while this was being built, so there
+// was something real to group, sort and scroll against; that was scaffolding and it is gone. What
+// remains is the shell and everything it does with what it is given: grouping, per-group order and
+// view, the two row templates, drag, the action menu. Until a source is attached, SetItems is never
+// called, Groups stays empty, and the panel does not open at all.
 public class QuickPanelViewModel : ViewModelBase
 {
+
+
     public ObservableCollection<StartupPanelTabViewModel> Tabs { get; } = new();
 
-    public ObservableCollection<AppSearchResult> Items { get; } = new();
+    /// <summary>One entry per folder, each holding its own items in its own order.</summary>
+    public ObservableCollection<QuickPanelGroupViewModel> Groups { get; } = new();
 
-    /// <summary>Items grouped by the folder they sit in, which is what the list binds to.</summary>
-    /// <remarks>
-    /// Grouped on FullPath through a converter rather than on a property of the item: the folder is not
-    /// something a result carries, and the field that would have held it carries the modified time.
-    ///
-    /// The view is built once over the same ObservableCollection, so regrouping follows from the
-    /// collection changing and nothing has to rebuild it.
-    /// </remarks>
-    public ICollectionView ItemsView { get; }
 
     public QuickPanelViewModel()
     {
-        ItemsView = CollectionViewSource.GetDefaultView(Items);
-        ItemsView.GroupDescriptions.Add(new PropertyGroupDescription(
-            nameof(AppSearchResult.FullPath), new Views.QuickPanel.ResultDirectoryConverter()));
+
     }
 
     /// <summary>Whether there is anything worth opening the panel for.</summary>
@@ -43,7 +44,8 @@ public class QuickPanelViewModel : ViewModelBase
     /// whether the panel opens at all; that one is about the tab you are looking at once it has. A panel
     /// with three tabs where the selected one happens to be empty should still open, and say so.
     /// </remarks>
-    public bool HasContent => Items.Count > 0;
+    public bool HasContent => Groups.Count > 0;
+
 
     private bool _isEmpty = true;
 
@@ -54,33 +56,48 @@ public class QuickPanelViewModel : ViewModelBase
         private set => SetProperty(ref _isEmpty, value);
     }
 
-    /// <summary>Replaces the panel's contents, newest first within each folder.</summary>
-    /// <remarks>
-    /// Sorted here rather than through a SortDescription, which would need a modified-time property on
-    /// AppSearchResult: that is a shared model and has none. Grouping alone leaves insertion order
-    /// intact within each group, so inserting in order is enough.
-    ///
-    /// The key is the DateTime, not the string that goes onto the row. That string is formatted and
-    /// localised, so ordering by it would rank "3 days ago" against "10 minutes ago" alphabetically and
-    /// answer differently in every language.
-    /// </remarks>
-    public void SetItems(IEnumerable<AppSearchResult> items)
+    /// <summary>Takes a freshly loaded set, stamps it, and hands it to Rebuild for ordering.</summary>
+    private void SetItems(IEnumerable<AppSearchResult> items)
     {
-        Items.Clear();
-
-        var stamped = items
+        // The timestamp is read once per load and kept alongside the item purely to sort by. What the
+        // change because the order did, and re-reading it would put the row's own second line through a
+        // to learn and fills it in later, and a written value would keep the placeholder forever.
+        var loaded = items
             .Select(item => (Item: item, Modified: ReadModified(item)))
-            .OrderByDescending(pair => pair.Modified ?? DateTime.MinValue)
             .ToList();
 
-        foreach (var (item, modified) in stamped)
+
+        // Folders in alphabetical order. Ordering them by anything derived from their contents, newest
+        // file for instance, would reshuffle the whole panel every time a file changed underneath it.
+        Groups.Clear();
+        foreach (var group in loaded
+                     .GroupBy(pair => DirectoryOf(pair.Item.FullPath))
+                     .OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase))
         {
-            StampModifiedTime(item, modified);
-            Items.Add(item);
+            Groups.Add(new QuickPanelGroupViewModel(group.Key, group.ToList()));
         }
 
-        IsEmpty = Items.Count == 0;
+        IsEmpty = Groups.Count == 0;
     }
+
+    private static string DirectoryOf(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+
+        try
+        {
+            // A drive root has no parent, so it groups under itself rather than collapsing into the
+            // empty-string group alongside every other unparented path.
+            return Path.GetDirectoryName(path) ?? path;
+        }
+        catch
+        {
+            return path;
+        }
+    }
+
+
+
 
     /// <summary>The result's modified time, without going to the filesystem for it.</summary>
     /// <remarks>
@@ -95,22 +112,5 @@ public class QuickPanelViewModel : ViewModelBase
     private static DateTime? ReadModified(AppSearchResult item)
         => item.DateModified is var modified && modified != DateTime.MinValue ? modified : null;
 
-    /// <summary>Puts the modified time on the row's second line, the way Recent Files renders it.</summary>
-    /// <remarks>
-    /// Written onto ParentDir, which is what the shared row template draws under the name. The
-    /// directory that field would otherwise hold is not lost: it is what the rows are grouped by, so it
-    /// appears once per group in the header rather than repeated on every row.
-    /// </remarks>
-    private static void StampModifiedTime(AppSearchResult item, DateTime? modifiedOrNull)
-    {
-        if (modifiedOrNull is not { } modified) return;
 
-        // Absolute first, interval in brackets after it. The interval alone answers "how stale is this"
-        // at a glance but never "which day was that"; the absolute alone is the reverse. The absolute
-        // half is formatted by the current culture rather than a fixed pattern, so a machine set to a
-        // language that writes the date the other way round gets its own order.
-        var relative = RecentFilesTabSource.FormatRelativeTime(modified);
-        var absolute = modified.ToString("g", CultureInfo.CurrentCulture);
-        item.ParentDir = string.IsNullOrEmpty(relative) ? absolute : $"{absolute} ({relative})";
-    }
 }

@@ -5,6 +5,7 @@
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
         xmlns:local="clr-namespace:SwiftList.App.Views.QuickPanel"
+        xmlns:app="clr-namespace:SwiftList.App"
         Title="SwiftList Quick Panel"
         Width="330" Height="300" SizeToContent="Manual"
         WindowStyle="None"
@@ -30,9 +31,12 @@
                 <!-- TabHeaderButtonStyle/TabUnderlineStyle live here, and StaticResource only fails at
                      runtime, so leaving this out built cleanly and crashed on first open. -->
                 <ResourceDictionary Source="../../Resources/Styles/Windows/SettingsWindow.xaml"/>
-                <!-- SearchResultTemplate lives here and is not part of Styles.xaml. -->
+                <!-- Kept though the tile template is defined locally: this dictionary also supplies
+                     implicit templates and converters the shared styles above reach for, and a
+                     StaticResource that goes missing only fails when the window is opened. -->
                 <ResourceDictionary Source="../../Resources/DataTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
 
             <!-- The full window's row, rebuilt for a ListBox. SearchResultItemStyle itself cannot be
                  reused: it targets ListViewItem and presents through a GridViewRowPresenter, neither of
@@ -49,11 +53,11 @@
             <Style x:Key="QuickPanelRowStyle" TargetType="ListBoxItem">
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0"/>
-                <!-- MinHeight from the item, not a fixed ListItemHeight: that constant sizes the full
-                     window's GRID rows, which are one line of text in columns. These rows carry a name
-                     and a time stacked, so pinning them to it squashed the two together. ItemHeight is
-                     the two-line figure, already accounting for the icon and its breathing room. -->
-                <Setter Property="MinHeight" Value="{Binding ItemHeight}"/>
+                <!-- The full window's own row height, which is what these should match. ItemHeight, the
+                     other candidate, is sized for a large icon plus breathing room and made the rows
+                     tower over everything. MinHeight rather than Height so a row can still grow if its
+                     own content ever needs to. -->
+                <Setter Property="MinHeight" Value="{x:Static services:UiMetrics.ListItemHeight}"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -82,7 +86,144 @@
                 </Setter>
             </Style>
 
-            <local:FolderLeafNameConverter x:Key="FolderLeafName"/>
+
+
+            <local:ModifiedTimeConverter x:Key="ModifiedTime"/>
+
+            <!-- The detail row. Not the shared SearchResultTemplate, which draws the path underneath the
+                 name: the path is already in the group's own header, once, and repeating it on every row
+                 of that group says nothing. The modified time goes there instead, bound rather than
+                 written onto the item, so a row whose time the index has yet to learn fills itself in
+                 when it arrives. -->
+            <DataTemplate x:Key="QuickPanelDetailRowTemplate" DataType="{x:Type app:AppSearchResult}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Image Grid.Column="0" Source="{Binding Icon}" Width="20" Height="20"
+                           Margin="0,0,10,0" VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="12"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding DateModified, Converter={StaticResource ModifiedTime}}"
+                                   FontSize="10" Margin="0,1,0,0"
+                                   Foreground="{DynamicResource TextSecondary2}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <!-- The sort switch, in each group header. Its glyph names the order it would GIVE you,
+                 same as the view switch below and for the same reason. -->
+            <Style x:Key="QuickPanelSortToggleStyle" TargetType="Button">
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Width" Value="20"/>
+                <Setter Property="Height" Value="16"/>
+                <Setter Property="ToolTip" Value="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SortByName]}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4">
+                                <TextBlock x:Name="Glyph" Text="&#xE8CB;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="10" Foreground="{DynamicResource TextSecondary2}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                    <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding SortMode}" Value="NameAscending">
+                                    <Setter TargetName="Glyph" Property="Text" Value="&#xE81C;"/>
+                                    <Setter Property="ToolTip" Value="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SortByModified]}"/>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- The view switch. Its glyph shows what pressing it gives you, not what you are looking
+                 at: a list icon while the tiles are up, tiles while the list is. A toggle that pictures
+                 the current state reads as a label and leaves the button looking inert. -->
+            <Style x:Key="QuickPanelViewToggleStyle" TargetType="Button">
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Width" Value="20"/>
+                <Setter Property="Height" Value="16"/>
+                <Setter Property="ToolTip" Value="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ViewList]}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4">
+                                <TextBlock x:Name="Glyph" Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="10" Foreground="{DynamicResource TextSecondary2}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                    <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding IsThumbnailView}" Value="False">
+                                    <Setter TargetName="Glyph" Property="Text" Value="&#xE80A;"/>
+                                    <Setter Property="ToolTip" Value="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ViewThumbnails]}"/>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- A thumbnail tile. Icon binds to the same property the list rows use, which already
+                 resolves through ShellIconHelper and whatever thumbnail providers are installed, so
+                 nothing new fetches images: this is the same picture at a size worth looking at.
+                 The name is allowed two lines before it is cut, a file called something long being the
+                 normal case rather than the exception at this width. -->
+            <DataTemplate x:Key="QuickPanelTileTemplate" DataType="{x:Type app:AppSearchResult}">
+                <StackPanel Width="84" Margin="2,4,2,4">
+                    <Image Source="{Binding Icon}" Width="48" Height="48"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="{Binding Name}" FontSize="11" Margin="0,6,0,0"
+                               Foreground="{DynamicResource TextPrimary}"
+                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                               MaxHeight="30" TextAlignment="Center"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- The tile's container. Not the row style: that one stretches to the full width and draws a
+                 left accent bar, both of which are for a list. A tile sizes to itself and takes the
+                 highlight as a rounded box around the whole thing. -->
+            <Style x:Key="QuickPanelTileStyle" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="TileBorder" Background="Transparent" CornerRadius="6"
+                                    Margin="2" Padding="2" Cursor="Hand">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="TileBorder" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="TileBorder" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
 
             <!-- The group header's own toggle. WPF's stock Expander draws a circled chevron from the
                  system theme, which answers to none of this app's brushes and sat in the panel looking
@@ -146,52 +287,6 @@
                 </Setter>
             </Style>
 
-            <!-- One group per folder, headed by a bar that collapses it.
-
-                 An Expander rather than a bare header with a click handler: collapsing a group is
-                 exactly what an Expander is, including keeping its own state per group as the list
-                 regroups, and it brings its own keyboard and accessibility behaviour rather than
-                 needing them added back by hand. -->
-            <Style x:Key="QuickPanelGroupStyle" TargetType="GroupItem">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="GroupItem">
-                            <Expander IsExpanded="True" Style="{StaticResource QuickPanelGroupExpanderStyle}">
-                                <Expander.Header>
-                                    <!-- Name, count, then the full path, in the order they are worth
-                                         reading: which folder this is, how much is in it, and only then
-                                         where exactly it lives. The path is allowed to be cut off,
-                                         being the part that stays useful truncated. -->
-                                    <Grid Margin="0,2,0,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AccentBlue}"
-                                                   VerticalAlignment="Center"
-                                                   Text="{Binding Name, Converter={StaticResource FolderLeafName}}"/>
-
-                                        <TextBlock Grid.Column="1" FontSize="11" Margin="6,0,0,0"
-                                                   Foreground="{DynamicResource TextSecondary2}"
-                                                   VerticalAlignment="Center"
-                                                   Text="{Binding ItemCount, StringFormat=({0})}"/>
-
-                                        <TextBlock Grid.Column="2" FontSize="11" Margin="10,0,0,0"
-                                                   Foreground="{DynamicResource TextSecondary2}"
-                                                   VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Text="{Binding Name}"/>
-                                    </Grid>
-                                </Expander.Header>
-                                <ItemsPresenter/>
-                            </Expander>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
 
         </ResourceDictionary>
     </Window.Resources>
@@ -238,6 +333,7 @@
                         <Border Width="36" Height="3" CornerRadius="1.5"
                                 Background="{DynamicResource SeparatorBrush}"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
                     </Grid>
                 </Border>
 
@@ -283,40 +379,115 @@
                     </ItemsControl>
                 </ctrl:TabStripScrollView>
 
+
                 <Border Grid.Row="1" Background="{DynamicResource ContentBg}">
                     <Grid>
-                        <!-- The quick window's own results list, resource for resource: the same
-                             SearchResultTemplate row, the same container style, the same scrollbar and
-                             virtualization settings. These items are AppSearchResults from the same
-                             startup panel sources, so a hand-rolled row here would have been a second,
-                             slowly diverging way to draw the same thing.
+                        <!-- One block per folder, each with its own header and its own list. Deliberately
+                             not a CollectionView's grouping, which is simpler and is what this used
+                             before: sorting on a view is a property of the whole view, so every group
+                             would share one order, and the order is meant to be per folder.
 
-                             ScrollUnit is Pixel rather than the default Item: item scrolling moves a
-                             whole row at a time, so the viewport lands between rows and leaves a band of
-                             the last one cut off. CanContentScroll stays True, which is what keeps
-                             virtualization alive; ScrollUnit is the supported way to scroll smoothly
-                             without turning that off (see SleekListBoxStyle on what false costs). -->
-                        <ListBox x:Name="ItemsList" ItemsSource="{Binding ItemsView}"
-                                 Background="Transparent" BorderThickness="0" Padding="0"
-                                 Margin="0,4,0,8"
-                                 MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}}"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 VirtualizingPanel.IsVirtualizing="True"
-                                 VirtualizingPanel.VirtualizationMode="Recycling"
-                                 VirtualizingPanel.ScrollUnit="Pixel"
-                                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                                 Style="{StaticResource SleekListBoxStyle}"
-                                 ItemContainerStyle="{StaticResource QuickPanelRowStyle}"
-                                 VerticalContentAlignment="Center"
-                                 ItemTemplate="{StaticResource SearchResultTemplate}"
-                                 SelectionMode="Extended"
-                                 MouseDoubleClick="ItemsList_MouseDoubleClick"
-                                 PreviewMouseRightButtonUp="ItemsList_PreviewMouseRightButtonUp">
-                            <ListBox.GroupStyle>
-                                <GroupStyle ContainerStyle="{StaticResource QuickPanelGroupStyle}"/>
-                            </ListBox.GroupStyle>
-                        </ListBox>
+                             What that costs is stated where the group view model is defined: a selection
+                             now belongs to one folder rather than spanning them. -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Margin="0,4,0,8">
+                            <ItemsControl ItemsSource="{Binding Groups}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                                  Style="{StaticResource QuickPanelGroupExpanderStyle}">
+                                            <Expander.Header>
+                                                <Grid Margin="0,2,0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AccentBlue}"
+                                                               VerticalAlignment="Center" Text="{Binding LeafName}"/>
+
+                                                    <TextBlock Grid.Column="1" FontSize="11" Margin="6,0,0,0"
+                                                               Foreground="{DynamicResource TextSecondary2}"
+                                                               VerticalAlignment="Center"
+                                                               Text="{Binding Count, StringFormat=({0})}"/>
+
+                                                    <TextBlock Grid.Column="2" FontSize="11" Margin="10,0,0,0"
+                                                               Foreground="{DynamicResource TextSecondary2}"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Text="{Binding FolderPath}"/>
+
+                                                    <!-- The rule carries the heading across to the sort
+                                                         button. It takes the Star column and the path
+                                                         takes Auto: the other way round, a long path
+                                                         would squeeze the line out of existence, and the
+                                                         line is the part that can be any length without
+                                                         losing anything. -->
+                                                    <Border Grid.Column="3" Height="1" Margin="10,0,10,0"
+                                                            VerticalAlignment="Center"
+                                                            Background="{DynamicResource SeparatorBrush}"/>
+
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal"
+                                                                VerticalAlignment="Center">
+                                                        <Button Click="SortToggle_Click"
+                                                                Style="{StaticResource QuickPanelSortToggleStyle}"/>
+                                                        <Button Click="ViewToggle_Click" Margin="2,0,0,0"
+                                                                Style="{StaticResource QuickPanelViewToggleStyle}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Expander.Header>
+
+                                            <!-- Its own scrolling is off: the groups scroll together in
+                                                 the viewer above, and a list that scrolled inside a group
+                                                 would trap the wheel in whichever one the pointer
+                                                 happened to be over.
+
+                                                 A view mode is three things at once and they are swapped
+                                                 together, since any one alone would leave the other two
+                                                 describing the view it is not. Read straight off the
+                                                 group now: which view suits a folder is a property of
+                                                 that folder, the same as its order. -->
+                                            <ListBox ItemsSource="{Binding Items}"
+                                                     Background="Transparent" BorderThickness="0" Padding="0"
+                                                     Margin="0,2,0,6"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                     VerticalContentAlignment="Center"
+                                                     SelectionMode="Extended"
+                                                     MouseDoubleClick="ItemsList_MouseDoubleClick"
+                                                     PreviewMouseRightButtonUp="ItemsList_PreviewMouseRightButtonUp"
+                                                     Loaded="GroupList_Loaded"
+                                                     PreviewMouseWheel="GroupList_PreviewMouseWheel">
+                                                <ListBox.Style>
+                                                    <Style TargetType="ListBox" BasedOn="{StaticResource SleekListBoxStyle}">
+                                                        <Setter Property="ItemContainerStyle" Value="{StaticResource QuickPanelRowStyle}"/>
+                                                        <Setter Property="ItemTemplate" Value="{StaticResource QuickPanelDetailRowTemplate}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Value="True"
+                                                                         Binding="{Binding IsThumbnailView}">
+                                                                <Setter Property="ItemContainerStyle" Value="{StaticResource QuickPanelTileStyle}"/>
+                                                                <Setter Property="ItemTemplate" Value="{StaticResource QuickPanelTileTemplate}"/>
+                                                                <Setter Property="ItemsPanel">
+                                                                    <Setter.Value>
+                                                                        <ItemsPanelTemplate>
+                                                                            <WrapPanel Orientation="Horizontal"/>
+                                                                        </ItemsPanelTemplate>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ListBox.Style>
+                                            </ListBox>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
 
                         <!-- Shown when the tab on screen has nothing in it. The panel not opening at all
                              covers the case where nothing anywhere has anything; this covers the one

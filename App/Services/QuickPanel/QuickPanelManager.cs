@@ -14,8 +14,8 @@ namespace SwiftList.App.Services.QuickPanel;
 /// The panel is created once and reused, hidden rather than closed, matching the quick window. That is
 /// also why Alt+F4 is suppressed on it: an OS close would leave this holding a dead window.
 ///
-/// It has no data source yet, so Show returns without opening. The window, its docking, its hotkey and
-/// everything its list does are finished; what it shows is not decided.
+/// Show returns without opening while there is nothing to show, which is every time for now: the data
+/// source is not attached. An empty shell over the window in front would only be in the way.
 /// </remarks>
 public sealed class QuickPanelManager : IDisposable
 {
@@ -72,13 +72,15 @@ public sealed class QuickPanelManager : IDisposable
     {
         _viewModel ??= new QuickPanelViewModel();
 
-        // Nothing to show, nothing to open. The panel exists to put content over the window in front;
-        // with no data source attached yet, flashing an empty shell over it would only be in the way.
+
+        // Nothing to show, nothing to open: the panel exists to put content over the window in front,
+        // and flashing an empty shell over it would only be in the way.
         if (!_viewModel.HasContent)
         {
             Core.Logger.Log("[QuickPanel] Nothing to show, so not opening.", Core.LogLevel.Debug);
             return;
         }
+
 
         if (_window == null)
         {
