@@ -89,8 +89,12 @@ internal static class SettingsWindowSearchExtensions
 
             foreach (var component in plugin.RawComponents)
             {
+                // Searched for across the whole page (empty list name), not inside the plugin's own row:
+                // RevealPlugin above has already selected the plugin, so its components are rendered in
+                // the detail pane by the time this runs -- but that pane is a sibling of the list, not
+                // something reachable from the row's container.
                 results.Add(new SettingsSearchResultItem(component.DisplayName, $"{pluginsSectionLabel} › {plugin.Name}", "Plugins", RevealPlugin,
-                    Reveal: new SettingsSearchDynamicReveal("PluginsList", capturedPlugin, component)));
+                    Reveal: new SettingsSearchDynamicReveal(string.Empty, component)));
             }
         }
 
@@ -246,7 +250,23 @@ internal static class SettingsWindowSearchExtensions
             var section = item.Section;
             window.Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (window.GetSectionPage(section)?.FindName(reveal.ListElementName) is not ItemsControl list
+                var page = window.GetSectionPage(section);
+                if (page == null) return;
+
+                // An empty list name means "search the whole page for this item" rather than "find its
+                // row inside that named list". The plugins page needs it: its list on the left holds one
+                // row per plugin, but a component lives in the detail pane beside it, which is a
+                // different element entirely -- so there is no single ItemsControl containing both, and
+                // the row container would never have the component under it to find.
+                if (reveal.ListElementName.Length == 0)
+                {
+                    if (FindDescendantByDataContext(page, reveal.GroupItem) is not { } found) return;
+                    found.BringIntoView();
+                    SettingsSearchHighlight.Show(found);
+                    return;
+                }
+
+                if (page.FindName(reveal.ListElementName) is not ItemsControl list
                     || list.ItemContainerGenerator.ContainerFromItem(reveal.GroupItem) is not FrameworkElement groupContainer)
                     return;
 

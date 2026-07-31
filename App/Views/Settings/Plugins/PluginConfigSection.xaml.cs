@@ -27,13 +27,27 @@ public partial class PluginConfigSection : UserControl
     private void FieldScroll_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
     {
         if (sender is not System.Windows.Controls.ScrollViewer scrollViewer) return;
-        if (System.Windows.Input.Keyboard.Modifiers != System.Windows.Input.ModifierKeys.Shift) return;
 
-        if (e.Delta < 0)
-            scrollViewer.LineRight();
-        else
-            scrollViewer.LineLeft();
+        if (System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Shift)
+        {
+            if (e.Delta < 0)
+                scrollViewer.LineRight();
+            else
+                scrollViewer.LineLeft();
 
+            e.Handled = true;
+            return;
+        }
+
+        // A ScrollViewer swallows the wheel even with its vertical bar disabled, so a plain scroll over
+        // the fields did nothing and the pane only responded once the pointer left them. Nothing bubbles
+        // out on its own to fix that -- the event has to be re-raised at the parent by hand.
         e.Handled = true;
+        var bubbled = new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = System.Windows.UIElement.MouseWheelEvent,
+            Source = sender,
+        };
+        (scrollViewer.Parent as System.Windows.UIElement)?.RaiseEvent(bubbled);
     }
 }
