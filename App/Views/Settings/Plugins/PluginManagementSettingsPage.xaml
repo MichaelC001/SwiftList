@@ -107,12 +107,11 @@
 
             <Border Grid.Column="1" Width="1" Background="{DynamicResource BorderColor}"/>
 
-            <!-- Horizontal scrolling stays available here, as it was in the config window this replaced:
-                 a plugin's schema is its own, and a wide field (a long path row, a multi-column array
-                 editor) has nothing to wrap to. The list on the left keeps it disabled, since its rows
-                 ellipsize instead. -->
+            <!-- Vertical only. Sideways scrolling belongs to the config fields alone (PluginConfigSection
+                 has its own scroller for them); putting it here dragged the plugin's name, description
+                 and tab strip off to the side along with them. -->
             <ScrollViewer Grid.Column="2" Margin="12,0,0,0"
-                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ContentControl Content="{Binding SelectedPlugin}">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>

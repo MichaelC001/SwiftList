@@ -6,6 +6,7 @@
              xmlns:services="clr-namespace:SwiftList.App.Services"
              xmlns:conv="clr-namespace:SwiftList.App.Converters"
              xmlns:local="clr-namespace:SwiftList.App.Views.Settings.Plugins"
+             xmlns:ctrl="clr-namespace:SwiftList.App.Views.Controls"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="620">
     <!-- The plugin config editor, lifted out of the modal PluginConfigWindow it used to be the body of
@@ -38,12 +39,19 @@
         <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
         <!-- Any fields outside a Group render directly, same as always -->
-        <ItemsControl ItemsSource="{Binding NonGroupConfigFields}"/>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      PreviewMouseWheel="FieldScroll_PreviewMouseWheel">
+            <ItemsControl ItemsSource="{Binding NonGroupConfigFields}"/>
+        </ScrollViewer>
 
         <!-- 2+ top-level Groups: render as tabs (like the Hotkeys page) instead of stacking every
              group's contents down the page -->
         <StackPanel Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource BoolToVis}}">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <!-- TabStripScrollView, not a bare horizontal panel: a plugin decides how many config groups
+                 it has and how long their labels are, so this strip can overflow the pane. Same control
+                 the Index and Hotkeys pages use for their own tab rows, which is where its left/right
+                 arrows come from. -->
+            <ctrl:TabStripScrollView Margin="0,0,0,16">
                 <ItemsControl ItemsSource="{Binding ConfigGroups}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -94,15 +102,20 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </StackPanel>
+            </ctrl:TabStripScrollView>
             <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,15"/>
 
-            <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"/>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="FieldScroll_PreviewMouseWheel">
+                <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"/>
+            </ScrollViewer>
         </StackPanel>
 
         <!-- 0 or 1 Groups: not worth a tab bar, fall back to the flat rendering used everywhere else
              (a lone Group still renders its own bold title inline) -->
-        <ItemsControl ItemsSource="{Binding ConfigGroups}" Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}"/>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="FieldScroll_PreviewMouseWheel"
+                      Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}">
+            <ItemsControl ItemsSource="{Binding ConfigGroups}"/>
+        </ScrollViewer>
 
         <!-- The modal's OK button, kept rather than switching to save-as-you-type: this page's other
              sections commit immediately, but a plugin's fields are free-form text that is only valid
