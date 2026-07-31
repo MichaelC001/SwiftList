@@ -146,6 +146,11 @@ public sealed class HookProcess : IDisposable
             _keyboardHook = new KeyboardHookService(_explorerTracker!);
             _keyboardHook.AppProcessId = _appProcessId;
             _keyboardHook.IsHotkeysDisabledTemporarily = _isHotkeysDisabledTemporarily;
+            _keyboardHook.OnQuickPanelHotkey += () =>
+            {
+                Logger.Log("[HookProcess] Quick panel hotkey detected.", LogLevel.Debug);
+                _ipcServer.SendQuickPanelHotkey();
+            };
             _keyboardHook.OnDoubleCtrl += () =>
             {
                 Logger.Log("[HookProcess] Double-Ctrl detected, sending ACTIVATE.", LogLevel.Debug);

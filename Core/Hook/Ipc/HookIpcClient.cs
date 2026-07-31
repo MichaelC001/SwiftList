@@ -53,6 +53,7 @@ public sealed class HookIpcClient : IDisposable
     // Hook and Tracker Events fired to App
 
     public event Action? OnActivated;
+    public event Action? OnQuickPanelHotkey;
     public event Action<char>? OnCharacterTyped;
     public event Action? OnBackspacePressed;
     public event Action? OnEscapePressed;
@@ -233,6 +234,7 @@ public sealed class HookIpcClient : IDisposable
             switch (msg.Id)
             {
                 case IpcMessageId.Activate: OnActivated?.Invoke(); break;
+                case IpcMessageId.QuickPanelHotkey: OnQuickPanelHotkey?.Invoke(); break;
                 case IpcMessageId.KeyBackspace: OnBackspacePressed?.Invoke(); break;
                 case IpcMessageId.KeyEscape: OnEscapePressed?.Invoke(); break;
                 case IpcMessageId.KeyEnter: OnEnterPressed?.Invoke(); break;

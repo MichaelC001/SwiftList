@@ -7,27 +7,18 @@ using SwiftList.App.Views.QuickPanel;
 namespace SwiftList.App.Services.QuickPanel;
 
 /// <summary>
-/// Owns the quick panel: the F2 trigger, the window's lifetime, and where it docks.
+/// Owns the quick panel: its lifetime and where it docks. The hotkey that opens it belongs to the hook
+/// service, which sends QuickPanelHotkey when the configured combination fires.
 /// </summary>
 /// <remarks>
-/// PROTOTYPE. Two things here are deliberately provisional.
+/// The panel is created once and reused, hidden rather than closed, matching the quick window. That is
+/// also why Alt+F4 is suppressed on it: an OS close would leave this holding a dead window.
 ///
-/// F2 is hardcoded and registered with RegisterHotKey rather than going through the hook service like
-/// every real hotkey does. The hook service route needs a key to be recognised there, a new IPC message
-/// to carry it, a case in the paired serializer, and the service restarted before any of it can be
-/// tried; RegisterHotKey is self-contained in the app and can be thrown away whole when this graduates
-/// to a configurable hotkey.
-///
-/// The panel is also created once and reused, hidden rather than closed, matching the quick window. A
-/// prototype that rebuilt it per invocation would reload the tabs from scratch every time, which hides
-/// exactly the kind of state bug worth finding early.
+/// It has no data source yet, so Show returns without opening. The window, its docking, its hotkey and
+/// everything its list does are finished; what it shows is not decided.
 /// </remarks>
 public sealed class QuickPanelManager : IDisposable
 {
-    private const int WM_HOTKEY = 0x0312;
-    private const int HotkeyId = 0xB101;
-    private const uint MOD_NONE = 0x0000;
-    private const uint VK_F2 = 0x71;
 
     // Floors for the quarter-of-the-host sizing: a panel docked to a small window still needs enough
     // room for a row to read as a row.
@@ -37,12 +28,6 @@ public sealed class QuickPanelManager : IDisposable
 
     private const double MinPanelWidth = 280;
     private const double MinPanelHeight = 200;
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
@@ -61,38 +46,11 @@ public sealed class QuickPanelManager : IDisposable
 
     public static QuickPanelManager? Instance { get; private set; }
 
-    private readonly HwndSource _messageSource;
     private QuickPanelWindow? _window;
     private QuickPanelViewModel? _viewModel;
 
-    public QuickPanelManager()
-    {
-        // A message-only window to own the hotkey. The app's real windows come and go (and the quick
-        // window is hidden most of the time), so hanging a process-lifetime registration off any of
-        // them would tie it to that window's lifetime for no reason.
-        _messageSource = new HwndSource(new HwndSourceParameters("SwiftListQuickPanelHotkey")
-        {
-            WindowStyle = 0,
-            ParentWindow = (IntPtr)(-3), // HWND_MESSAGE
-        });
-        _messageSource.AddHook(OnMessage);
+    public QuickPanelManager() => Instance = this;
 
-        if (!RegisterHotKey(_messageSource.Handle, HotkeyId, MOD_NONE, VK_F2))
-        {
-            Core.Logger.Log($"[QuickPanel] F2 is already taken by something else, so the panel has no trigger. Error={Marshal.GetLastWin32Error()}", Core.LogLevel.Warn);
-        }
-
-        Instance = this;
-    }
-
-    private IntPtr OnMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        if (msg != WM_HOTKEY || (int)wParam != HotkeyId) return IntPtr.Zero;
-
-        handled = true;
-        Toggle();
-        return IntPtr.Zero;
-    }
 
     public void Toggle()
     {
@@ -113,6 +71,14 @@ public sealed class QuickPanelManager : IDisposable
     private void Show(IntPtr host)
     {
         _viewModel ??= new QuickPanelViewModel();
+
+        // Nothing to show, nothing to open. The panel exists to put content over the window in front;
+        // with no data source attached yet, flashing an empty shell over it would only be in the way.
+        if (!_viewModel.HasContent)
+        {
+            Core.Logger.Log("[QuickPanel] Nothing to show, so not opening.", Core.LogLevel.Debug);
+            return;
+        }
 
         if (_window == null)
         {
@@ -144,7 +110,6 @@ public sealed class QuickPanelManager : IDisposable
         // actually hands it over.
         _window.ActivateAndFocus();
 
-        _ = _viewModel.ActivateAsync();
     }
 
     private bool _hiding;
@@ -159,7 +124,6 @@ public sealed class QuickPanelManager : IDisposable
         try
         {
             _window.Hide();
-            _viewModel?.Deactivate();
         }
         finally
         {
@@ -209,9 +173,6 @@ public sealed class QuickPanelManager : IDisposable
 
     public void Dispose()
     {
-        UnregisterHotKey(_messageSource.Handle, HotkeyId);
-        _messageSource.RemoveHook(OnMessage);
-        _messageSource.Dispose();
 
         _window?.Close();
         _window = null;

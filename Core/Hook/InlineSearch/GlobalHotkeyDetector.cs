@@ -77,6 +77,25 @@ public sealed class GlobalHotkeyDetector
         return triggered;
     }
 
+    /// <summary>The quick panel's own global combo. A plain combination, with no bare-modifier form.</summary>
+    /// <remarks>
+    /// The tap detectors the other two hotkeys carry exist because those can be configured as a bare
+    /// modifier, which needs double-tap timing to tell apart from the same modifier being held down for
+    /// something else. This one is always a real key, so there is nothing to disambiguate.
+    /// </remarks>
+    public bool CheckQuickPanelHotkey(int vkCode, out bool consumeKey)
+    {
+        consumeKey = false;
+
+        HotkeyStringFormat.ParseCombo(_settings.Hotkeys.QuickPanelHotkey, out var modifier, out var key);
+        var targetVk = KeyboardUtils.GetKeyVirtualCode(key);
+        if (targetVk == 0 || vkCode != targetVk) return false;
+        if (!KeyboardUtils.CheckModifiersMatch(modifier, _windowsKeyState.IsDown)) return false;
+
+        consumeKey = true;
+        return true;
+    }
+
     public bool CheckAndHandleQuickSwitch(int vkCode, uint time, out bool consumeKey)
     {
         consumeKey = false;

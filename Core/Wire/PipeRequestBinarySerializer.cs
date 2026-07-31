@@ -48,6 +48,7 @@ public static class PipeRequestBinarySerializer
         switch (msg.Id)
         {
             case IpcMessageId.Stop:
+            case IpcMessageId.ReloadSettings:
             case IpcMessageId.Activate:
             case IpcMessageId.ExplorerDeactivated:
             case IpcMessageId.ActiveWindowMoved:
@@ -55,6 +56,7 @@ public static class PipeRequestBinarySerializer
             case IpcMessageId.KeyEscape:
             case IpcMessageId.KeyEnter:
             case IpcMessageId.KeyUp:
+            case IpcMessageId.QuickPanelHotkey:
             case IpcMessageId.KeyDown:
             case IpcMessageId.KeyLeft:
             case IpcMessageId.KeyRight:
@@ -145,6 +147,7 @@ public static class PipeRequestBinarySerializer
         switch (msg.Id)
         {
             case IpcMessageId.Stop:
+            case IpcMessageId.ReloadSettings:
             case IpcMessageId.Activate:
             case IpcMessageId.ExplorerDeactivated:
             case IpcMessageId.ActiveWindowMoved:
@@ -152,6 +155,7 @@ public static class PipeRequestBinarySerializer
             case IpcMessageId.KeyEscape:
             case IpcMessageId.KeyEnter:
             case IpcMessageId.KeyUp:
+            case IpcMessageId.QuickPanelHotkey:
             case IpcMessageId.KeyDown:
             case IpcMessageId.KeyLeft:
             case IpcMessageId.KeyRight:

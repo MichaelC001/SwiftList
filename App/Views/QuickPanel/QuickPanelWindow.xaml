@@ -4,6 +4,7 @@
         xmlns:ctrl="clr-namespace:SwiftList.App.Views.Controls"
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
+        xmlns:local="clr-namespace:SwiftList.App.Views.QuickPanel"
         Title="SwiftList Quick Panel"
         Width="330" Height="300" SizeToContent="Manual"
         WindowStyle="None"
@@ -76,6 +77,117 @@
                                     <Setter TargetName="AccentBar" Property="Fill" Value="{DynamicResource AccentBarColor}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <local:FolderLeafNameConverter x:Key="FolderLeafName"/>
+
+            <!-- The group header's own toggle. WPF's stock Expander draws a circled chevron from the
+                 system theme, which answers to none of this app's brushes and sat in the panel looking
+                 like it came from another program.
+                 The whole bar is the button, not just the glyph: it is a wide, thin target and the
+                 chevron alone is a small one, and clicking a header to collapse what is under it is the
+                 behaviour the bar as a whole implies. -->
+            <Style x:Key="QuickPanelGroupToggleStyle" TargetType="ToggleButton">
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Bar" Background="Transparent" CornerRadius="6" Padding="8,3,8,3">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock x:Name="Chevron" Grid.Column="0"
+                                               Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="9"
+                                               Foreground="{DynamicResource TextSecondary2}"
+                                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                                    <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bar" Property="Background" Value="{DynamicResource ItemHover}"/>
+                                </Trigger>
+                                <!-- Chevron up once open, so it points at what collapsing would do. -->
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Chevron" Property="Text" Value="&#xE70E;"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="QuickPanelGroupExpanderStyle" TargetType="Expander">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Expander">
+                            <StackPanel>
+                                <ToggleButton Style="{StaticResource QuickPanelGroupToggleStyle}"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                              Content="{TemplateBinding Header}"/>
+                                <ContentPresenter x:Name="Body" Visibility="Collapsed"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsExpanded" Value="True">
+                                    <Setter TargetName="Body" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- One group per folder, headed by a bar that collapses it.
+
+                 An Expander rather than a bare header with a click handler: collapsing a group is
+                 exactly what an Expander is, including keeping its own state per group as the list
+                 regroups, and it brings its own keyboard and accessibility behaviour rather than
+                 needing them added back by hand. -->
+            <Style x:Key="QuickPanelGroupStyle" TargetType="GroupItem">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="GroupItem">
+                            <Expander IsExpanded="True" Style="{StaticResource QuickPanelGroupExpanderStyle}">
+                                <Expander.Header>
+                                    <!-- Name, count, then the full path, in the order they are worth
+                                         reading: which folder this is, how much is in it, and only then
+                                         where exactly it lives. The path is allowed to be cut off,
+                                         being the part that stays useful truncated. -->
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBlue}"
+                                                   VerticalAlignment="Center"
+                                                   Text="{Binding Name, Converter={StaticResource FolderLeafName}}"/>
+
+                                        <TextBlock Grid.Column="1" FontSize="11" Margin="6,0,0,0"
+                                                   Foreground="{DynamicResource TextSecondary2}"
+                                                   VerticalAlignment="Center"
+                                                   Text="{Binding ItemCount, StringFormat=({0})}"/>
+
+                                        <TextBlock Grid.Column="2" FontSize="11" Margin="10,0,0,0"
+                                                   Foreground="{DynamicResource TextSecondary2}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{Binding Name}"/>
+                                    </Grid>
+                                </Expander.Header>
+                                <ItemsPresenter/>
+                            </Expander>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
@@ -184,7 +296,7 @@
                              the last one cut off. CanContentScroll stays True, which is what keeps
                              virtualization alive; ScrollUnit is the supported way to scroll smoothly
                              without turning that off (see SleekListBoxStyle on what false costs). -->
-                        <ListBox x:Name="ItemsList" ItemsSource="{Binding Items}"
+                        <ListBox x:Name="ItemsList" ItemsSource="{Binding ItemsView}"
                                  Background="Transparent" BorderThickness="0" Padding="0"
                                  Margin="0,4,0,8"
                                  MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -193,15 +305,23 @@
                                  VirtualizingPanel.IsVirtualizing="True"
                                  VirtualizingPanel.VirtualizationMode="Recycling"
                                  VirtualizingPanel.ScrollUnit="Pixel"
+                                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                                  Style="{StaticResource SleekListBoxStyle}"
                                  ItemContainerStyle="{StaticResource QuickPanelRowStyle}"
                                  VerticalContentAlignment="Center"
                                  ItemTemplate="{StaticResource SearchResultTemplate}"
                                  SelectionMode="Extended"
                                  MouseDoubleClick="ItemsList_MouseDoubleClick"
-                                 PreviewMouseRightButtonUp="ItemsList_PreviewMouseRightButtonUp"/>
+                                 PreviewMouseRightButtonUp="ItemsList_PreviewMouseRightButtonUp">
+                            <ListBox.GroupStyle>
+                                <GroupStyle ContainerStyle="{StaticResource QuickPanelGroupStyle}"/>
+                            </ListBox.GroupStyle>
+                        </ListBox>
 
-                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Search_NoResult]}"
+                        <!-- Shown when the tab on screen has nothing in it. The panel not opening at all
+                             covers the case where nothing anywhere has anything; this covers the one
+                             where it opened for another tab's sake and this one is bare. -->
+                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Empty]}"
                                    Foreground="{DynamicResource TextSecondary2}" FontSize="12"
                                    HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock.Style>
@@ -215,6 +335,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
+
                     </Grid>
                 </Border>
             </Grid>

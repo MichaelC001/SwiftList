@@ -88,6 +88,10 @@ public class HotkeyPageSettings
     // mode to leave switched on.
     public string StayOpenHotkey { get; set; } = "Ctrl+T";
 
+    // Global, not window-level like StayOpen above: the panel docks onto whatever window is in front,
+    // so it has to be reachable while that window has focus, which means the hook service detects it.
+    public string QuickPanelHotkey { get; set; } = "Ctrl+F2";
+
     /// <summary>
     /// User overrides for plugin action hotkeys, keyed by plugin ID (the DLL file name without its
     /// extension, matching <see cref="PluginSettings"/>'s convention) then by

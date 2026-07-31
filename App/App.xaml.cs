@@ -141,6 +141,9 @@ public partial class App : Application
                 quickSearchWindow?.ToggleVisibility();
             }
         }));
+        HookClient.OnQuickPanelHotkey += () => Dispatcher.BeginInvoke(
+            new Action(() => _quickPanelManager?.Toggle()));
+
         HookClient.Start();
 
         // Prototype: the quick panel, on a hardcoded F2. Owns its own message-only window for the

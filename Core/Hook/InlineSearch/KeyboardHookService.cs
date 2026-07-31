@@ -22,6 +22,7 @@ public class KeyboardHookService : IDisposable
     internal const uint ContextMenuGraceMs = 400;
 
     public event Action? OnDoubleCtrl;
+    public event Action? OnQuickPanelHotkey;
     public event Action<char>? OnCharacterTyped;
     public event Action? OnBackspacePressed;
     public event Action? OnEscapePressed;
@@ -157,6 +158,14 @@ public class KeyboardHookService : IDisposable
             var isFullscreenBlocking = !_settings.Hotkeys.AllowHotkeysInFullscreen && FullscreenHelper.IsForegroundWindowFullScreen();
             var shouldDisableAllHooks = (IsHotkeysDisabledTemporarily || ForegroundProcessGate.IsForegroundProcessBlacklisted(_settings.BlacklistedProcesses) || isFullscreenBlocking)
                                          && !_explorerTracker.IsActiveWindowDialog;
+
+            // The quick panel first: a plain combination with no bare-modifier form, so nothing below
+            // is waiting to see whether this key turns out to be part of a tap.
+            if (!shouldDisableAllHooks && _hotkeyDetector.CheckQuickPanelHotkey(vkCode, out var consumeQuickPanel))
+            {
+                OnQuickPanelHotkey?.Invoke();
+                if (consumeQuickPanel) return (IntPtr)1;
+            }
 
             if (!shouldDisableAllHooks && _hotkeyDetector.CheckToggleWindowHotkey(vkCode, time, out var consumeToggleKey, OnDoubleCtrl))
             {

@@ -184,6 +184,17 @@
                 RequireModifier="True" DefaultValue="Ctrl+T"/>
         </Grid>
 
+        <Grid x:Name="RowQuickPanel" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="HotkeyLabel"/>
+                <ColumnDefinition Width="200"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Hotkeys_QuickPanel]}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+            <ctrl:HotkeyRecorderControl Grid.Column="1" Width="200" Height="26"
+                Value="{Binding QuickPanelHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                RequireModifier="True" DefaultValue="Ctrl+F2"/>
+        </Grid>
+
         <Border Style="{StaticResource SettingsGroupDivider}"/>
 
         <!-- Group: Quick Navigation -->

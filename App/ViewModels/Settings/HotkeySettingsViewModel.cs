@@ -39,6 +39,7 @@ public class HotkeySettingsViewModel : ViewModelBase
         _startupPanelPreviousTabHotkey = hotkeys.StartupPanelPreviousTabHotkey;
         _openFullWindowHotkey = hotkeys.OpenFullWindowHotkey;
         _stayOpenHotkey = hotkeys.StayOpenHotkey;
+        _quickPanelHotkey = hotkeys.QuickPanelHotkey;
 
         PluginActionGroups = BuildPluginActionGroups(hotkeys.PluginActionHotkeys);
 
@@ -242,6 +243,15 @@ public class HotkeySettingsViewModel : ViewModelBase
         set => SetProperty(ref _openFullWindowHotkey, value);
     }
 
+    private string _quickPanelHotkey;
+
+    /// <summary>Global, detected by the hook service rather than by a focused window.</summary>
+    public string QuickPanelHotkey
+    {
+        get => _quickPanelHotkey;
+        set => SetProperty(ref _quickPanelHotkey, value);
+    }
+
     private string _stayOpenHotkey;
     public string StayOpenHotkey
     {
@@ -273,6 +283,7 @@ public class HotkeySettingsViewModel : ViewModelBase
         hotkeys.StartupPanelPreviousTabHotkey = StartupPanelPreviousTabHotkey;
         hotkeys.OpenFullWindowHotkey = OpenFullWindowHotkey;
         hotkeys.StayOpenHotkey = StayOpenHotkey;
+        hotkeys.QuickPanelHotkey = QuickPanelHotkey;
 
         var pluginActionHotkeys = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var group in PluginActionGroups)
