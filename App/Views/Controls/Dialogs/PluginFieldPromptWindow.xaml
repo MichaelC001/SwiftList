@@ -4,7 +4,7 @@
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
         Title="SwiftList"
-        MinWidth="380" MinHeight="140" MaxWidth="900" MaxHeight="800"
+        MinWidth="380" MinHeight="140" MaxWidth="620" MaxHeight="800"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner"
         Background="Transparent"
@@ -15,6 +15,11 @@
         Topmost="True"
         Loaded="Window_Loaded">
 
+    <!-- MaxWidth above doubles as the wrap width. SizeToContent still shrinks a short prompt to its
+         own content, but a field with a long description has no reason to stop before the cap, so the
+         cap is what that text wraps at: 900 meant one line running most of the screen. 620 reads as a
+         dialog and still clears the widest thing a field can be, the object array master/detail table
+         at roughly 520. -->
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
