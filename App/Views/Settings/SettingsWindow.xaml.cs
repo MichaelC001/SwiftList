@@ -68,6 +68,9 @@ public partial class SettingsWindow : Window
         // its own rounded corners, but it is an ordinary window the user opens and is done with, so
         // Alt+F4 stays working.
         SystemMenuBlocker.Attach(this, blockClose: false);
+        // Same WM_GETMINMAXINFO interception the full search window uses. A borderless window maximizes
+        // to the whole monitor rather than its work area, so without this it covers the taskbar.
+        Views.SearchWindow.SearchWindowMaximizeBoundsHelper.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
         var vm = new SettingsViewModel();
@@ -174,11 +177,42 @@ public partial class SettingsWindow : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ButtonState == MouseButtonState.Pressed)
+        if (e.ButtonState != MouseButtonState.Pressed) return;
+
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximize();
+            return;
+        }
+
+        // Only while restored: DragMove on a maximized window throws, and there is nowhere to drag it
+        // to anyway. Same guard the full search window's chrome handler uses.
+        if (WindowState == WindowState.Normal)
             DragMove();
     }
 
     private void BtnMinimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void BtnMaximize_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
+
+    private void ToggleMaximize() =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    // Custom chrome draws its own rounded frame with a margin for the drop shadow. Maximized, both are
+    // wrong: the rounding leaves cut corners against the screen edge and the margin leaves a gap round
+    // the whole window, so they are flattened while maximized and restored afterwards. Mirrors the full
+    // search window's SearchWindowChromeHandler.HandleStateChanged.
+    private void Window_StateChanged(object sender, EventArgs e)
+    {
+        var maximized = WindowState == WindowState.Maximized;
+
+        BtnMaximize.Content = maximized ? "" : "";
+
+        MainBorder.CornerRadius = maximized ? new CornerRadius(0) : new CornerRadius(10);
+        MainBorder.Margin = maximized ? new Thickness(0) : new Thickness(8);
+        MainBorder.BorderThickness = new Thickness(maximized ? 0 : 1);
+        ClippingBorder.CornerRadius = maximized ? new CornerRadius(0) : new CornerRadius(10);
+    }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 

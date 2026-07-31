@@ -11,7 +11,8 @@
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        StateChanged="Window_StateChanged">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -22,13 +23,13 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border CornerRadius="{StaticResource CornerRadiusWindow}" Background="{DynamicResource ContentBg}"
+    <Border x:Name="MainBorder" CornerRadius="{StaticResource CornerRadiusWindow}" Background="{DynamicResource ContentBg}"
             BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1" Margin="8"
             Effect="{StaticResource Elevation2}">
         <!-- ClipToBounds ignores CornerRadius (a WPF limitation, not a bug here): helpers:RoundedClip
              builds a real rounded-rect Clip instead: child content flush to the edge would otherwise show
              square corners poking past this Border's own rounded paint. -->
-        <Border CornerRadius="{StaticResource CornerRadiusWindow}" helpers:RoundedClip.IsEnabled="True">
+        <Border x:Name="ClippingBorder" CornerRadius="{StaticResource CornerRadiusWindow}" helpers:RoundedClip.IsEnabled="True">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="44"/>
@@ -94,6 +95,7 @@
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0">
                             <Button Content="&#xE949;" Style="{StaticResource WindowControlButton}" Click="BtnMinimize_Click"/>
+                            <Button x:Name="BtnMaximize" Content="&#xE922;" Style="{StaticResource WindowControlButton}" Click="BtnMaximize_Click"/>
                             <Button Content="&#xE8BB;" Style="{StaticResource CloseButton}" Click="BtnClose_Click"/>
                         </StackPanel>
                     </Grid>
