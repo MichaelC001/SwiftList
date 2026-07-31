@@ -64,6 +64,10 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        // Menu only. This window has custom chrome, so Alt+Space would drop an OS-drawn box clipped by
+        // its own rounded corners, but it is an ordinary window the user opens and is done with, so
+        // Alt+F4 stays working.
+        SystemMenuBlocker.Attach(this, blockClose: false);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
         var vm = new SettingsViewModel();

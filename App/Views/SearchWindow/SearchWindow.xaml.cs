@@ -39,6 +39,10 @@ public partial class SearchWindow : Window, ISearchWindow, IHasVisibleContentIns
         InitializeComponent();
         _restorePreviewOnFirstResult = restorePreview;
 
+        // Menu only, same as the settings window: custom chrome makes the OS system menu a clipped box
+        // with nothing useful in it, but Alt+F4 on a window the user opened and is done with should
+        // close it as usual.
+        SystemMenuBlocker.Attach(this, blockClose: false);
         ThemedWindowIconHelper.Apply(this);
 
         // XAML's Height/Width are just the design-time/factory-reset default -- the real size (user's
