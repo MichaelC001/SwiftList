@@ -97,10 +97,17 @@
                                   PreviewMouseWheel="ArrayScroll_PreviewMouseWheel"
                                   Visibility="{Binding IsObjectArray, Converter={StaticResource BoolToVis}}">
                     <Grid MinWidth="496" Width="{Binding ViewportWidth, ElementName=ArrayScroll}">
+                        <!-- Both sides are proportional so extra pane width is shared rather than
+                             landing entirely on the detail panel, which is what a fixed master
+                             column did. The detail side still grows faster: it holds labelled
+                             fields whose descriptions wrap, where the master list is a compact
+                             title, badge and row buttons that gains little past a point. MinWidth
+                             on each is the pair the table's own MinWidth of 496 is built from, so
+                             they degrade to the old fixed sizes before the scroller takes over. -->
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="*" MinWidth="220"/>
                             <ColumnDefinition Width="16"/>
-                            <ColumnDefinition Width="*" MinWidth="260"/>
+                            <ColumnDefinition Width="1.5*" MinWidth="260"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Master list: height locked to the detail panel's natural height (kept
