@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:services="clr-namespace:SwiftList.App.Services"
              xmlns:conv="clr-namespace:SwiftList.App.Converters"
+             xmlns:local="clr-namespace:SwiftList.App.Views.Settings.Plugins"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="620">
     <!-- The plugin config editor, lifted out of the modal PluginConfigWindow it used to be the body of
@@ -110,7 +111,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
             <Button Style="{StaticResource PrimarySettingsButton}" MinWidth="80"
                     Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_OK]}"
-                    Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType={x:Type local:PluginManagementSettingsPage}}}"
                     CommandParameter="{Binding}"/>
         </StackPanel>
     </StackPanel>

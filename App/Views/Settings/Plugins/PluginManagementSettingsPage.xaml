@@ -24,8 +24,14 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel>
+    <!-- No page-level ScrollViewer: the two panes scroll on their own (see below), and wrapping them in
+         one would scroll the header away and drag both panes with it as a single tall column. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
             <!-- Page header -->
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
@@ -43,12 +49,8 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Expand/collapse-all for every plugin card on this page -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="{Binding ExpandAllToggleLabel}" Command="{Binding ToggleExpandAllCommand}"
-                            Style="{StaticResource LinkButton}" FontSize="12"
-                            Visibility="{Binding IsEmpty, Converter={StaticResource InvertBoolToVis}}"/>
-                </StackPanel>
+                <!-- Nothing here any more: expand-all/collapse-all only meant something while every
+                     plugin was rendered down the page at once. -->
             </Grid>
             <TextBlock Style="{StaticResource SettingsHintText}"
                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Plugins_Hint]}"/>
@@ -60,27 +62,65 @@
                            Foreground="{DynamicResource TextSecondary2}"
                            HorizontalAlignment="Center" Padding="0,8"/>
             </Border>
-
-            <!-- Plugin cards -->
-            <ItemsControl x:Name="PluginsList" ItemsSource="{Binding Plugins}" Margin="0,12,0,0">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <local:PluginCard/>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <!-- Restart note banner -->
-            <Border Margin="0,4,0,8" Padding="12,8" CornerRadius="6"
-                    Background="{DynamicResource WarningBackground}" BorderBrush="{DynamicResource WarningBorderBrush}" BorderThickness="1">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                               Foreground="{DynamicResource WarningBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Plugins_RestartNote]}"
-                               FontSize="12" Foreground="{DynamicResource WarningBrush}" VerticalAlignment="Center"
-                               />
-                </StackPanel>
-            </Border>
         </StackPanel>
-    </ScrollViewer>
+
+        <!-- Two independently scrolling panes with a hairline between them, matching how the settings
+             window itself divides its own section list from its content (SettingsWindow.xaml uses the
+             same BorderColor on a 1px edge). One shared scrollbar would have moved both panes together
+             and taken the header with them; a long plugin list and a long config form have nothing to do
+             with each other's scroll position.
+
+             Kept named PluginsList: the settings search reveals a plugin by looking this element up by
+             name (SettingsWindowSearchExtensions), and selecting the row is now what revealing means. -->
+        <Grid Grid.Row="1" Margin="0,12,0,0"
+              Visibility="{Binding IsEmpty, Converter={StaticResource InvertBoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- SidebarItemStyle is the settings window's own nav-list item style, so this list reads as
+                 the same kind of thing one level in rather than as a raw ListBox. -->
+            <ListBox x:Name="PluginsList" Grid.Column="0" ItemsSource="{Binding Plugins}"
+                     SelectedItem="{Binding SelectedPlugin, Mode=TwoWay}"
+                     ItemContainerStyle="{StaticResource SidebarItemStyle}"
+                     BorderThickness="0" Background="Transparent" Margin="0,0,12,0"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="2,4">
+                            <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                            <!-- Same pill the SDK version uses in the page header above, so the two
+                                 version numbers on this page read as the same kind of thing. -->
+                            <Border CornerRadius="4" Background="{DynamicResource BadgeBackground}"
+                                    BorderBrush="{DynamicResource BadgeBorderBrush}" BorderThickness="1"
+                                    Padding="5,1,5,2" Margin="0,3,0,0" HorizontalAlignment="Left">
+                                <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="10"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource BadgeText}"/>
+                            </Border>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Border Grid.Column="1" Width="1" Background="{DynamicResource BorderColor}"/>
+
+            <!-- Horizontal scrolling stays available here, as it was in the config window this replaced:
+                 a plugin's schema is its own, and a wide field (a long path row, a multi-column array
+                 editor) has nothing to wrap to. The list on the left keeps it disabled, since its rows
+                 ellipsize instead. -->
+            <ScrollViewer Grid.Column="2" Margin="12,0,0,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <ContentControl Content="{Binding SelectedPlugin}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate>
+                            <local:PluginCard/>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>

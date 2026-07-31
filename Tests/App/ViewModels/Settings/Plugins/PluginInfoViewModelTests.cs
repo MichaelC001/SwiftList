@@ -189,17 +189,26 @@ public sealed class PluginInfoViewModelTests
         Assert.IsTrue(vm.RawComponents.All(c => !c.IsEnabled));
     }
 
+    // IsExpanded went with the card column it belonged to: the page now shows one plugin at a time, so
+    // "which plugin am I looking at" is the list's selection rather than a flag on every plugin. What
+    // replaced it is IsConfigOpen, which is about the config form inside that one plugin's pane.
     [TestMethod]
-    public void IsExpanded_DefaultsToTrue() =>
-        Assert.IsTrue(MakeVm(new List<PluginComponentViewModel>()).IsExpanded);
+    public void TheDetailsTabIsTheOneShownFirst()
+    {
+        // Selecting a plugin should show what it is and what it provides, not drop the user straight
+        // into a form.
+        Assert.IsFalse(MakeVm(new List<PluginComponentViewModel>()).IsConfigTab);
+    }
 
     [TestMethod]
-    public void IsExpanded_SetFalse_ReflectsBack()
+    public void TheTabCommandsMoveBetweenTheTwoTabs()
     {
         var vm = MakeVm(new List<PluginComponentViewModel>());
 
-        vm.IsExpanded = false;
+        vm.ShowConfigCommand.Execute(null);
+        Assert.IsTrue(vm.IsConfigTab);
 
-        Assert.IsFalse(vm.IsExpanded);
+        vm.ShowDetailsCommand.Execute(null);
+        Assert.IsFalse(vm.IsConfigTab);
     }
 }

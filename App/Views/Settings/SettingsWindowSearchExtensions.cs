@@ -80,14 +80,16 @@ internal static class SettingsWindowSearchExtensions
         foreach (var plugin in plugins)
         {
             var capturedPlugin = plugin;
-            void ExpandPlugin(SettingsViewModel _) => capturedPlugin.IsExpanded = true;
+            // Selecting is what showing a plugin means now that the page is a list beside a detail pane;
+            // it used to expand that plugin's card in a column of all of them.
+            void RevealPlugin(SettingsViewModel settings) => settings.Plugins.SelectedPlugin = capturedPlugin;
 
-            results.Add(new SettingsSearchResultItem(plugin.Name, pluginsSectionLabel, "Plugins", ExpandPlugin,
+            results.Add(new SettingsSearchResultItem(plugin.Name, pluginsSectionLabel, "Plugins", RevealPlugin,
                 Reveal: new SettingsSearchDynamicReveal("PluginsList", capturedPlugin)));
 
             foreach (var component in plugin.RawComponents)
             {
-                results.Add(new SettingsSearchResultItem(component.DisplayName, $"{pluginsSectionLabel} › {plugin.Name}", "Plugins", ExpandPlugin,
+                results.Add(new SettingsSearchResultItem(component.DisplayName, $"{pluginsSectionLabel} › {plugin.Name}", "Plugins", RevealPlugin,
                     Reveal: new SettingsSearchDynamicReveal("PluginsList", capturedPlugin, component)));
             }
         }

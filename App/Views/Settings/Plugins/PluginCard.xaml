@@ -25,18 +25,13 @@
     <Border Style="{StaticResource SettingsCard}" Margin="0,0,0,12">
         <StackPanel>
 
-            <!-- Plugin header row -->
-            <Grid Cursor="Hand">
-                <Grid.InputBindings>
-                    <MouseBinding MouseAction="LeftClick"
-                                  Command="{Binding DataContext.ToggleExpandCommand,
-                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                  CommandParameter="{Binding}"/>
-                </Grid.InputBindings>
+            <!-- Plugin header row. No longer clickable: this card is the detail pane for whichever
+                 plugin the list on the left has selected, so there is nothing left for clicking it to
+                 expand into. -->
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -60,85 +55,99 @@
                     <TextBlock Text="{Binding Name}"
                                FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Plugins_Version]}"
-                                   Foreground="{DynamicResource TextSecondary2}" FontSize="11"/>
-                        <TextBlock Text=" " FontSize="11"/>
-                        <TextBlock Text="{Binding Version}"
-                                   Foreground="{DynamicResource TextPrimary2}" FontSize="11" FontWeight="SemiBold"/>
-                        <TextBlock Text="  ·  " Foreground="{DynamicResource SeparatorBrush}" FontSize="11"/>
-                        <TextBlock Text="{Binding DllFileName}"
-                                   Foreground="{DynamicResource TextSecondary2}" FontSize="11"/>
-                    </StackPanel>
+                    <!-- The description, which used to be a tooltip behind a small (!) badge. There is
+                         room for it here now that the pane shows one plugin at a time, and a plugin's
+                         own summary is the thing most worth reading before deciding anything about it.
+                         The version and DLL name that used to sit on this line are gone: the version is
+                         already on this plugin's row in the list to the left, and the file name is
+                         detail nobody needs while choosing what to enable. -->
+                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Foreground="{DynamicResource TextSecondary2}" FontSize="12">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Description}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Description}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
 
-                <!-- Plugin Description Info button (!) -->
-                <Border Grid.Column="2" Width="14" Height="14" CornerRadius="7"
-                        Background="{DynamicResource HoverBackground}"
-                        BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="1"
-                        Margin="8,0" VerticalAlignment="Center" Cursor="Help">
-                    <Border.ToolTip>
-                        <ToolTip MaxWidth="300">
-                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
-                        </ToolTip>
-                    </Border.ToolTip>
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Description}" Value="">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Description}" Value="{x:Null}">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <TextBlock Text="!" FontSize="9" FontWeight="Bold"
-                               Foreground="{DynamicResource TextSecondary2}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
-                </Border>
-
-                <!-- Configure Button: opens the fields inside this card rather than in a modal window,
-                     which is why it toggles rather than launching anything. -->
-                <Button Grid.Column="3"
-                        Command="{Binding DataContext.ToggleConfigCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                        CommandParameter="{Binding}"
-                        Visibility="{Binding HasConfigFields, Converter={StaticResource BoolToVis}}"
-                        Style="{StaticResource SettingsButton}"
-                        ContentTemplate="{x:Null}"
-                        Margin="4,0" Padding="8,4" VerticalAlignment="Center" Focusable="False">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Configure]}"  FontSize="11" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
-                <!-- Expand/collapse chevron -->
-                <TextBlock Grid.Column="4" FontFamily="Segoe MDL2 Assets"
-                           FontSize="10" Foreground="{DynamicResource TextSecondary2}"
-                           VerticalAlignment="Center" Margin="8,0,0,0">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Text" Value="&#xE70E;"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsExpanded}" Value="False">
-                                    <Setter Property="Text" Value="&#xE70D;"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
             </Grid>
 
-            <!-- Config section (collapsible, independent of the component list below: a plugin can have
-                 config and no toggleable components, or the reverse). -->
-            <local:PluginConfigSection Visibility="{Binding IsConfigOpen, Converter={StaticResource BoolToVis}}"/>
+            <!-- Details / Config tabs. Config used to be a button that revealed a section below the
+                 components; a plugin's settings and the list of what it provides are separate things to
+                 look at, so they get a tab each rather than stacking down one pane. Same tab-strip
+                 styling as the Index and Hotkeys pages. A plugin with no config fields would leave the
+                 strip showing a lone Details tab, so the whole strip hides in that case. -->
+            <StackPanel Orientation="Horizontal" Margin="0,16,0,0"
+                        Visibility="{Binding HasConfigFields, Converter={StaticResource BoolToVis}}">
+                <StackPanel Margin="0,0,28,0">
+                    <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Plugins_TabDetails]}"
+                            Command="{Binding ShowDetailsCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConfigTab}" Value="False">
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConfigTab}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </StackPanel>
+                <StackPanel>
+                    <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Configure]}"
+                            Command="{Binding ShowConfigCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConfigTab}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConfigTab}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
 
-            <!-- Components section (collapsible) -->
+            <!-- Config tab -->
+            <local:PluginConfigSection Visibility="{Binding IsConfigTab, Converter={StaticResource BoolToVis}}"/>
+
+            <!-- Details tab: the components this plugin provides. -->
             <StackPanel Margin="0,12,0,0"
-                        Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
+                        Visibility="{Binding IsConfigTab, Converter={StaticResource InvertBoolToVis}}">
 
                 <Border Height="1" Background="{DynamicResource SeparatorBrush}" Margin="0,0,0,10"/>
 

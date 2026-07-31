@@ -20,70 +20,59 @@ public class PluginManagementViewModel : ViewModelBase
     {
         _userSettings = userSettings;
         Plugins = new ObservableCollection<PluginInfoViewModel>(PluginLoaderHelper.BuildPluginList(_userSettings));
-        foreach (var p in Plugins)
-            p.PropertyChanged += OnPluginIsExpandedChanged;
-        ToggleExpandCommand = new RelayCommand<PluginInfoViewModel>(p => p?.IsExpanded = !p.IsExpanded);
-        ToggleExpandAllCommand = new RelayCommand(ToggleExpandAll);
-        ToggleConfigCommand = new RelayCommand<PluginInfoViewModel>(ToggleConfig);
         SaveConfigCommand = new RelayCommand<PluginInfoViewModel>(SaveConfig);
+        _selectedPlugin = Plugins.FirstOrDefault();
 
         // Dynamically refresh the plugin list when language changes to dynamically apply localized plugin names
         TranslationManager.Instance.PropertyChanged += (s, e) =>
         {
-            var expandedStates = Plugins.ToDictionary(p => p.DllFileName, p => p.IsExpanded);
-            foreach (var p in Plugins)
-                p.PropertyChanged -= OnPluginIsExpandedChanged;
+            // Keeping the selection across a rebuild means matching on the one stable identifier a
+            // rebuilt view model shares with the old one -- the instances themselves are all new.
+            var selectedDll = SelectedPlugin?.DllFileName;
             var newList = PluginLoaderHelper.BuildPluginList(_userSettings);
             Plugins.Clear();
             foreach (var p in newList)
-            {
-                if (expandedStates.TryGetValue(p.DllFileName, out var isExpanded))
-                {
-                    p.IsExpanded = isExpanded;
-                }
-                p.PropertyChanged += OnPluginIsExpandedChanged;
                 Plugins.Add(p);
-            }
+            SelectedPlugin = Plugins.FirstOrDefault(p => p.DllFileName == selectedDll) ?? Plugins.FirstOrDefault();
             OnPropertyChanged(nameof(IsEmpty));
-            OnPropertyChanged(nameof(ExpandAllToggleLabel));
             OnPropertyChanged(nameof(DevGuideUri));
         };
     }
 
     public ObservableCollection<PluginInfoViewModel> Plugins { get; }
 
-    public ICommand ToggleExpandCommand { get; }
-    public ICommand ToggleExpandAllCommand { get; }
+    private PluginInfoViewModel? _selectedPlugin;
 
-    /// <summary>Shows or hides a plugin's config fields inside its own card.</summary>
-    public ICommand ToggleConfigCommand { get; }
-
-    /// <summary>The card's OK button: writes the config fields the user edited.</summary>
-    public ICommand SaveConfigCommand { get; }
-
-    // Opening the config used to mean a modal window, and closing that window without OK rolled the
-    // fields back. Inline there is no close, so hiding the section takes its place -- otherwise edits
-    // abandoned by collapsing would sit in the view models, and the next card to open would show them as
-    // if they had been saved.
-    private void ToggleConfig(PluginInfoViewModel? plugin)
+    /// <summary>
+    /// The plugin whose details the right-hand pane shows.
+    /// </summary>
+    /// <remarks>
+    /// Replaces the per-card expand/collapse this page used to have. With one plugin shown at a time
+    /// there is nothing left for a card to expand INTO, so the concept went rather than being kept as a
+    /// second, redundant way to say "this is the one I am looking at".
+    ///
+    /// Switching away rolls back any config the previous plugin had open and unsaved: the section is
+    /// gone from view either way, and leaving edits staged in a view model nobody can see is how they
+    /// end up written by a later OK that meant something else.
+    /// </remarks>
+    public PluginInfoViewModel? SelectedPlugin
     {
-        if (plugin == null) return;
-
-        if (plugin.IsConfigOpen)
+        get => _selectedPlugin;
+        set
         {
-            RollbackConfig(plugin);
-            plugin.IsConfigOpen = false;
-            return;
+            if (ReferenceEquals(_selectedPlugin, value)) return;
+
+            // Setting this back rolls the config fields back with it (see IsConfigTab), so a plugin
+            // left mid-edit does not keep those edits staged while out of view.
+            if (_selectedPlugin is { IsConfigTab: true } previous)
+                previous.IsConfigTab = false;
+
+            SetProperty(ref _selectedPlugin, value);
         }
-
-        plugin.IsConfigOpen = true;
     }
 
-    internal static void RollbackConfig(PluginInfoViewModel plugin)
-    {
-        foreach (var field in plugin.ConfigFields)
-            field.Reload();
-    }
+    /// <summary>The config tab's OK button: writes the fields the user edited.</summary>
+    public ICommand SaveConfigCommand { get; }
 
     // Same three steps the modal's OK did: commit every field, persist once through the settings object
     // they share, and tell the hook process to re-read what just changed.
@@ -96,30 +85,11 @@ public class PluginManagementViewModel : ViewModelBase
 
         plugin.ConfigFields[0].Settings.Save();
         App.HookClient?.SendMessage(new IpcMessage { Id = IpcMessageId.ReloadSettings });
-        plugin.IsConfigOpen = false;
     }
 
     public bool IsEmpty => Plugins.Count == 0;
 
     public string HostSdkVersion { get; } = typeof(IPlugin).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
-
-    // Header-level "expand all / collapse all" for every plugin card at once, mirroring each card's
-    // own "select all / deselect all" toggle for its components (PluginInfoViewModel.SelectAllToggleLabel).
-    public bool AreAllExpanded => Plugins.Count > 0 && Plugins.All(p => p.IsExpanded);
-    public string ExpandAllToggleLabel => TranslationManager.Instance[AreAllExpanded ? "Common_CollapseAll" : "Common_ExpandAll"];
-
-    private void OnPluginIsExpandedChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(PluginInfoViewModel.IsExpanded))
-            OnPropertyChanged(nameof(ExpandAllToggleLabel));
-    }
-
-    private void ToggleExpandAll()
-    {
-        var expand = !AreAllExpanded;
-        foreach (var p in Plugins)
-            p.IsExpanded = expand;
-    }
 
     // The dev guide link's target differs per locale (/zh-CN/ prefix), so it's derived from the
     // same translated URL string the link displays -- see AboutSettingsPage.UserGuideUri for the
