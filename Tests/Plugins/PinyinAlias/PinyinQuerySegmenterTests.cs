@@ -14,7 +14,7 @@ public sealed class PinyinQuerySegmenterTests
         foreach (var s in PinyinEngine.AllSyllables)
             longest = Math.Max(longest, s.Length);
 
-        Assert.IsTrue(longest <= PinyinAliasFormat.MaxSyllableLength,
+        Assert.IsLessThanOrEqualTo(PinyinAliasFormat.MaxSyllableLength, longest,
             $"table has a {longest}-char syllable, constant is {PinyinAliasFormat.MaxSyllableLength}");
     }
 
