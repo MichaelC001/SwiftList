@@ -106,10 +106,10 @@
                                  never changes colour, but here it sits on a row that tints itself when
                                  selected, and a flat fill would sink into that tint and leave the glyph
                                  floating on its own. -->
-                            <Grid Grid.Column="0" Width="24" Height="24" Margin="0,0,8,0" VerticalAlignment="Center">
-                                <Border CornerRadius="6" IsHitTestVisible="False"
+                            <Grid Grid.Column="0" Width="32" Height="32" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Border CornerRadius="8" IsHitTestVisible="False"
                                         Background="{DynamicResource HoverBackground}" Opacity="0.5"/>
-                                <Border CornerRadius="6" IsHitTestVisible="False">
+                                <Border CornerRadius="8" IsHitTestVisible="False">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="{DynamicResource AccentBlue}"/>
@@ -123,7 +123,7 @@
                                     </Border.Style>
                                 </Border>
                                 <TextBlock Text="&#xECAA;" FontFamily="Segoe MDL2 Assets"
-                                           FontSize="11" Foreground="{DynamicResource AccentBlue}"
+                                           FontSize="15" Foreground="{DynamicResource AccentBlue}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
 
