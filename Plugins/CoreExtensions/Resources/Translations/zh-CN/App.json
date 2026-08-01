@@ -63,6 +63,7 @@
   "QuickPanel_ViewThumbnails": "以缩略图显示",
   "QuickPanel_CloseWorkspaceTooltip": "关闭此工作区(可在 设置 > 快速面板 中重新启用)",
   "QuickPanel_SearchPlaceholder": "筛选此工作区",
+  "QuickPanel_StayOpenTooltip": "失去焦点时保持面板不关闭",
   "StartupPanel_Enabled": "启用初始面板",
   "StartupPanel_TabRecentFiles": "最近文件",
   "StartupPanel_SecondsAgo": "{0}秒前",

@@ -63,6 +63,7 @@
   "QuickPanel_ViewThumbnails": "Show as thumbnails",
   "QuickPanel_CloseWorkspaceTooltip": "Close this workspace (turn it back on under Settings > Quick Panel)",
   "QuickPanel_SearchPlaceholder": "Filter this workspace",
+  "QuickPanel_StayOpenTooltip": "Keep this panel open when it loses focus",
   "StartupPanel_Enabled": "Enable the startup panel",
   "StartupPanel_TabRecentFiles": "Recent Files",
   "StartupPanel_SecondsAgo": "{0}s ago",

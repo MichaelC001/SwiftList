@@ -11,33 +11,11 @@
          Everything here resolves within itself or through DynamicResource at runtime: nothing reaches
          for a StaticResource out of another dictionary, which a merged dictionary loaded by pack URI
          cannot rely on seeing. -->
-    <!-- The x on a workspace tab. Same construction as the startup panel's own close button, down to the
-         glyph and the hover box: they do the same thing to the same kind of strip, and a second look for
-         it would only be a second thing to keep in step. -->
-    <Style x:Key="QuickPanelTabCloseStyle" TargetType="Button">
-        <Setter Property="Padding" Value="0"/>
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Focusable" Value="False"/>
-        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextSecondary2}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" CornerRadius="3" Background="{TemplateBinding Background}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlHoverBackground}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
+    <ResourceDictionary.MergedDictionaries>
+        <!-- The two small chrome buttons, split off for the same line-limit reason and merged back in
+             here so that everything already merging this file still finds them. -->
+        <ResourceDictionary Source="QuickPanelChromeResources.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
 
     <!-- The full window's row, rebuilt for a ListBox. SearchResultItemStyle itself cannot be
          reused: it targets ListViewItem and presents through a GridViewRowPresenter, neither of

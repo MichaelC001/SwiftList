@@ -14,16 +14,33 @@ namespace SwiftList.PluginSdk.Shell.FileOperations;
 public static class ShellPasteHelper
 {
     // Fire-and-forget by design, same reasoning as ShellDeleteHelper.DeleteAsync: nothing downstream
-    // needs to know when the copy/move actually finishes, and blocking the caller for however long the
-    // native progress/conflict dialog sits open would freeze the search window for no reason.
-    public static void PasteAsync(IReadOnlyList<string> sourcePaths, string destinationFolder, bool move)
+    // needs to WAIT for the copy, and blocking the caller for however long the native progress/conflict
+    // dialog sits open would freeze the search window for no reason.
+    //
+    // onCompleted is for the callers that do need to know it landed -- a view showing the destination
+    // folder has to be told, since nothing else will tell it. Raised on the shell worker's own thread
+    // once PerformOperations returns, whether it copied anything or the user cancelled the dialog: the
+    // only honest signal available is "the operation is over", and a view's answer to both is the same,
+    // which is to go and look again.
+    public static void PasteAsync(
+        IReadOnlyList<string> sourcePaths, string destinationFolder, bool move, Action? onCompleted = null)
     {
         if (sourcePaths.Count == 0) return;
 
         var dispatcher = ShellOperationStaWorker.StaDispatcher;
         if (dispatcher == null) return;
 
-        dispatcher.BeginInvoke(new Action(() => PasteCore(sourcePaths, destinationFolder, move)));
+        dispatcher.BeginInvoke(new Action(() =>
+        {
+            try
+            {
+                PasteCore(sourcePaths, destinationFolder, move);
+            }
+            finally
+            {
+                onCompleted?.Invoke();
+            }
+        }));
     }
 
     private static void PasteCore(IReadOnlyList<string> sourcePaths, string destinationFolder, bool move)

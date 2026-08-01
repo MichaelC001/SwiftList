@@ -50,6 +50,49 @@ public partial class QuickPanelViewModel
         ShowActiveWorkspace();
     }
 
+    /// <summary>Loads one group's source again and puts the result back into that same group.</summary>
+    /// <remarks>
+    /// For after a drop: the files were copied by the shell behind its own dialog, and nothing tells the
+    /// panel they arrived. Only the one group is reloaded, and into the object that is already on screen,
+    /// so its sort, its view and whether it is collapsed all survive -- which a full refresh would not
+    /// leave alone.
+    ///
+    /// A source that has since gone (settings edited while the panel was up) simply leaves the group as
+    /// it was: there is nothing to load it from, and emptying it would be a worse answer than stale.
+    /// </remarks>
+    public async Task ReloadGroupAsync(QuickPanelGroupViewModel group, CancellationToken token = default)
+    {
+        var source = _workspaces
+            .SelectMany(workspace => workspace.Folders)
+            .FirstOrDefault(folder => folder.Id.Equals(group.SourceId, StringComparison.OrdinalIgnoreCase));
+        if (source == null) return;
+
+        List<SearchResult> results;
+        try
+        {
+            results = await _load(source, token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[QuickPanel] Source '{source.Path}' failed to reload: {ex.Message}", LogLevel.Error);
+            return;
+        }
+
+        group.Replace(results
+            .Select((result, index) => (
+                Item: SearchResultHelper.CreateUiResult(result, string.Empty, index, isApplication: false, scope: null),
+                Modified: ReadModified(result)))
+            .ToList());
+
+        // A group that the reload emptied is hidden by its own HasMatches, so the panel's own "nothing
+        // here" line has to be recomputed against what is left.
+        IsEmpty = !Groups.Any(shown => shown.HasMatches);
+    }
+
     /// <summary>One workspace's visible sources, in the order it stores, minus the ones that came back empty.</summary>
     private async Task<List<QuickPanelGroupViewModel>> LoadWorkspaceAsync(
         QuickPanelTab workspace, CancellationToken token)

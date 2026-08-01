@@ -10,6 +10,25 @@ namespace SwiftList.App.Views.QuickPanel;
 // are also the only parts of the panel's input worth testing without a mouse.
 public partial class QuickPanelWindow
 {
+    /// <summary>
+    /// Whether this summon has been asked not to dismiss itself when it loses the foreground.
+    /// </summary>
+    /// <remarks>
+    /// On the window, not the view model, and that is the whole of the "current summon only" scoping the
+    /// quick window needs an explicit reset for: this window IS the summon, so the flag dies with it and
+    /// the next open starts normal without anyone having to remember to clear it.
+    /// </remarks>
+    public static readonly DependencyProperty IsStayOpenProperty = DependencyProperty.Register(
+        nameof(IsStayOpen), typeof(bool), typeof(QuickPanelWindow), new PropertyMetadata(false));
+
+    public bool IsStayOpen
+    {
+        get => (bool)GetValue(IsStayOpenProperty);
+        set => SetValue(IsStayOpenProperty, value);
+    }
+
+    public void ToggleStayOpen() => IsStayOpen = !IsStayOpen;
+
     /// <summary>Which workspace a keystroke asks for, 1-based, or 0 for anything that is not the shortcut.</summary>
     /// <remarks>
     /// The same modifier the result lists use for "jump to result N", rather than a second setting that
@@ -62,6 +81,49 @@ public partial class QuickPanelWindow
 
         if (e.OriginalSource is DependencyObject source && IsClickOnNothing(source))
             ClearSelection((DependencyObject)sender);
+    }
+
+    /// <summary>Hold the jump-to-Nth-result modifier and press 1-9 to switch workspace.</summary>
+    /// <remarks>
+    /// Checked ahead of the action hotkeys because a bare digit can legitimately be bound to an action,
+    /// and the modifier is what tells the two apart.
+    /// </remarks>
+    private bool TrySwitchWorkspace(System.Windows.Input.KeyEventArgs e)
+    {
+        var index = WorkspaceIndexFor(e.Key, Keyboard.Modifiers, Core.UserSettings.Load().Hotkeys.SelectJumpModifier);
+        if (index == 0 || DataContext is not ViewModels.QuickPanel.QuickPanelViewModel viewModel) return false;
+
+        e.Handled = true;
+        _ = viewModel.SelectTabAtAsync(index);
+        return true;
+    }
+
+    /// <summary>Runs an action's configured hotkey against the selection, without opening the menu.</summary>
+    /// <remarks>
+    /// The full window reaches this through SearchInputHelper.TryActionHotkey, which needs an
+    /// ISearchWindow and a ShellMenuPresenter for gates this panel has no equivalent of: whether the
+    /// search caret is at the end, and whether an actions pane could be shown. The execution underneath
+    /// is an overload taking only IPluginSearchWindow, which is what the quick navigation menu already
+    /// calls for the same reason, so the panel uses that directly.
+    ///
+    /// Bare keys are allowed through here where the full window checks its caret first -- but only while
+    /// nothing is being typed into. That used to be free: there was no box in this panel at all, so a
+    /// bound key could only have been meant as the action. The filter box changed that premise, and
+    /// every combination stands down while it has focus, not just the bare ones: Ctrl+A and Ctrl+C in a
+    /// text box are the box's, whatever else they may also be bound to.
+    /// </remarks>
+    private void TryRunActionHotkey(System.Windows.Input.KeyEventArgs e)
+    {
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
+
+        if (Keyboard.Modifiers == ModifierKeys.None && !Helpers.HotkeyActionTrigger.HasBareKeyActionHotkey(e.Key))
+            return;
+
+        var selection = _activeList?.SelectedItems.OfType<AppSearchResult>().ToList() ?? new List<AppSearchResult>();
+        if (selection.Count == 0) return;
+
+        if (Helpers.HotkeyActionTrigger.TryExecute(e, selection, this, PluginSdk.Abstractions.SearchWindowType.Main, hideOnRun: true))
+            e.Handled = true;
     }
 
     /// <summary>Whether what was hit is blank space rather than something that acts on its own.</summary>

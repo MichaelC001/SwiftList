@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using SwiftList.App;
@@ -34,6 +34,20 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         // are both answered per list rather than once for a named one. GroupList_Loaded below does the
         // registering as each appears.
 
+        // Filtering replaces what every group is showing, so the selection has to be put back on the
+        // first thing still standing. Queued at Background so the layout that the new items trigger has
+        // already run -- selecting into a list that has not been arranged yet selects nothing.
+        void OnViewModelChanged(object? _, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(QuickPanelViewModel.SearchQuery)) return;
+            Dispatcher.BeginInvoke(new Action(SelectFirstResult), System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        viewModel.PropertyChanged += OnViewModelChanged;
+        // Unsubscribed explicitly because the view model outlives this window by design: every summon
+        // builds a new one, and a handler left behind would pile up one per open on an object that never
+        // goes away.
+        Closed += (_, _) => viewModel.PropertyChanged -= OnViewModelChanged;
     }
 
 
@@ -71,6 +85,10 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         Activate();
         Focus();
         FilterBox.FocusInput();
+
+        // With the keyboard in the box, the first entry is what Enter would open -- so it is selected
+        // from the start rather than only once something has been typed or clicked.
+        SelectFirstResult();
     }), System.Windows.Threading.DispatcherPriority.Input);
 
 
@@ -78,9 +96,34 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     // the list has focus and would consume the key first.
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        // Enter opens the selection, which is what a double-click does -- the filter box has the keyboard
+        // after a summon and does not want Enter for anything, so the whole gesture is "type, then
+        // press Enter" without ever leaving it.
+        if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            if (_activeList?.SelectedItem is AppSearchResult)
+            {
+                e.Handled = true;
+                OpenSelected();
+            }
+            return;
+        }
+
         if (e.Key != Key.Escape)
         {
             if (TrySwitchWorkspace(e)) return;
+
+            // Ahead of the action hotkeys and unguarded by focus: the same key the quick window uses for
+            // this, and it has to work while the filter box has the keyboard, which is where a summon
+            // leaves it.
+            if (Helpers.WpfUiHelper.MatchesHotkey(
+                    Core.UserSettings.Load().Hotkeys.StayOpenHotkey, Keyboard.Modifiers, e.Key))
+            {
+                e.Handled = true;
+                ToggleStayOpen();
+                return;
+            }
+
             TryRunActionHotkey(e);
             return;
         }
@@ -104,53 +147,6 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         Services.QuickPanel.QuickPanelManager.Instance?.Hide();
     }
 
-    /// <summary>Hold the jump-to-Nth-result modifier and press 1-9 to switch workspace.</summary>
-    /// <remarks>
-    /// The same modifier the result lists use for "jump to result N", rather than a second setting that
-    /// would only ever be set to the same thing -- one "hold this and press a number" key everywhere.
-    /// There is no numbered row to collide with here: this panel's groups are opened by clicking them.
-    ///
-    /// Checked ahead of the action hotkeys because a bare digit can legitimately be bound to an action,
-    /// and the modifier is what tells the two apart.
-    /// </remarks>
-    private bool TrySwitchWorkspace(System.Windows.Input.KeyEventArgs e)
-    {
-        var index = WorkspaceIndexFor(e.Key, Keyboard.Modifiers, Core.UserSettings.Load().Hotkeys.SelectJumpModifier);
-        if (index == 0 || DataContext is not QuickPanelViewModel viewModel) return false;
-
-        e.Handled = true;
-        _ = viewModel.SelectTabAtAsync(index);
-        return true;
-    }
-
-
-    /// <summary>Runs an action's configured hotkey against the selection, without opening the menu.</summary>
-    /// <remarks>
-    /// The full window reaches this through SearchInputHelper.TryActionHotkey, which needs an
-    /// ISearchWindow and a ShellMenuPresenter for gates this panel has no equivalent of: whether the
-    /// search caret is at the end, and whether an actions pane could be shown. The execution underneath
-    /// is an overload taking only IPluginSearchWindow, which is what the quick navigation menu already
-    /// calls for the same reason, so the panel uses that directly.
-    ///
-    /// Bare keys are allowed through here where the full window checks its caret first -- but only while
-    /// nothing is being typed into. That used to be free: there was no box in this panel at all, so a
-    /// bound key could only have been meant as the action. The filter box changed that premise, and
-    /// every combination stands down while it has focus, not just the bare ones: Ctrl+A and Ctrl+C in a
-    /// text box are the box's, whatever else they may also be bound to.
-    /// </remarks>
-    private void TryRunActionHotkey(System.Windows.Input.KeyEventArgs e)
-    {
-        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
-
-        if (Keyboard.Modifiers == ModifierKeys.None && !Helpers.HotkeyActionTrigger.HasBareKeyActionHotkey(e.Key))
-            return;
-
-        var selection = _activeList?.SelectedItems.OfType<AppSearchResult>().ToList() ?? new List<AppSearchResult>();
-        if (selection.Count == 0) return;
-
-        if (Helpers.HotkeyActionTrigger.TryExecute(e, selection, this, PluginSdk.Abstractions.SearchWindowType.Main, hideOnRun: true))
-            e.Handled = true;
-    }
 
     /// <summary>True while DragMove's modal loop is running, so the dismiss-on-deactivate can stand down.</summary>
     /// <remarks>
@@ -254,8 +250,49 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         if (sender is not System.Windows.Controls.ListBox list) return;
 
         _activeList = list;
-        if (list.SelectedItem is not AppSearchResult result) return;
+        OpenSelected();
+    }
+
+    /// <summary>Opens whatever the active list has selected. What a double-click does, and Enter with it.</summary>
+    /// <remarks>
+    /// One method rather than two identical ones, so the two ways of asking for the same thing cannot
+    /// drift apart. Neither closes the panel: it is docked over the window you are working in, and the
+    /// point of opening something from it is usually to open the next thing too.
+    /// </remarks>
+    private void OpenSelected()
+    {
+        if (_activeList?.SelectedItem is not AppSearchResult result) return;
 
         FileExecutor.OpenFileOrFolder(result.FullPath);
+    }
+
+    /// <summary>Puts the selection on the first entry of the first group that has one.</summary>
+    /// <remarks>
+    /// So a summon can be answered with Enter alone: focus lands in the filter box, typing narrows, and
+    /// the thing being narrowed towards is already selected. Collapsed groups are skipped -- a filter
+    /// that emptied a group hides it, and selecting inside something not on screen would leave Enter
+    /// opening a file nobody could see was chosen.
+    ///
+    /// This also sets the list every hotkey acts on, which a summon otherwise leaves unset until the
+    /// first click.
+    /// </remarks>
+    private void SelectFirstResult()
+    {
+        var list = FirstVisibleList(this);
+        if (list == null || list.Items.Count == 0) return;
+
+        list.SelectedIndex = 0;
+        _activeList = list;
+    }
+
+    private static System.Windows.Controls.ListBox? FirstVisibleList(DependencyObject root)
+    {
+        if (root is System.Windows.Controls.ListBox { IsVisible: true } list) return list;
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            if (FirstVisibleList(VisualTreeHelper.GetChild(root, i)) is { } found) return found;
+        }
+        return null;
     }
 }

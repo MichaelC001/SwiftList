@@ -99,6 +99,19 @@ public class QuickPanelGroupViewModel : ViewModelBase
     /// <summary>Whether anything survived the filter -- a group with nothing left is hidden entirely.</summary>
     public bool HasMatches => Items.Count > 0;
 
+    /// <summary>Takes a freshly loaded set in place of what this group was holding.</summary>
+    /// <remarks>
+    /// The same group object, refilled, rather than a new one: its sort, its view and whether it is
+    /// collapsed are the user's own doing and belong to the group, not to the entries in it. A drop that
+    /// rebuilt the group would land the files and quietly undo everything else about it.
+    /// </remarks>
+    public void Replace(List<(AppSearchResult Item, DateTime? Modified)> loaded)
+    {
+        _loaded.Clear();
+        _loaded.AddRange(loaded);
+        Rebuild();
+    }
+
     public ObservableCollection<AppSearchResult> Items { get; } = new();
 
     private QuickPanelSortMode _sortMode = QuickPanelSortMode.ModifiedDescending;

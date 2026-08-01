@@ -78,9 +78,16 @@ public partial class QuickPanelWindow
         if (existing.Count == 0) return;
 
         // Never a move, so the flag is fixed rather than read from the drag. See Group_DragOver.
-        ShellPasteHelper.PasteAsync(existing, group!.FolderPath, move: false);
-
-        // The panel stays where it is. The copy runs behind its own dialog and the group will pick the
-        // new files up on the next open, which is when the panel next asks the index what is there.
+        //
+        // The reload is the panel's only way of learning the files arrived: the shell copies them behind
+        // its own dialog, on its own thread, and tells nobody. Hence the callback -- and hence marshalling
+        // it back here, since it is raised on that worker thread. It fires on a cancelled copy too, which
+        // is right: "the operation is over, go and look again" is the same answer either way.
+        ShellPasteHelper.PasteAsync(existing, group!.FolderPath, move: false,
+            onCompleted: () => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (DataContext is QuickPanelViewModel viewModel)
+                    _ = viewModel.ReloadGroupAsync(group);
+            })));
     }
 }

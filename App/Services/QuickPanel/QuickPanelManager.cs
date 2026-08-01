@@ -207,6 +207,10 @@ public sealed class QuickPanelManager : IDisposable
             // on the hotkey or Escape instead, for as long as that is true.
             if (_viewModel is { AcceptsDrops: true }) return;
 
+            // Nor when this summon was asked to stay, by the same hotkey the quick window uses for it.
+            // The flag lives on the window, so it is gone with the window and the next open is normal.
+            if (_window is { IsStayOpen: true }) return;
+
             Hide();
         };
 

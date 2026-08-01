@@ -96,11 +96,22 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <local:QuickPanelTabStrip Grid.Column="0" VerticalAlignment="Bottom"/>
                     <local:QuickPanelSearchBox x:Name="FilterBox" Grid.Column="1" Width="150"
                                                Margin="8,0,0,4" VerticalAlignment="Bottom"/>
+
+                    <!-- Keeps this summon up when it loses the foreground. A pin, lit while it is on:
+                         the panel dismissing itself is its normal behaviour, so the state worth showing
+                         is the one that suspends it. Clickable as well as bound to the hotkey, since a
+                         pin that only reports is a pin you cannot press. -->
+                    <ToggleButton Grid.Column="2" Margin="6,0,0,4" VerticalAlignment="Bottom"
+                                  Width="24" Height="24"
+                                  IsChecked="{Binding IsStayOpen, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
+                                  ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_StayOpenTooltip]}"
+                                  Style="{StaticResource QuickPanelStayOpenStyle}"/>
                 </Grid>
 
 
