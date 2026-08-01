@@ -26,11 +26,22 @@ internal static class QuickNavigationTriggerGate
         var hwndUnderCursor = PointNative.WindowFromPoint(new PointNative.POINT { x = x, y = y });
         if (hwndUnderCursor == IntPtr.Zero) return false;
 
-        if (!IsDescendantOfShellDllDefView(hwndUnderCursor)) return false;
-
         var sbClass = new StringBuilder(256);
         Native.GetClassName(hwndUnderCursor, sbClass, sbClass.Capacity);
         var clsName = sbClass.ToString();
+
+        // Turning off "Show desktop icons" does not remove them: the shell hides the SysListView32 that
+        // holds them. With it hidden, WindowFromPoint returns whatever was behind it, the wallpaper
+        // host, and both checks below fail on it: the class is not one of the two they accept, and
+        // depending on which window answers it may not sit under SHELLDLL_DefView either. The menu
+        // simply stopped opening on the desktop.
+        //
+        // Nothing needs hit-testing in that state. There are no icons on screen to have clicked, so any
+        // click on the desktop is a click on empty space, which is the very thing the checks below exist
+        // to establish.
+        if (IsDesktopBackgroundClass(clsName)) return true;
+
+        if (!IsDescendantOfShellDllDefView(hwndUnderCursor)) return false;
 
         if (!clsName.Equals("DirectUIHWND", StringComparison.OrdinalIgnoreCase) &&
             !clsName.Equals("SysListView32", StringComparison.OrdinalIgnoreCase))
@@ -81,6 +92,22 @@ internal static class QuickNavigationTriggerGate
     }
 
     private const uint GA_ROOT = 2;
+
+    /// <summary>The windows that are the desktop itself rather than anything sitting on it.</summary>
+    /// <remarks>
+    /// Progman is the desktop window; WorkerW is the sibling the shell interposes for the wallpaper, and
+    /// which one answers WindowFromPoint varies with the Windows version and whether a slideshow is
+    /// running. SHELLDLL_DefView is included because it is what is left once its SysListView32 child is
+    /// hidden, and reaching it means the cursor got past the icons without landing on one.
+    ///
+    /// None of the three can hold a desktop icon, which is what makes this safe to treat as empty space
+    /// without hit-testing: an icon is always a SysListView32 item, and that window answers for itself
+    /// while it is visible.
+    /// </remarks>
+    internal static bool IsDesktopBackgroundClass(string className) =>
+        className.Equals("Progman", StringComparison.OrdinalIgnoreCase)
+        || className.Equals("WorkerW", StringComparison.OrdinalIgnoreCase)
+        || className.Equals("SHELLDLL_DefView", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsDescendantOfShellDllDefView(IntPtr hwnd)
     {
