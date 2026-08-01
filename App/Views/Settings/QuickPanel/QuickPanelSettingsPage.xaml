@@ -61,44 +61,64 @@
             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_HotkeyHint]}"
                        Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
+            <!-- No MinHeight: with one workspace and its sources collapsed, a floor left a slab of
+                 empty card under the list. The page scrolls when the content outgrows it instead. -->
             <Border Style="{StaticResource SettingsCard}">
-                <Grid MinHeight="360">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="190"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <DockPanel Grid.Column="0" Margin="0,0,16,0">
-                        <TextBlock DockPanel.Dock="Top" Margin="0,0,0,6"
-                                   Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Workspaces]}"/>
-                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Content="&#xE710;" Style="{StaticResource RuleIconButton}"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AddWorkspace]}"
-                                    Command="{Binding AddTabCommand}"/>
-                            <Button Content="&#xE8C8;" Style="{StaticResource RuleIconButton}"
+                        <!-- Add and duplicate act on the list as a whole, so they sit on its header;
+                             reorder and delete belong to one row each and live in the rows, the way the
+                             plugin array editor's master list does it. Five buttons in a strip under a
+                             pane this narrow did not fit, and the last one was cut off. -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Content="&#xE8C8;" Style="{StaticResource RuleIconButton}"
                                     ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_DuplicateWorkspace]}"
                                     Command="{Binding DuplicateTabCommand}"/>
-                            <Button Content="&#xE74D;" Style="{StaticResource RuleIconButton}"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_RemoveWorkspace]}"
-                                    Command="{Binding RemoveTabCommand}"/>
-                            <Button Content="&#xE70E;" Style="{StaticResource RuleIconButton}"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveUpTooltip]}"
-                                    Command="{Binding MoveTabUpCommand}"/>
-                            <Button Content="&#xE70D;" Style="{StaticResource RuleIconButton}"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveDownTooltip]}"
-                                    Command="{Binding MoveTabDownCommand}"/>
-                        </StackPanel>
-                        <!-- Bounded so a long workspace list scrolls inside its own pane instead of
-                             stretching the card past the window. -->
+                            <Button DockPanel.Dock="Right" Content="&#xE710;" Style="{StaticResource RuleIconButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AddWorkspace]}"
+                                    Command="{Binding AddTabCommand}"/>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Workspaces]}"/>
+                        </DockPanel>
+                        <!-- Sizes to its rows, capped only where a very long list would out-grow the
+                             window; anything shorter leaves no empty pane behind it. -->
                         <ListBox x:Name="ListQuickPanelWorkspaces" ItemsSource="{Binding Tabs}"
                                  SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
                                  ItemContainerStyle="{StaticResource WorkspaceItemStyle}"
-                                 MaxHeight="300" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 VerticalAlignment="Top" MaxHeight="420"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 HorizontalContentAlignment="Stretch"
                                  BorderThickness="0" Background="Transparent">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding EffectiveName}" TextTrimming="CharacterEllipsis"
-                                               Foreground="{DynamicResource TextPrimary2}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,8,0"
+                                                  ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_WorkspaceEnabledTooltip]}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding EffectiveName}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimary2}"/>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="&#xE70E;" Style="{StaticResource RuleIconButton}" Width="22"
+                                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveUpTooltip]}"
+                                                    Command="{Binding MoveUpSelfCommand}" CommandParameter="{Binding}"/>
+                                            <Button Content="&#xE70D;" Style="{StaticResource RuleIconButton}" Width="22"
+                                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveDownTooltip]}"
+                                                    Command="{Binding MoveDownSelfCommand}" CommandParameter="{Binding}"/>
+                                            <Button Content="&#xE74D;" Style="{StaticResource RuleIconButton}" Width="22"
+                                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_RemoveWorkspace]}"
+                                                    Command="{Binding RemoveSelfCommand}" CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>

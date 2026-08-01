@@ -143,18 +143,16 @@
 
                             <TextBlock Style="{StaticResource SourceFieldLabel}"
                                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceKind]}"/>
-                            <ComboBox Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Left" MinWidth="200"
+                            <!-- ItemsSource of value+label pairs, like every other Settings dropdown:
+                                 declared items whose Content was a translation binding left the box
+                                 blank (the selection matched on identity, not on the value) and would
+                                 have had to be rebuilt on a language switch anyway. -->
+                            <ComboBox Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Left" MinWidth="220"
                                       Style="{StaticResource SettingsComboBox}"
-                                      SelectedValue="{Binding Kind, Mode=TwoWay}" SelectedValuePath="Tag">
-                                <!-- Each item carries the style itself: ItemContainerStyle only reaches
-                                     containers the ComboBox generates, and these are declared. -->
-                                <ComboBoxItem Style="{StaticResource SettingsComboBoxItem}"
-                                              Tag="{x:Static core:QuickPanelSourceKind.RecentFiles}"
-                                              Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_KindRecentFiles]}"/>
-                                <ComboBoxItem Style="{StaticResource SettingsComboBoxItem}"
-                                              Tag="{x:Static core:QuickPanelSourceKind.Launcher}"
-                                              Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_KindLauncher]}"/>
-                            </ComboBox>
+                                      ItemsSource="{Binding KindOptions}"
+                                      DisplayMemberPath="Label"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Kind, Mode=TwoWay}"/>
 
                             <TextBlock Grid.Row="1" Style="{StaticResource SourceFieldLabel}"
                                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourcePath]}"/>

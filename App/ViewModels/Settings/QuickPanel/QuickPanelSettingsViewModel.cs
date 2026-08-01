@@ -27,20 +27,38 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         _enabled = panel.Enabled;
         _blacklistText = string.Join(Environment.NewLine, panel.BlacklistedProcesses);
 
-        // A settings file edited by hand (or one from before this page existed) can have no tabs at all,
-        // and a panel with nowhere to put a source is not something the user can recover from here.
-        _models = panel.Tabs.Count > 0 ? panel.Tabs.ToList() : new List<QuickPanelTab> { QuickPanelTab.CreateDefault() };
-        foreach (var model in _models)
-            Tabs.Add(new QuickPanelTabSettingsViewModel(model));
-
-        _selectedTab = Tabs.FirstOrDefault(t => t.Id == panel.ActiveTabId) ?? Tabs.FirstOrDefault();
-
         SelectSubTabCommand = new RelayCommand<string>(tab => SelectedSubTab = tab ?? "Sources");
         AddTabCommand = new RelayCommand(AddTab);
         DuplicateTabCommand = new RelayCommand(DuplicateTab, () => SelectedTab != null);
         RemoveTabCommand = new RelayCommand(RemoveTab, () => Tabs.Count > 1 && SelectedTab != null);
         MoveTabUpCommand = new RelayCommand(() => MoveTab(-1), () => CanMoveTab(-1));
         MoveTabDownCommand = new RelayCommand(() => MoveTab(+1), () => CanMoveTab(+1));
+
+        // Row-level commands, so each workspace carries its own reorder/delete buttons rather than a
+        // toolbar under the list acting on the selection -- same shape as the plugin array editor, and
+        // it takes the button strip out of a pane too narrow to hold five of them. Built before any row
+        // exists, so every row can be handed them as it is created.
+        _rowMoveUp = new RelayCommand<QuickPanelTabSettingsViewModel>(tab => MoveTab(tab, -1));
+        _rowMoveDown = new RelayCommand<QuickPanelTabSettingsViewModel>(tab => MoveTab(tab, +1));
+        _rowRemove = new RelayCommand<QuickPanelTabSettingsViewModel>(RemoveTab);
+
+        // A settings file edited by hand (or one from before this page existed) can have no tabs at all,
+        // and a panel with nowhere to put a source is not something the user can recover from here.
+        _models = panel.Tabs.Count > 0 ? panel.Tabs.ToList() : new List<QuickPanelTab> { QuickPanelTab.CreateDefault() };
+        foreach (var model in _models)
+            Tabs.Add(BindRow(new QuickPanelTabSettingsViewModel(model)));
+
+        _selectedTab = Tabs.FirstOrDefault(t => t.Id == panel.ActiveTabId) ?? Tabs.FirstOrDefault();
+    }
+
+    private readonly ICommand _rowMoveUp;
+    private readonly ICommand _rowMoveDown;
+    private readonly ICommand _rowRemove;
+
+    private QuickPanelTabSettingsViewModel BindRow(QuickPanelTabSettingsViewModel tab)
+    {
+        tab.BindRowCommands(_rowMoveUp, _rowMoveDown, _rowRemove);
+        return tab;
     }
 
     private bool _enabled;
@@ -119,7 +137,7 @@ public class QuickPanelSettingsViewModel : ViewModelBase
     {
         var model = new QuickPanelTab { Id = QuickPanelTab.NewId() };
         _models.Add(model);
-        var tab = new QuickPanelTabSettingsViewModel(model);
+        var tab = BindRow(new QuickPanelTabSettingsViewModel(model));
         Tabs.Add(tab);
         SelectedTab = tab;
         OnPropertyChanged(nameof(HasMultipleTabs));
@@ -166,19 +184,23 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         }
 
         _models.Add(copy);
-        var tab = new QuickPanelTabSettingsViewModel(copy);
+        var tab = BindRow(new QuickPanelTabSettingsViewModel(copy));
         Tabs.Add(tab);
         SelectedTab = tab;
         OnPropertyChanged(nameof(HasMultipleTabs));
     }
 
-    private void RemoveTab()
+    private void RemoveTab() => RemoveTab(SelectedTab);
+
+    // The last workspace stays: a panel with nowhere to put a source is not a state the user can
+    // recover from on this page.
+    private void RemoveTab(QuickPanelTabSettingsViewModel? tab)
     {
-        if (SelectedTab == null || Tabs.Count <= 1)
+        if (tab == null || Tabs.Count <= 1)
             return;
-        var index = Tabs.IndexOf(SelectedTab);
-        _models.RemoveAll(m => m.Id == SelectedTab.Id);
-        Tabs.Remove(SelectedTab);
+        var index = Tabs.IndexOf(tab);
+        _models.RemoveAll(m => m.Id == tab.Id);
+        Tabs.Remove(tab);
         SelectedTab = Tabs[Math.Min(index, Tabs.Count - 1)];
         OnPropertyChanged(nameof(HasMultipleTabs));
     }
@@ -191,11 +213,16 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         return to >= 0 && to < Tabs.Count;
     }
 
-    private void MoveTab(int delta)
+    private void MoveTab(int delta) => MoveTab(SelectedTab, delta);
+
+    private void MoveTab(QuickPanelTabSettingsViewModel? tab, int delta)
     {
-        if (SelectedTab == null || !CanMoveTab(delta))
+        if (tab == null)
             return;
-        var from = Tabs.IndexOf(SelectedTab);
-        Tabs.Move(from, from + delta);
+        var from = Tabs.IndexOf(tab);
+        var to = from + delta;
+        if (from < 0 || to < 0 || to >= Tabs.Count)
+            return;
+        Tabs.Move(from, to);
     }
 }

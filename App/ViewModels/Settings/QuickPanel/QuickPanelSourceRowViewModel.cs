@@ -2,6 +2,9 @@ using SwiftList.App.Services;
 using SwiftList.Core;
 namespace SwiftList.App.ViewModels.Settings.QuickPanel;
 
+/// <summary>One entry of the kind dropdown: the value that is stored, and the label that is shown.</summary>
+public sealed record QuickPanelSourceKindOption(QuickPanelSourceKind Value, string Label);
+
 /// <summary>
 /// One row of a tab's source list, which is also one group in the panel. Folder sources and the
 /// built-in ones share this type on purpose: everything the list offers -- rename, show/hide, reorder --
@@ -95,6 +98,31 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
             if (SetProperty(ref _path, value))
                 OnPropertyChanged(nameof(EffectiveName));
         }
+    }
+
+    /// <summary>
+    /// What the kind dropdown offers, as value+label pairs rather than items with translated Content
+    /// and the enum in Tag. That is how every other dropdown in Settings is built, for two reasons this
+    /// one hit both of: the label is only ever a label, so switching language rebuilds the list without
+    /// touching the selection, and the selection matches on the value rather than on identity.
+    /// </summary>
+    public IReadOnlyList<QuickPanelSourceKindOption> KindOptions => _kindOptions ??= BuildKindOptions();
+
+    private IReadOnlyList<QuickPanelSourceKindOption>? _kindOptions;
+
+    private static IReadOnlyList<QuickPanelSourceKindOption> BuildKindOptions() => new[]
+    {
+        new QuickPanelSourceKindOption(QuickPanelSourceKind.RecentFiles, TranslationManager.Instance["QuickPanel_KindRecentFiles"]),
+        new QuickPanelSourceKindOption(QuickPanelSourceKind.AllByModified, TranslationManager.Instance["QuickPanel_KindAllByModified"]),
+        new QuickPanelSourceKindOption(QuickPanelSourceKind.Launcher, TranslationManager.Instance["QuickPanel_KindLauncher"]),
+    };
+
+    /// <summary>Rebuilds the labels after a language switch, keeping the selected value.</summary>
+    public void RefreshTranslations()
+    {
+        _kindOptions = null;
+        OnPropertyChanged(nameof(KindOptions));
+        OnPropertyChanged(nameof(Kind));
     }
 
     private QuickPanelSourceKind _kind = QuickPanelSourceKind.RecentFiles;

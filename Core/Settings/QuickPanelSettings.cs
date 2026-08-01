@@ -7,13 +7,18 @@ public enum QuickPanelSortMode
     NameAscending,
 }
 
-/// <summary>Where a folder source's items come from.</summary>
+/// <summary>Where a folder source's items come from, and in what order.</summary>
 public enum QuickPanelSourceKind
 {
     /// <summary>Only what changed recently, newest first -- answered from the index, not by walking.</summary>
     RecentFiles,
     /// <summary>Everything in the folder, by name: a folder used as a shortcut bar.</summary>
     Launcher,
+    /// <summary>
+    /// Everything in the folder, newest first. Distinct from RecentFiles, which drops anything older
+    /// than its age limit: this one never hides a file, it only decides what to show first.
+    /// </summary>
+    AllByModified,
 }
 
 /// <summary>
@@ -60,6 +65,13 @@ public class QuickPanelTab
 
     /// <summary>Empty falls back to a translated default, so a never-renamed tab follows the UI language.</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Off keeps the workspace configured but out of the way: no tab for it in the panel, and no
+    /// process of its claims it. For the workspace you set up for a project you are not on this month,
+    /// where deleting it means rebuilding the source list to get it back.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
 
     /// <summary>
     /// Applications this workspace belongs to, by process name. Summon the panel while one of them is

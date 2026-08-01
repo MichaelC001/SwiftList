@@ -133,6 +133,65 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.IsFalse(copy.GroupPreferences.Keys.Any(originalIds.Contains));
     }
 
+    // Each row carries its own reorder/delete buttons, so the commands they bind to have to exist by
+    // the time the row does -- a null one is a button that silently does nothing when clicked.
+    [TestMethod]
+    public void RowCommands_AreBoundOnEveryTab_IncludingOnesAddedLater()
+    {
+        var settings = BuildSettings(@"C:\a");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        vm.AddTabCommand.Execute(null);
+        vm.DuplicateTabCommand.Execute(null);
+
+        Assert.IsTrue(vm.Tabs.Count >= 3);
+        foreach (var tab in vm.Tabs)
+        {
+            Assert.IsNotNull(tab.MoveUpSelfCommand, tab.EffectiveName);
+            Assert.IsNotNull(tab.MoveDownSelfCommand, tab.EffectiveName);
+            Assert.IsNotNull(tab.RemoveSelfCommand, tab.EffectiveName);
+        }
+    }
+
+    [TestMethod]
+    public void RowRemoveCommand_RemovesThatRowRatherThanTheSelectedOne()
+    {
+        var settings = BuildSettings(@"C:\a");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        vm.AddTabCommand.Execute(null);   // selects the new one
+        var first = vm.Tabs[0];
+
+        first.RemoveSelfCommand.Execute(first);
+
+        CollectionAssert.DoesNotContain(vm.Tabs.ToList(), first);
+    }
+
+    // The dropdown binds SelectedValue to Kind against these options: a kind missing from the list is a
+    // source whose type the box cannot display, which is what an empty dropdown looked like.
+    [TestMethod]
+    public void KindOptions_OfferEveryKind_WithDistinctValues()
+    {
+        var settings = BuildSettings(@"C:\a");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        var row = vm.Tabs.Single().Sources.First(s => s.IsFolderSource);
+
+        var values = row.KindOptions.Select(o => o.Value).ToList();
+
+        CollectionAssert.AreEquivalent(Enum.GetValues<QuickPanelSourceKind>(), values);
+        Assert.IsTrue(row.KindOptions.All(o => !string.IsNullOrWhiteSpace(o.Label)));
+    }
+
+    [TestMethod]
+    public void Save_WorkspaceEnabledFlag_RoundTrips()
+    {
+        var settings = BuildSettings(@"C:\a");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        vm.Tabs.Single().Enabled = false;
+
+        vm.Save();
+
+        Assert.IsFalse(settings.QuickPanel.Tabs.Single().Enabled);
+    }
+
     [TestMethod]
     public void RemoveTab_LastRemainingTab_IsKept()
     {

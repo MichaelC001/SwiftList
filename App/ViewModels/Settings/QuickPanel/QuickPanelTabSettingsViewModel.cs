@@ -20,6 +20,7 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
     {
         _model = model;
         _name = model.Name;
+        _enabled = model.Enabled;
         _processesText = string.Join(Environment.NewLine, model.Processes);
 
         foreach (var id in QuickPanelGroupOrdering.Resolve(AvailableIds(model), model.GroupOrder, disabled: null))
@@ -50,6 +51,31 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
         : Name.Trim();
 
+    private bool _enabled;
+
+    /// <summary>Off keeps the workspace configured but gives it no tab in the panel.</summary>
+    public bool Enabled
+    {
+        get => _enabled;
+        set => SetProperty(ref _enabled, value);
+    }
+
+    public ICommand MoveUpSelfCommand { get; private set; } = null!;
+    public ICommand MoveDownSelfCommand { get; private set; } = null!;
+    public ICommand RemoveSelfCommand { get; private set; } = null!;
+
+    /// <summary>
+    /// Lets a workspace row carry its own reorder/delete buttons, the way the plugin array editor's
+    /// master list does, instead of a toolbar under the list acting on whatever is selected. Wired by
+    /// the page, which owns the list these operate on.
+    /// </summary>
+    internal void BindRowCommands(ICommand moveUp, ICommand moveDown, ICommand remove)
+    {
+        MoveUpSelfCommand = moveUp;
+        MoveDownSelfCommand = moveDown;
+        RemoveSelfCommand = remove;
+    }
+
     private string _processesText = string.Empty;
 
     /// <summary>
@@ -74,6 +100,7 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
     public void Save()
     {
         _model.Name = Name.Trim();
+        _model.Enabled = Enabled;
         _model.Processes = ParseLines(ProcessesText);
 
         foreach (var row in Sources)
