@@ -34,13 +34,25 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         // are both answered per list rather than once for a named one. GroupList_Loaded below does the
         // registering as each appears.
 
-        // Filtering replaces what every group is showing, so the selection has to be put back on the
-        // first thing still standing. Queued at Background so the layout that the new items trigger has
-        // already run -- selecting into a list that has not been arranged yet selects nothing.
         void OnViewModelChanged(object? _, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != nameof(QuickPanelViewModel.SearchQuery)) return;
-            Dispatcher.BeginInvoke(new Action(SelectFirstResult), System.Windows.Threading.DispatcherPriority.Background);
+            // Filtering replaces what every group is showing, so the selection has to be put back on
+            // the first thing still standing. Queued at Background so the layout that the new items
+            // trigger has already run -- selecting into a list that has not been arranged yet selects
+            // nothing.
+            if (e.PropertyName == nameof(QuickPanelViewModel.SearchQuery))
+            {
+                Dispatcher.BeginInvoke(new Action(SelectFirstResult), System.Windows.Threading.DispatcherPriority.Background);
+                return;
+            }
+
+            // Closing the last workspace leaves a panel with no tabs, no groups and nothing it could
+            // ever show -- so it closes, whatever else was asked of it. The pin is not consulted: it
+            // suspends dismissal on focus loss, which is a statement about attention, not a reason to
+            // keep an empty frame on screen. Queued so the close lands after the change that caused it
+            // has finished being applied.
+            if (e.PropertyName == nameof(QuickPanelViewModel.HasTabStrip) && !viewModel.HasTabStrip)
+                Dispatcher.BeginInvoke(new Action(() => Services.QuickPanel.QuickPanelManager.Instance?.Hide()));
         }
 
         viewModel.PropertyChanged += OnViewModelChanged;

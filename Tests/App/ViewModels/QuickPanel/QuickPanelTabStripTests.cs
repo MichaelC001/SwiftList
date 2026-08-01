@@ -69,8 +69,10 @@ public sealed class QuickPanelTabStripTests
         CollectionAssert.AreEqual(new[] { "w1s" }, vm.Groups.Select(g => g.SourceId).ToList());
     }
 
+    // Closing the last one is what the window watches for: HasTabStrip going false is the signal that
+    // there is nothing left the panel could ever show, and it closes on it whatever else was asked.
     [TestMethod]
-    public async Task CloseTab_TheLastOne_LeavesAnEmptyStrip()
+    public async Task CloseTab_TheLastOne_LeavesNothingAndSaysSo()
     {
         var settings = Settings(Workspace("w1"));
         var (vm, _) = Build(settings);
@@ -80,6 +82,8 @@ public sealed class QuickPanelTabStripTests
 
         Assert.IsEmpty(vm.Tabs);
         Assert.IsEmpty(vm.Groups);
+        Assert.IsFalse(vm.HasTabStrip);
+        Assert.IsFalse(vm.HasContent);
         Assert.IsFalse(settings.Tabs.Single().Enabled, "still there, just disabled");
     }
 
