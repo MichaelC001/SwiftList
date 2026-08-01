@@ -221,6 +221,17 @@
 
     <!-- Move Up/Down: same look as the delete button above, narrower since the master list column
          is tight on space, and each row already carries three of these plus a title. -->
+    <!-- Add, on the list's own header rather than pinned under it. Same icon button as the row
+         buttons, so the list reads as one control instead of a list with a full-width button glued to
+         the bottom edge; it also stops the button drifting away from the list as the list grows. -->
+    <Style x:Key="ArrayHeaderAddButton" TargetType="Button" BasedOn="{StaticResource ArrayRowDeleteButton}">
+        <Setter Property="Content" Value="&#xE710;"/>
+        <Setter Property="Command" Value="{Binding AddCommand}"/>
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="Margin" Value="4,0,0,0"/>
+    </Style>
+
     <Style x:Key="ArrayRowMoveUpButton" TargetType="Button" BasedOn="{StaticResource ArrayRowDeleteButton}">
         <Setter Property="Content" Value="&#xE74A;"/>
         <Setter Property="Command" Value="{Binding MoveUpCommand}"/>

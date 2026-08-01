@@ -112,19 +112,23 @@
 
                         <!-- Master list: height locked to the detail panel's natural height (kept
                              in sync from code-behind, see ArrayDetailPanel_Loaded) so only the
-                             ListBox itself scrolls; the Add button stays pinned directly beneath it. -->
+                             ListBox itself scrolls. Add sits on the list's header, where it stays put
+                             as the list grows, rather than under a list whose bottom edge moves. -->
                         <Grid x:Name="ArrayMasterListGrid" Grid.Column="0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
+                            <Button Grid.Row="0" HorizontalAlignment="Right" Margin="0,0,0,4"
+                                    Style="{StaticResource ArrayHeaderAddButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Add]}"/>
                             <!-- No horizontal scrolling of its own. Left at the default it hands each
                                  row an unbounded width, the row's Star column resolves to however
                                  long the title happens to be, and the list grows a second horizontal
                                  bar inside the table's own. Bounding it to the list width is also
                                  what lets the title's TextTrimming ellipsize, which is the behaviour
                                  the item template was written for. -->
-                            <ListBox Grid.Row="0" ItemsSource="{Binding ArrayItems}" SelectedItem="{Binding SelectedArrayItem, Mode=TwoWay}"
+                            <ListBox Grid.Row="1" ItemsSource="{Binding ArrayItems}" SelectedItem="{Binding SelectedArrayItem, Mode=TwoWay}"
                                      BorderThickness="0" Background="Transparent"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ItemContainerStyle="{StaticResource ArrayMasterListItemStyle}"
@@ -187,9 +191,6 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                            <Button Grid.Row="1" Command="{Binding AddCommand}" Style="{StaticResource SettingsButton}" Height="26" Padding="8,0"
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Add]}"
-                                    FontSize="11" Cursor="Hand" HorizontalContentAlignment="Center" Margin="0,6,0,0"/>
                         </Grid>
 
                         <!-- Detail panel for the selected item. VerticalAlignment="Top" keeps its
