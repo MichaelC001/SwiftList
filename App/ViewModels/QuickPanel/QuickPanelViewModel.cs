@@ -181,5 +181,7 @@ public partial class QuickPanelViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasContent));
         // Switching workspace can change the answer: one tab may take drops where the next does not.
         OnPropertyChanged(nameof(AcceptsDrops));
+
+        RewatchIfWatching();
     }
 }

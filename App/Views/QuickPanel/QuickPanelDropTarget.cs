@@ -34,9 +34,13 @@ public partial class QuickPanelWindow
 
     // The three answers read off the live drag. IsDragActive is set by this app's own drag-out helper for
     // the length of its DoDragDrop, which is exactly "this drag started in one of our lists".
+    //
+    // "Carrying files" is two questions, because there are two ways to carry one. CF_HDROP is a drag of
+    // things that already exist on disk. A browser dragging an image, or Outlook an attachment, has no
+    // path to give and offers the bytes instead -- see VirtualFileExtractor.
     private static bool CanDrop(QuickPanelGroupViewModel? group, DragEventArgs e)
         => CanDrop(group,
-            e.Data.GetDataPresent(DataFormats.FileDrop),
+            e.Data.GetDataPresent(DataFormats.FileDrop) || VirtualFileExtractor.HasVirtualFiles(e.Data),
             Views.Controls.Results.ResultsDragDropHelper.IsDragActive);
 
     private static QuickPanelGroupViewModel? GroupOf(object sender)
@@ -72,22 +76,57 @@ public partial class QuickPanelWindow
         if (!CanDrop(group, e)) return;
 
         e.Handled = true;
-        if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
 
-        var existing = paths.Where(path => File.Exists(path) || Directory.Exists(path)).ToList();
-        if (existing.Count == 0) return;
+        // Real paths if the drag has them, otherwise the bytes written out to somewhere they do have
+        // one. Either way what reaches the copy below is a list of files on disk, so there is one path
+        // through the shell rather than two.
+        var staging = (string?)null;
+        List<string> sources;
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
+        {
+            sources = paths.Where(path => File.Exists(path) || Directory.Exists(path)).ToList();
+        }
+        else
+        {
+            staging = Path.Combine(Path.GetTempPath(), "SwiftList", "Drop", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(staging);
+            sources = VirtualFileExtractor.Extract(e.Data, staging);
+        }
 
+        if (sources.Count == 0)
+        {
+            TryDelete(staging);
+            return;
+        }
+
+        // Copied rather than written straight into the folder, even when they were just written once
+        // already. That second hop is what buys the native conflict prompt, the progress dialog and the
+        // undo entry -- writing directly would land the file and offer none of the three.
+        //
         // Never a move, so the flag is fixed rather than read from the drag. See Group_DragOver.
         //
-        // The reload is the panel's only way of learning the files arrived: the shell copies them behind
-        // its own dialog, on its own thread, and tells nobody. Hence the callback -- and hence marshalling
-        // it back here, since it is raised on that worker thread. It fires on a cancelled copy too, which
-        // is right: "the operation is over, go and look again" is the same answer either way.
-        ShellPasteHelper.PasteAsync(existing, group!.FolderPath, move: false,
-            onCompleted: () => Dispatcher.BeginInvoke(new Action(() =>
-            {
-                if (DataContext is QuickPanelViewModel viewModel)
-                    _ = viewModel.ReloadGroupAsync(group);
-            })));
+        // Nothing here asks for a reload. The group's folder is being watched for as long as the panel
+        // is open, so the files landing IS the notification -- from whoever put them there, by whatever
+        // means. The callback is only for sweeping up the staging folder, once the copy that reads from
+        // it is done with it.
+        ShellPasteHelper.PasteAsync(sources, group!.FolderPath, move: false,
+            onCompleted: () => TryDelete(staging));
+    }
+
+    /// <summary>Removes the staging folder, if there was one. Never worth failing a drop over.</summary>
+    private static void TryDelete(string? folder)
+    {
+        if (folder == null) return;
+
+        try
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
+        catch (Exception ex)
+        {
+            // Under the user's own temp folder, so what is left behind is swept up with everything else
+            // there. Worth a line, not worth an error.
+            Core.Logger.Log($"[QuickPanel] Could not remove the drop staging folder: {ex.Message}", Core.LogLevel.Debug);
+        }
     }
 }
