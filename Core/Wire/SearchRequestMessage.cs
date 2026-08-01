@@ -18,7 +18,10 @@ public enum SearchRequestId : byte
     GetRecentFiles = 13,
     ClearPathCaches = 14,
     LaunchHook = 15,
-    CancelDriveIndex = 16
+    CancelDriveIndex = 16,
+    // Streams a directory's entries out of the index (DirectoryFilter = the directory, Query = the
+    // filename filter, Recursive = descend). Streaming, like Search/SearchDir -- not a Process() case.
+    EnumerateDir = 17
 }
 
 public struct SearchRequestMessage
@@ -47,4 +50,9 @@ public struct SearchRequestMessage
     // field initializer, and a caller that forgets to set it must fall back to the historical fuzzy
     // behavior -- which only the negative phrasing gives, since default(bool) is false.
     public bool ExactMatch { get; set; }
+
+    // EnumerateDir: whether to descend into subdirectories. Same struct-default reasoning as
+    // ExactMatch above -- a caller that forgets it gets the cheap single-level listing, not a
+    // full subtree walk.
+    public bool Recursive { get; set; }
 }

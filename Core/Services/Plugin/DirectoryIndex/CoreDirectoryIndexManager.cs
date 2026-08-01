@@ -1,3 +1,7 @@
+using System.Runtime.CompilerServices;
+using System.Threading.Channels;
+
+using SwiftList.Core.Services.Search;
 namespace SwiftList.Core.Services.Plugin.DirectoryIndex;
 
 /// <summary>
@@ -36,5 +40,33 @@ public sealed class CoreDirectoryIndexManager
             return new List<SearchResult>();
 
         return await _searcher.SearchAsync(dirs, query, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Lists one directory (any directory, registered or not) out of the index, streaming entries as
+    /// they arrive. See <see cref="IndexedDirectoryEnumerator"/> for the index-vs-live-walk routing;
+    /// this only adapts its callback into the async sequence the SDK hands to plugins.
+    /// </summary>
+    public async IAsyncEnumerable<SearchResult> EnumerateDirectoryAsync(string directoryPath, bool recursive, string filterPattern, int limit,
+        [EnumeratorCancellation] CancellationToken token = default)
+    {
+        var channel = Channel.CreateUnbounded<SearchResult>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
+        var producer = Task.Run(async () =>
+        {
+            try
+            {
+                await IndexedDirectoryEnumerator.EnumerateAsync(directoryPath, recursive, filterPattern,
+                    result => channel.Writer.TryWrite(result), limit, token).ConfigureAwait(false);
+                channel.Writer.TryComplete();
+            }
+            catch (Exception ex)
+            {
+                channel.Writer.TryComplete(ex);
+            }
+        }, token);
+
+        await foreach (var result in channel.Reader.ReadAllAsync(token).ConfigureAwait(false))
+            yield return result;
+        await producer.ConfigureAwait(false);
     }
 }

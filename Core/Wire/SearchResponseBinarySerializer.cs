@@ -1,17 +1,21 @@
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Text;
-using SwiftList.PluginSdk.Abstractions;
 
 namespace SwiftList.Core.Wire;
 
 public static class SearchResponseBinarySerializer
 {
     private const int Magic = 0x53524C53; // SLRS
-    private const int Version = 5; // v4: gained Size/Created/Modified/Accessed (SearchResult.Metadata); v5: gained Attributes
+    // v4: gained Size/Created/Modified/Accessed (SearchResult.Metadata); v5: gained Attributes;
+    // v6: gained the NotIndexed frame.
+    private const int Version = 6;
     private const byte EndFrame = 0;
     private const byte FileResultFrame = 1;
     private const byte AppResultFrame = 2;
+    // "No loaded index covers what you asked for" -- distinct from an empty result set, which a stream
+    // of zero results is indistinguishable from. Only ever written for EnumerateDir, whose caller has a
+    // real filesystem walk to fall back to; a search has nowhere to fall back to and never sends it.
+    private const byte NotIndexedFrame = 3;
     private const byte HeaderFrame = 255;
 
     public static async Task WriteHeaderAsync(Stream stream, CancellationToken token = default)
@@ -38,14 +42,20 @@ public static class SearchResponseBinarySerializer
     public static Task WriteFileResultAsync(Stream stream, SearchResult result, CancellationToken token = default)
         => WriteResultAsync(stream, FileResultFrame, result, token);
 
-    public static async Task WriteEndAsync(Stream stream, CancellationToken token = default)
+    public static Task WriteEndAsync(Stream stream, CancellationToken token = default)
+        => WriteEmptyFrameAsync(stream, EndFrame, token);
+
+    public static Task WriteNotIndexedAsync(Stream stream, CancellationToken token = default)
+        => WriteEmptyFrameAsync(stream, NotIndexedFrame, token);
+
+    private static async Task WriteEmptyFrameAsync(Stream stream, byte frame, CancellationToken token)
     {
         var buffer = ArrayPool<byte>.Shared.Rent(9);
         try
         {
             var span = buffer.AsSpan();
             BinaryPrimitives.WriteInt32LittleEndian(span.Slice(0), Magic);
-            span[4] = EndFrame;
+            span[4] = frame;
             BinaryPrimitives.WriteInt32LittleEndian(span.Slice(5), 0);
 
             await stream.WriteAsync(buffer.AsMemory(0, 9), token).ConfigureAwait(false);
@@ -56,7 +66,9 @@ public static class SearchResponseBinarySerializer
         }
     }
 
-    public static async Task ReadAsync(Stream stream, Action<SearchResult> onResult, CancellationToken token = default)
+    // onNotIndexed fires (before the End frame) when the responder answered "that path is in no loaded
+    // index" -- see NotIndexedFrame. Callers that can't act on it simply don't pass it.
+    public static async Task ReadAsync(Stream stream, Action<SearchResult> onResult, CancellationToken token = default, Action? onNotIndexed = null)
     {
         try
         {
@@ -93,8 +105,13 @@ public static class SearchResponseBinarySerializer
 
                 if (frameType == FileResultFrame || frameType == AppResultFrame)
                 {
-                    var result = ReadResult(payload);
-                    onResult(result);
+                    onResult(SearchResultFrameCodec.ReadPayload(payload));
+                    continue;
+                }
+
+                if (frameType == NotIndexedFrame)
+                {
+                    onNotIndexed?.Invoke();
                     continue;
                 }
 
@@ -113,151 +130,25 @@ public static class SearchResponseBinarySerializer
         }
     }
 
+    // Framing only: magic, frame byte, payload length. The payload itself is SearchResultFrameCodec's.
     private static async Task WriteResultAsync(Stream stream, byte frame, SearchResult result, CancellationToken token)
     {
-        var name = result.Name ?? string.Empty;
-        var path = result.Path ?? string.Empty;
-        var drive = result.Drive ?? string.Empty;
-
-        var nameLen = Encoding.UTF8.GetByteCount(name);
-        var pathLen = Encoding.UTF8.GetByteCount(path);
-        var driveLen = Encoding.UTF8.GetByteCount(drive);
-
-        var maxPayloadSize = nameLen + pathLen + driveLen + 48;
-        var totalSize = 9 + maxPayloadSize;
-
-        var buffer = ArrayPool<byte>.Shared.Rent(totalSize);
+        var buffer = ArrayPool<byte>.Shared.Rent(9 + SearchResultFrameCodec.MaxPayloadSize(result));
         try
         {
             var span = buffer.AsSpan();
-            var offset = 0;
+            BinaryPrimitives.WriteInt32LittleEndian(span.Slice(0), Magic);
+            span[4] = frame;
 
-            BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset), Magic);
-            offset += 4;
+            var payloadLength = SearchResultFrameCodec.WritePayload(span.Slice(9), result);
+            BinaryPrimitives.WriteInt32LittleEndian(span.Slice(5), payloadLength);
 
-            span[offset++] = frame;
-
-            var payloadLengthOffset = offset;
-            offset += 4;
-
-            var payloadStart = offset;
-
-            Write7BitEncodedInt(span.Slice(offset), nameLen, out var written);
-            offset += written;
-            Encoding.UTF8.GetBytes(name, span.Slice(offset));
-            offset += nameLen;
-
-            Write7BitEncodedInt(span.Slice(offset), pathLen, out written);
-            offset += written;
-            Encoding.UTF8.GetBytes(path, span.Slice(offset));
-            offset += pathLen;
-
-            span[offset++] = (byte)(result.IsDir ? 1 : 0);
-
-            Write7BitEncodedInt(span.Slice(offset), driveLen, out written);
-            offset += written;
-            Encoding.UTF8.GetBytes(drive, span.Slice(offset));
-            offset += driveLen;
-
-            BinaryPrimitives.WriteUInt64LittleEndian(span.Slice(offset), result.RankSortKey);
-            offset += 8;
-
-            BinaryPrimitives.WriteInt64LittleEndian(span.Slice(offset), result.Metadata.Size);
-            offset += 8;
-            BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset), FileTimeHelper.ToUnixSeconds(result.Metadata.Created.ToUniversalTime()));
-            offset += 4;
-            BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset), FileTimeHelper.ToUnixSeconds(result.Metadata.Modified.ToUniversalTime()));
-            offset += 4;
-            BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset), FileTimeHelper.ToUnixSeconds(result.Metadata.Accessed.ToUniversalTime()));
-            offset += 4;
-
-            // Hidden/System bits drive FileSystemItemFilter.IsHiddenOrSystem client-side -- without this,
-            // that check always sees the zero default and never filters anything (confirmed live: NTFS
-            // metadata files like $MFT showed up in results despite the filter being unconditionally
-            // wired in). Only the two bits the filter actually reads are worth carrying; write the whole
-            // enum value anyway since it's a single int and keeps this a faithful round-trip.
-            BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset), (int)result.Attributes);
-            offset += 4;
-
-            var payloadLength = offset - payloadStart;
-            BinaryPrimitives.WriteInt32LittleEndian(span.Slice(payloadLengthOffset), payloadLength);
-
-            await stream.WriteAsync(buffer.AsMemory(0, offset), token).ConfigureAwait(false);
+            await stream.WriteAsync(buffer.AsMemory(0, 9 + payloadLength), token).ConfigureAwait(false);
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
-    }
-
-    private static void Write7BitEncodedInt(Span<byte> destination, int value, out int bytesWritten)
-    {
-        bytesWritten = 0;
-        var uValue = (uint)value;
-        while (uValue >= 0x80)
-        {
-            destination[bytesWritten++] = (byte)(uValue | 0x80);
-            uValue >>= 7;
-        }
-        destination[bytesWritten++] = (byte)uValue;
-    }
-
-    private static int Read7BitEncodedInt(byte[] buffer, ref int offset)
-    {
-        uint result = 0;
-        var shift = 0;
-        while (shift < 35)
-        {
-            var b = buffer[offset++];
-            result |= (uint)(b & 0x7F) << shift;
-            shift += 7;
-            if ((b & 0x80) == 0)
-                return (int)result;
-        }
-        throw new FormatException("Invalid 7-bit encoded integer.");
-    }
-
-    private static string ReadString(byte[] buffer, ref int offset)
-    {
-        var length = Read7BitEncodedInt(buffer, ref offset);
-        if (length == 0) return string.Empty;
-        var str = Encoding.UTF8.GetString(buffer, offset, length);
-        offset += length;
-        return str;
-    }
-
-    private static SearchResult ReadResult(byte[] payload)
-    {
-        var offset = 0;
-        var name = ReadString(payload, ref offset);
-        var path = ReadString(payload, ref offset);
-        var isDir = payload[offset++] != 0;
-        var drive = ReadString(payload, ref offset);
-        var rankSortKey = BinaryPrimitives.ReadUInt64LittleEndian(payload.AsSpan(offset));
-        offset += 8;
-        var size = BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(offset));
-        offset += 8;
-        var created = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(offset));
-        offset += 4;
-        var modified = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(offset));
-        offset += 4;
-        var accessed = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(offset));
-        offset += 4;
-        var attributes = (FileAttributes)BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(offset));
-        return new SearchResult
-        {
-            Name = name,
-            Path = path,
-            IsDir = isDir,
-            Drive = drive,
-            Attributes = attributes,
-            RankSortKey = rankSortKey,
-            Metadata = new FileMetadata(
-                size,
-                FileTimeHelper.FromUnixSeconds(created).ToLocalTime(),
-                FileTimeHelper.FromUnixSeconds(modified).ToLocalTime(),
-                FileTimeHelper.FromUnixSeconds(accessed).ToLocalTime()),
-        };
     }
 
     private static async Task<int> ReadInt32Async(Stream stream, CancellationToken token)

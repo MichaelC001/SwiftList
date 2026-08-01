@@ -48,7 +48,30 @@ internal static class PluginSdkBridge
             }).ToList();
         };
 
+        // Wire up index-backed directory enumeration, so a plugin listing a folder it cares about reads
+        // the index the host already maintains instead of hitting the disk itself
+        PluginSdk.Services.DirectoryIndexerService.EnumerateDirectoryFunc = EnumerateDirectoryAsync;
+
         // Trigger CoreDirectoryIndexManager singleton instantiation to bind SDK DirectoryIndexerService delegates
         _ = CoreDirectoryIndexManager.Instance;
+    }
+
+    private static async IAsyncEnumerable<PluginSdk.Abstractions.ISearchResult> EnumerateDirectoryAsync(
+        string directoryPath, bool recursive, string filterPattern, int limit,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token)
+    {
+        await foreach (var result in CoreDirectoryIndexManager.Instance
+            .EnumerateDirectoryAsync(directoryPath, recursive, filterPattern, limit, token).ConfigureAwait(false))
+        {
+            yield return new SimpleSearchResult
+            {
+                Name = result.Name,
+                FullPath = result.Path,
+                IsDir = result.IsDir,
+                // Kept from the index rather than dropped: size/date are exactly what a plugin
+                // enumerating a folder would otherwise re-stat every entry from disk to learn.
+                Metadata = result.Metadata
+            };
+        }
     }
 }

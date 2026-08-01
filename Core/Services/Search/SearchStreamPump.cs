@@ -50,10 +50,26 @@ public static class SearchStreamPump
             var channel = Channel.CreateUnbounded<SearchResult>(
                 new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
+            // Set by the enumeration branch below when no loaded drive index holds the requested path,
+            // and reported to the client as its own frame after the results drain -- a stream of zero
+            // results cannot say the difference between "not indexed" and "that directory is empty",
+            // and only the first of those is worth walking the disk over.
+            var notIndexed = false;
             var producer = Task.Run(() =>
             {
                 try
                 {
+                    if (msg.Id == SearchRequestId.EnumerateDir)
+                    {
+                        // Query carries the filename filter here, not a search term (see EnumerateDir).
+                        // No engine at all counts as not indexed: the client should fall back, not
+                        // conclude the directory is empty.
+                        notIndexed = engine == null || !engine.EnumerateDirectory(msg.DirectoryFilter ?? string.Empty,
+                            msg.Recursive, msg.Query ?? "*", msg.Limit, result => channel.Writer.TryWrite(result), queryToken);
+                        channel.Writer.TryComplete();
+                        return;
+                    }
+
                     var directory = msg.Id == SearchRequestId.SearchDir ? msg.DirectoryFilter : null;
 
                     engine?.SearchStreaming(msg.Query ?? string.Empty, msg.Limit, msg.AppLimit, directory,
@@ -82,6 +98,8 @@ public static class SearchStreamPump
 
                 await bufferedStream.FlushAsync(queryToken).ConfigureAwait(false);
                 await producer.ConfigureAwait(false);
+                if (notIndexed)
+                    await SearchResponseBinarySerializer.WriteNotIndexedAsync(bufferedStream, queryToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

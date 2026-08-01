@@ -342,4 +342,7 @@ internal class SimpleSearchResult : PluginSdk.Abstractions.ISearchResult
     public string ContextDirectory { get; set; } = string.Empty;
     public bool IsDir { get; set; }
     public bool IsApplication { get; set; }
+    // Default (unknown) unless the producer had it already -- index-backed results (directory
+    // enumeration, plugin directory search) carry the real values straight from the index.
+    public PluginSdk.Abstractions.FileMetadata Metadata { get; set; }
 }

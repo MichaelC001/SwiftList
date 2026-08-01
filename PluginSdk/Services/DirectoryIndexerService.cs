@@ -24,6 +24,12 @@ public static class DirectoryIndexerService
     public static Func<string, string, CancellationToken, Task<List<Abstractions.ISearchResult>>>? SearchPluginDirectoriesFunc { get; set; }
 
     /// <summary>
+    /// Delegate set by the host application to list a directory out of the file index.
+    /// Parameters: (directoryPath, recursive, filterPattern, limit, token)
+    /// </summary>
+    public static Func<string, bool, string, int, CancellationToken, IAsyncEnumerable<Abstractions.ISearchResult>>? EnumerateDirectoryFunc { get; set; }
+
+    /// <summary>
     /// Event fired when a monitored directory's content changes.
     /// Parameters: (pluginId)
     /// </summary>
@@ -51,5 +57,35 @@ public static class DirectoryIndexerService
     {
         if (SearchPluginDirectoriesFunc == null) return new List<Abstractions.ISearchResult>();
         return await SearchPluginDirectoriesFunc(pluginId, query, token);
+    }
+
+    /// <summary>
+    /// Lists a directory's contents from the host's file index instead of the filesystem: for a local
+    /// drive the host indexes (the usual case) this costs no disk I/O at all, which is the whole point
+    /// of preferring it over <c>Directory.EnumerateFileSystemEntries</c>. A directory no index covers
+    /// (an unconfigured network share, a drive indexing is disabled for) is walked live instead, so a
+    /// caller never has to decide which of the two applies.
+    /// <para>
+    /// Results stream as they are produced. Both files and directories are returned, both matched
+    /// against <paramref name="filterPattern"/> by name -- one or more Win32 wildcard patterns
+    /// separated by ';' or ',' (e.g. <c>"*.exe;*.lnk"</c>, default <c>"*"</c>) -- while
+    /// <paramref name="recursive"/> descends regardless of what the pattern selects. Hidden and system
+    /// entries are never returned (the same always-on filter the host applies to every search result),
+    /// though a hidden directory is still descended into -- only the entry's own attributes count. The
+    /// user's exclusion settings are not applied, since the caller named one exact directory to look at.
+    /// </para>
+    /// <para>
+    /// <paramref name="limit"/> caps how many entries are returned (0 = no cap). Worth setting for a
+    /// recursive listing of a large tree: <c>EnumerateDirectoryAsync(@"C:\", recursive: true)</c> is a
+    /// legitimate request for every single entry on the volume, and it will deliver exactly that.
+    /// </para>
+    /// </summary>
+    public static IAsyncEnumerable<Abstractions.ISearchResult> EnumerateDirectoryAsync(string directoryPath, bool recursive = false, string filterPattern = "*", int limit = 0, CancellationToken token = default)
+        => EnumerateDirectoryFunc?.Invoke(directoryPath, recursive, filterPattern, limit, token) ?? EmptyResults();
+
+    private static async IAsyncEnumerable<Abstractions.ISearchResult> EmptyResults()
+    {
+        await Task.CompletedTask;
+        yield break;
     }
 }

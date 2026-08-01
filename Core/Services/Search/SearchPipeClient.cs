@@ -86,7 +86,7 @@ internal sealed class SearchPipeClient
     // results, small enough to stay off the large object heap.
     private const int ResponseReadBufferSize = 64 * 1024;
 
-    public static async Task SendSearchPipeCommandAsync(SearchRequestMessage msg, Action<SearchResult> onResult, CancellationToken token)
+    public static async Task SendSearchPipeCommandAsync(SearchRequestMessage msg, Action<SearchResult> onResult, CancellationToken token, Action? onNotIndexed = null)
     {
         using var pipe = await GetPipeAsync(token).ConfigureAwait(false);
         await SearchRequestBinarySerializer.WriteSearchRequestAsync(pipe, msg, token).ConfigureAwait(false);
@@ -110,6 +110,6 @@ internal sealed class SearchPipeClient
         {
             token.ThrowIfCancellationRequested();
             onResult(result);
-        }, token).ConfigureAwait(false);
+        }, token, onNotIndexed).ConfigureAwait(false);
     }
 }

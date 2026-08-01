@@ -103,7 +103,7 @@ public sealed class UsnServicePipeServer : IDisposable
                     if (verboseLog)
                         Logger.Log($"[PipeServer] Request received: {request.Id}", LogLevel.Debug);
 
-                    if (request.Id == SearchRequestId.Search || request.Id == SearchRequestId.SearchDir)
+                    if (request.Id is SearchRequestId.Search or SearchRequestId.SearchDir or SearchRequestId.EnumerateDir)
                     {
                         await SearchStreamPump.RunAsync(_engine, request, pipe, token);
                         if (verboseLog)

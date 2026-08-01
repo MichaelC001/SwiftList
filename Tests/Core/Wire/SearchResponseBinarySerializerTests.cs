@@ -138,6 +138,57 @@ public sealed class SearchResponseBinarySerializerTests
         Assert.AreEqual(@"c:\文件搜索.txt", results[0].Path);
     }
 
+    // The whole point of the frame: a directory the index can't answer for and an empty directory both
+    // produce zero results, and only the first is worth falling back to a real filesystem walk over.
+    [TestMethod]
+    public async Task ReadAsync_NotIndexedFrame_SignalsTheCallerWithoutProducingResults()
+    {
+        using var stream = new MemoryStream();
+        await SearchResponseBinarySerializer.WriteHeaderAsync(stream);
+        await SearchResponseBinarySerializer.WriteNotIndexedAsync(stream);
+        await SearchResponseBinarySerializer.WriteEndAsync(stream);
+        stream.Position = 0;
+
+        var results = new List<SearchResult>();
+        var notIndexed = false;
+        await SearchResponseBinarySerializer.ReadAsync(stream, results.Add, onNotIndexed: () => notIndexed = true);
+
+        Assert.IsTrue(notIndexed);
+        Assert.IsEmpty(results);
+    }
+
+    [TestMethod]
+    public async Task ReadAsync_WithoutTheNotIndexedFrame_LeavesTheSignalUnset()
+    {
+        using var stream = new MemoryStream();
+        await SearchResponseBinarySerializer.WriteHeaderAsync(stream);
+        await SearchResponseBinarySerializer.WriteFileResultAsync(stream, MakeResult("a.txt", @"c:\a.txt"));
+        await SearchResponseBinarySerializer.WriteEndAsync(stream);
+        stream.Position = 0;
+
+        var notIndexed = false;
+        await SearchResponseBinarySerializer.ReadAsync(stream, _ => { }, onNotIndexed: () => notIndexed = true);
+
+        Assert.IsFalse(notIndexed);
+    }
+
+    // A reader that doesn't care (every search caller) must not trip over the frame.
+    [TestMethod]
+    public async Task ReadAsync_NotIndexedFrameWithNoCallback_IsSkipped()
+    {
+        using var stream = new MemoryStream();
+        await SearchResponseBinarySerializer.WriteHeaderAsync(stream);
+        await SearchResponseBinarySerializer.WriteNotIndexedAsync(stream);
+        await SearchResponseBinarySerializer.WriteFileResultAsync(stream, MakeResult("a.txt", @"c:\a.txt"));
+        await SearchResponseBinarySerializer.WriteEndAsync(stream);
+        stream.Position = 0;
+
+        var results = new List<SearchResult>();
+        await SearchResponseBinarySerializer.ReadAsync(stream, results.Add);
+
+        Assert.HasCount(1, results);
+    }
+
     [TestMethod]
     public async Task ReadAsync_HeaderWithWrongVersion_ThrowsInvalidDataException()
     {

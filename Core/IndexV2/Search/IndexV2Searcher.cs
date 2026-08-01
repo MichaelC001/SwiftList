@@ -34,6 +34,11 @@ public static class IndexV2Searcher
         });
     }
 
+    // Directory listing rather than search (see DirectoryEnumerator): no query, no ranking, walks the
+    // index's own parent->children structure. False = this drive's index doesn't hold that path.
+    public static bool EnumerateDirectory(LiveIndex index, string path, bool recursive, string[]? patterns, int limit, Action<SearchResult> onResult, CancellationToken token)
+        => index.Read((snapshot, delta) => DirectoryEnumerator.Enumerate(snapshot, delta, path, recursive, patterns, limit, onResult, token));
+
     public static void GetRecentFiles(LiveIndex index, string dirLower, uint cutoffUtc, List<SearchResult> candidates) => index.Read<object?>((snapshot, delta) =>
                                                                                                                                {
                                                                                                                                    RecentFilesV2.CollectFromDirectory(snapshot, delta, dirLower, snapshot.SourceKey, cutoffUtc, candidates);

@@ -59,6 +59,33 @@ internal static class SearchCoordinator
             });
     }
 
+    // No fan-out here, unlike the search above: a path lives on exactly one drive, and every other
+    // drive's index rejects it on the source-root prefix check before doing any work.
+    public static bool EnumerateDirectory(
+        Dictionary<string, LiveIndex> recordIndexes,
+        object lockObj,
+        string path,
+        bool recursive,
+        string[]? patterns,
+        int limit,
+        Action<SearchResult> onResult,
+        CancellationToken token)
+    {
+        LiveIndex[] drives;
+        lock (lockObj)
+        {
+            drives = recordIndexes.Values.ToArray();
+        }
+
+        foreach (var drive in drives)
+        {
+            token.ThrowIfCancellationRequested();
+            if (IndexV2Searcher.EnumerateDirectory(drive, path, recursive, patterns, limit, onResult, token))
+                return true;
+        }
+        return false;
+    }
+
     // IndexV2 has no cross-search rank/candidate cache yet (a known follow-up, not a correctness gap
     // -- see the IndexV2 migration notes); kept as a no-op call site so callers don't need to know that.
     public static void ClearCaches()

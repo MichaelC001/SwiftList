@@ -1,6 +1,8 @@
 using SwiftList.Core.Indexer.Usn;
 
 using SwiftList.Core.DriveMonitoring;
+
+using SwiftList.Core.Services.Plugin.DirectoryIndex;
 namespace SwiftList.Core;
 
 public class SearchEngine : IDisposable
@@ -174,6 +176,24 @@ public class SearchEngine : IDisposable
         }, searchToken, directoryFilter);
 
         return true;
+    }
+
+    // Directory listing straight off the index -- no query, no disk IO (see DirectoryEnumerator).
+    // Deliberately outside the _searchCts/_searchDirCts cancellation pairs above: those exist so a new
+    // keystroke supersedes the previous one's search, and an enumeration is not a keystroke -- two
+    // plugins listing two different directories must not cancel each other. False = no loaded drive
+    // index holds that path, so the caller has to walk the filesystem itself.
+    public bool EnumerateDirectory(string path, bool recursive, string filterPattern, int limit, Action<SearchResult> onResult, CancellationToken token = default)
+    {
+        _idleTrim.SearchStarted(Environment.TickCount64);
+        try
+        {
+            return _indexer.EnumerateDirectory(path, recursive, FilterPatternHelper.SplitOrNullIfMatchAll(filterPattern), limit, onResult, token);
+        }
+        finally
+        {
+            _idleTrim.SearchFinished(Environment.TickCount64);
+        }
     }
 
     public void InitializeOrLoadIndex(bool forceRebuild = false)

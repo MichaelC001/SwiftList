@@ -9,12 +9,10 @@ internal sealed class MonitoredDir
     public string FilterPattern { get; set; } = "*";
 }
 
-/// <summary>
-/// Owns plugin directory registration and the FileSystemWatcher lifecycle backing it (create, retry on
-/// disconnect/error, teardown on unregister). Kept separate from <see cref="PluginDirectorySearcher"/>,
-/// which owns the actual local-vs-network query routing -- watching for changes and answering a search
-/// are different responsibilities that only share the registration list.
-/// </summary>
+// A registration's FilterPattern, in the "*.exe;*.lnk" form plugins register it in: split into the
+// single patterns Directory.EnumerateFiles accepts one at a time, and matched with the same Win32
+// wildcard semantics that call would apply, so an index-backed enumeration and a live filesystem walk
+// of the same directory agree on which names the pattern selects.
 internal static class FilterPatternHelper
 {
     public static string[] Split(string filterPattern)
@@ -23,8 +21,37 @@ internal static class FilterPatternHelper
         var patterns = filterPattern.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return patterns.Length > 0 ? patterns : new[] { "*" };
     }
+
+    // null = "everything matches", so a caller enumerating a whole subtree can skip per-name matching
+    // outright instead of running a wildcard match that can only ever return true.
+    public static string[]? SplitOrNullIfMatchAll(string? filterPattern)
+    {
+        var patterns = Split(filterPattern ?? string.Empty);
+        return patterns.Any(IsMatchAll) ? null : patterns;
+    }
+
+    public static bool Matches(string name, string[] patterns)
+    {
+        foreach (var pattern in patterns)
+        {
+            // "*.*" is the DOS spelling of "everything" and is what Directory.EnumerateFiles normalizes
+            // it to (FileSystemEnumerableFactory.NormalizeInputs); MatchesWin32Expression on its own
+            // would read it as "name containing a dot" instead.
+            if (IsMatchAll(pattern) || System.IO.Enumeration.FileSystemName.MatchesWin32Expression(pattern, name, ignoreCase: true))
+                return true;
+        }
+        return false;
+    }
+
+    private static bool IsMatchAll(string pattern) => pattern is "*" or "*.*";
 }
 
+/// <summary>
+/// Owns plugin directory registration and the FileSystemWatcher lifecycle backing it (create, retry on
+/// disconnect/error, teardown on unregister). Kept separate from <see cref="PluginDirectorySearcher"/>,
+/// which owns the actual local-vs-network query routing -- watching for changes and answering a search
+/// are different responsibilities that only share the registration list.
+/// </summary>
 internal sealed class PluginDirectoryWatchRegistry
 {
     private readonly ConcurrentDictionary<string, List<MonitoredDir>> _registrations = new(StringComparer.OrdinalIgnoreCase);
