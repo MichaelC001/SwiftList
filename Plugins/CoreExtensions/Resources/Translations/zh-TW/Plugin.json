@@ -1,4 +1,10 @@
 {
+  "CoreExtensions_Config_RecentFilesGroupLabel": "快速面板 · 最近檔案",
+  "CoreExtensions_Config_RecentFilesDirectoriesLabel": "要監控的目錄",
+  "CoreExtensions_Config_RecentFilesDirectoriesDesc": "「最近檔案」標籤會把這些目錄下最近修改過的檔案合併成一份清單顯示(包含子目錄)。",
+  "CoreExtensions_Config_RecentFilesCountLabel": "顯示的檔案數量上限",
+  "CoreExtensions_Config_RecentFilesMaxAgeLabel": "時間範圍(分鐘)",
+  "CoreExtensions_Config_RecentFilesMaxAgeDesc": "只顯示最近這麼多分鐘內修改過的檔案。0 表示不限時間。",
   "Action_Open": "開啟",
   "Action_OpenAdmin": "開啟 (管理員)",
   "Action_DefaultGroup": "動作",

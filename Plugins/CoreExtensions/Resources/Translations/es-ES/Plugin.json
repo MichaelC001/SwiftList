@@ -1,4 +1,10 @@
 {
+  "CoreExtensions_Config_RecentFilesGroupLabel": "Panel Rápido · Archivos recientes",
+  "CoreExtensions_Config_RecentFilesDirectoriesLabel": "Directorios a vigilar",
+  "CoreExtensions_Config_RecentFilesDirectoriesDesc": "La pestaña Archivos recientes muestra los archivos modificados más recientemente bajo estos, unidos en una sola lista (subdirectorios incluidos).",
+  "CoreExtensions_Config_RecentFilesCountLabel": "Número máximo de archivos a mostrar",
+  "CoreExtensions_Config_RecentFilesMaxAgeLabel": "Rango de tiempo (minutos)",
+  "CoreExtensions_Config_RecentFilesMaxAgeDesc": "Solo se muestran los archivos modificados dentro de estos minutos. 0 para no limitar la antigüedad.",
   "Action_DefaultGroup": "Acción",
   "Action_BuiltinGroup": "Integradas",
   "Plugin_ShellGroup": "Menú Contextual",

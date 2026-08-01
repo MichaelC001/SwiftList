@@ -1,4 +1,10 @@
 {
+  "CoreExtensions_Config_RecentFilesGroupLabel": "빠른 패널 · 최근 파일",
+  "CoreExtensions_Config_RecentFilesDirectoriesLabel": "감시할 디렉터리",
+  "CoreExtensions_Config_RecentFilesDirectoriesDesc": "「최근 파일」탭은 이 디렉터리들 아래에서 최근에 수정된 파일을 하나의 목록으로 묶어 보여 줍니다(하위 디렉터리 포함).",
+  "CoreExtensions_Config_RecentFilesCountLabel": "표시할 파일 수 상한",
+  "CoreExtensions_Config_RecentFilesMaxAgeLabel": "시간 범위(분)",
+  "CoreExtensions_Config_RecentFilesMaxAgeDesc": "이 분 이내에 수정된 파일만 표시합니다. 0이면 기간 제한 없음.",
   "Action_DefaultGroup": "동작",
   "Action_BuiltinGroup": "내장",
   "Plugin_ShellGroup": "컨텍스트 메뉴",

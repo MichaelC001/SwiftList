@@ -1,4 +1,10 @@
 {
+  "CoreExtensions_Config_RecentFilesGroupLabel": "快速面板 · 最近文件",
+  "CoreExtensions_Config_RecentFilesDirectoriesLabel": "要监控的目录",
+  "CoreExtensions_Config_RecentFilesDirectoriesDesc": "「最近文件」标签会把这些目录下最近修改过的文件合并成一份清单显示(包含子目录)。",
+  "CoreExtensions_Config_RecentFilesCountLabel": "显示的文件数量上限",
+  "CoreExtensions_Config_RecentFilesMaxAgeLabel": "时间范围(分钟)",
+  "CoreExtensions_Config_RecentFilesMaxAgeDesc": "只显示最近这么多分钟内修改过的文件。0 表示不限时间。",
   "Action_Open": "打开",
   "Action_OpenAdmin": "打开 (管理员)",
   "Action_DefaultGroup": "动作",

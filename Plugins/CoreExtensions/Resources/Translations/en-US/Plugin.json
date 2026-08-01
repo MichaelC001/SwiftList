@@ -1,4 +1,10 @@
 {
+  "CoreExtensions_Config_RecentFilesGroupLabel": "Quick Panel Recent Files",
+  "CoreExtensions_Config_RecentFilesDirectoriesLabel": "Directories to watch",
+  "CoreExtensions_Config_RecentFilesDirectoriesDesc": "The Recent Files tab shows the most recently modified files under these, merged into one list (subdirectories included).",
+  "CoreExtensions_Config_RecentFilesCountLabel": "Maximum number of files to show",
+  "CoreExtensions_Config_RecentFilesMaxAgeLabel": "Time range (minutes)",
+  "CoreExtensions_Config_RecentFilesMaxAgeDesc": "Only files modified within this many minutes are shown. 0 for no age limit.",
   "Action_DefaultGroup": "Action",
   "Action_BuiltinGroup": "Built-in",
   "Plugin_ShellGroup": "Context Menu",

@@ -1,4 +1,10 @@
 {
+  "CoreExtensions_Config_RecentFilesGroupLabel": "クイックパネル · 最近使ったファイル",
+  "CoreExtensions_Config_RecentFilesDirectoriesLabel": "監視するディレクトリ",
+  "CoreExtensions_Config_RecentFilesDirectoriesDesc": "「最近使ったファイル」タブは、これらのディレクトリ配下で最近変更されたファイルを1つの一覧にまとめて表示します(サブディレクトリを含む)。",
+  "CoreExtensions_Config_RecentFilesCountLabel": "表示するファイル数の上限",
+  "CoreExtensions_Config_RecentFilesMaxAgeLabel": "時間範囲(分)",
+  "CoreExtensions_Config_RecentFilesMaxAgeDesc": "この分数以内に変更されたファイルだけを表示します。0 で期間制限なし。",
   "Action_DefaultGroup": "アクション",
   "Action_BuiltinGroup": "組み込み",
   "Plugin_ShellGroup": "コンテキストメニュー",
