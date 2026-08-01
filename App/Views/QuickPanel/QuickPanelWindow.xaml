@@ -97,7 +97,13 @@
                      and offers nowhere to go, and this panel is a quarter of the window it docks to. -->
                 <ctrl:TabStripScrollView Grid.Row="0" Margin="12,16,12,0"
                                          Visibility="{Binding HasTabStrip, Converter={StaticResource BoolToVis}}">
-                    <ItemsControl ItemsSource="{Binding Tabs}">
+                    <!-- Dragging a tab reorders the workspaces, and the tab itself is the handle: there
+                         is nowhere on a strip to put a grip, and a tab is already the thing you would
+                         reach for. IsHorizontal so the drop line stands between two tabs rather than
+                         lying across them. -->
+                    <ItemsControl ItemsSource="{Binding Tabs}"
+                                  helpers:DragReorder.IsEnabled="True"
+                                  helpers:DragReorder.IsHorizontal="True">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel Orientation="Horizontal"/>
@@ -105,10 +111,18 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Margin="0,0,20,0">
-                                    <Button Content="{Binding Label}" Command="{Binding SelectCommand}">
+                                <StackPanel Margin="0,0,16,0">
+                                    <StackPanel Orientation="Horizontal">
+                                    <Button Content="{Binding Label}" Command="{Binding SelectCommand}"
+                                            helpers:DragReorder.IsHandle="True">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                                <!-- Two points down from the settings window's own tabs,
+                                                     which is where that style is sized for. This panel is
+                                                     a quarter of the window it docks to, and a 14pt strip
+                                                     stood taller than the group headings under it. -->
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="Padding" Value="0,0,0,8"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                         <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
@@ -118,6 +132,16 @@
                                             </Style>
                                         </Button.Style>
                                     </Button>
+                                    <!-- Closes the tab, which disables the workspace rather than
+                                         deleting it: the sources behind one took assembling, and this
+                                         is a statement about the strip, not about them. Same glyph and
+                                         the same treatment the startup panel's own close carries. -->
+                                    <Button Content="&#xE711;" Command="{Binding CloseCommand}"
+                                            Margin="6,0,0,7" Width="13" Height="13" FontSize="8"
+                                            ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_CloseWorkspaceTooltip]}"
+                                            VerticalAlignment="Bottom"
+                                            Style="{StaticResource QuickPanelTabCloseStyle}"/>
+                                    </StackPanel>
                                     <Border>
                                         <Border.Style>
                                             <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
@@ -220,7 +244,7 @@
                                                      SelectionMode="Extended"
                                                      MouseDoubleClick="ItemsList_MouseDoubleClick"
                                                      PreviewMouseRightButtonUp="ItemsList_PreviewMouseRightButtonUp"
-                                                     Loaded="GroupList_Loaded"
+                                                     Loaded="GroupList_Loaded" helpers:RubberBandSelection.IsEnabled="True"
                                                      PreviewMouseWheel="GroupList_PreviewMouseWheel">
                                                 <ListBox.Style>
                                                     <Style TargetType="ListBox" BasedOn="{StaticResource SleekListBoxStyle}">

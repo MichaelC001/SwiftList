@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using SwiftList.App.ViewModels.QuickPanel;
 using SwiftList.Core;
@@ -126,6 +127,31 @@ public sealed class QuickPanelWindowTests
 
         Assert.IsTrue(lists.TrueForAll(list => list.SelectedItems.Count == 0));
     }
+
+    // Hold the jump-to-Nth-result modifier and press a number. The combo has to be spelled the way the
+    // hotkey recorder spells one -- "Ctrl+D3", not "Ctrl+3" -- because a bare digit parses as the raw
+    // Key ordinal (3 is Key.Tab) and matches nothing at all, which is how this shipped doing nothing.
+    [TestMethod]
+    [DataRow(Key.D3, ModifierKeys.Control, "Ctrl", 3)]
+    [DataRow(Key.D1, ModifierKeys.Control, "Ctrl", 1)]
+    [DataRow(Key.D9, ModifierKeys.Control, "Ctrl", 9)]
+    [DataRow(Key.NumPad3, ModifierKeys.Control, "Ctrl", 3)]
+    [DataRow(Key.D2, ModifierKeys.Alt, "Alt", 2)]
+    public void WorkspaceIndex_IsTheDigitHeldWithTheConfiguredModifier(
+        Key key, ModifierKeys modifiers, string jumpModifier, int expected)
+        => Assert.AreEqual(expected,
+            SwiftList.App.Views.QuickPanel.QuickPanelWindow.WorkspaceIndexFor(key, modifiers, jumpModifier));
+
+    [TestMethod]
+    [DataRow(Key.D3, ModifierKeys.None, "Ctrl", "a bare digit is a plain keystroke, not this shortcut")]
+    [DataRow(Key.D3, ModifierKeys.Control | ModifierKeys.Shift, "Ctrl", "the modifiers must match exactly")]
+    [DataRow(Key.D3, ModifierKeys.Alt, "Ctrl", "held with the wrong modifier")]
+    [DataRow(Key.A, ModifierKeys.Control, "Ctrl", "not a number at all")]
+    [DataRow(Key.D0, ModifierKeys.Control, "Ctrl", "the strip is 1-9; there is no zeroth workspace")]
+    [DataRow(Key.D3, ModifierKeys.Control, "", "no modifier configured means no shortcut")]
+    public void WorkspaceIndex_IsZeroForAnythingElse(Key key, ModifierKeys modifiers, string jumpModifier, string because)
+        => Assert.AreEqual(0,
+            SwiftList.App.Views.QuickPanel.QuickPanelWindow.WorkspaceIndexFor(key, modifiers, jumpModifier), because);
 
     private static FrameworkElement Laid(QuickPanelViewModel viewModel)
     {

@@ -139,6 +139,13 @@ public sealed class QuickPanelManager : IDisposable
         // Positioned before Show: placing it afterwards lets the window paint once at its old location
         // and jump, which reads as a flicker every time the panel opens.
         PositionAgainst(host);
+
+        // And laid out before Show, for the same reason one step further in. A hidden window does not
+        // lay itself out, so the groups replaced above are still only a collection: the containers on
+        // screen are the previous open's, at the previous open's size, and they are what the first
+        // painted frame would show before the post-show pass replaced them. The quick window's own Show
+        // forces the same pass for the same reason.
+        _window.UpdateLayout();
         _window.Show();
 
         // After Show, and only then: the window has to exist as a real HWND before it can be given the
@@ -165,6 +172,12 @@ public sealed class QuickPanelManager : IDisposable
         {
             _hiding = false;
         }
+
+        // After the window is gone, never before: clearing while it is still up would lay the panel out
+        // empty in front of the user on the way out. Everything it shows is loaded fresh on the next
+        // open anyway, so holding the last workspace's groups behind a hidden window buys nothing and
+        // costs a frame of the wrong content if anything renders before that load lands.
+        _viewModel?.Clear();
     }
 
     /// <summary>Docks the panel inside the host window's bottom-right corner.</summary>

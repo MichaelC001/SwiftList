@@ -1,4 +1,4 @@
-{
+﻿{
   "Settings_Title": "SwiftList 設定",
   "Settings_SearchPlaceholder": " 設定を検索...",
   "Settings_SearchNoResults": "一致する設定項目が見つかりません。",
@@ -59,6 +59,7 @@
   "QuickPanel_SortByModified": "更新日時順に並べ替え",
   "QuickPanel_ViewList": "一覧で表示",
   "QuickPanel_ViewThumbnails": "サムネイルで表示",
+  "QuickPanel_CloseWorkspaceTooltip": "このワークスペースを閉じる（設定 > クイックパネル から再度有効にできます）",
   "StartupPanel_Enabled": "スタートアップパネルを有効化",
   "StartupPanel_TabRecentFiles": "最近使ったファイル",
   "StartupPanel_SecondsAgo": "{0}秒前",

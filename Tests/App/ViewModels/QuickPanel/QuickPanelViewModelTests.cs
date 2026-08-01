@@ -27,7 +27,7 @@ public sealed class QuickPanelViewModelTests
     private static QuickPanelViewModel Build(
         QuickPanelSettings settings,
         Func<QuickPanelFolderSource, CancellationToken, Task<List<SearchResult>>>? load = null)
-        => new(() => settings, load ?? OneEach);
+        => new(() => settings, load ?? OneEach, saveSettings: () => { });
 
     private static QuickPanelSettings OneWorkspace(params QuickPanelFolderSource[] folders)
     {
@@ -312,6 +312,66 @@ public sealed class QuickPanelViewModelTests
 
         await vm.SelectTabAtAsync(1);
         Assert.AreEqual("w1", vm.Tabs.Single(t => t.IsSelected).Id);
+    }
+
+    // What the panel leaves behind when it is hidden: nothing on screen, so a frame that slips in
+    // before the next load lands cannot show the last workspace's files.
+    [TestMethod]
+    public async Task Clear_EmptiesEverythingThatIsOnScreen()
+    {
+        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
+        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Name = "Other" });
+        var vm = Build(settings);
+        await vm.RefreshAsync();
+
+        vm.Clear();
+
+        Assert.IsEmpty(vm.Groups);
+        Assert.IsEmpty(vm.Tabs);
+        Assert.IsTrue(vm.IsEmpty);
+        Assert.IsFalse(vm.HasContent);
+        Assert.IsFalse(vm.HasTabStrip);
+    }
+
+    // The active workspace is the one piece of the panel's state that is not on screen, so clearing
+    // must not take it: that is where the panel reopens.
+    [TestMethod]
+    public async Task Clear_KeepsWhereTheUserLeftThePanel()
+    {
+        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
+        var second = new QuickPanelTab { Id = "w2", Name = "Other" };
+        second.Folders.Add(Folder(@"C:\b", "s2"));
+        settings.Tabs.Add(second);
+
+        var vm = Build(settings);
+        await vm.RefreshAsync();
+        await vm.SelectTabAsync("w2");
+        vm.Clear();
+        await vm.RefreshAsync();
+
+        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
+    }
+
+    // The whole way round, because the two halves agree only if every id survives the trip: the settings
+    // page edits a clone, files the new name under the source's id, and Save puts the clone back -- and
+    // the panel then has to find that entry again by the same id off the live settings object.
+    [TestMethod]
+    public async Task RenamingASourceInSettings_ShowsUpAsTheGroupHeading()
+    {
+        var userSettings = new UserSettings();
+        var workspace = new QuickPanelTab { Id = "w1" };
+        workspace.Folders.Add(QuickPanelFolderSource.For(@"C:\Users\me\Desktop"));
+        userSettings.QuickPanel.Tabs = new List<QuickPanelTab> { workspace };
+        userSettings.QuickPanel.ActiveTabId = "w1";
+
+        var page = new SwiftList.App.ViewModels.Settings.QuickPanel.QuickPanelSettingsViewModel(userSettings);
+        page.Tabs.Single().Sources.Single().DisplayName = "11212";
+        page.Save();
+
+        var vm = new QuickPanelViewModel(() => userSettings.QuickPanel, OneEach, saveSettings: () => { });
+        await vm.RefreshAsync();
+
+        Assert.AreEqual("11212", vm.Groups.Single().Title);
     }
 
     [TestMethod]

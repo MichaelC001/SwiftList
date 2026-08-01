@@ -12,11 +12,12 @@ namespace SwiftList.App.ViewModels.QuickPanel;
 /// </remarks>
 public class QuickPanelTabViewModel : ViewModelBase
 {
-    public QuickPanelTabViewModel(string id, string label, Action onSelect)
+    public QuickPanelTabViewModel(string id, string label, Action onSelect, Action onClose)
     {
         Id = id;
         Label = label;
         SelectCommand = new RelayCommand(onSelect);
+        CloseCommand = new RelayCommand(onClose);
     }
 
     public string Id { get; }
@@ -24,6 +25,14 @@ public class QuickPanelTabViewModel : ViewModelBase
     public string Label { get; }
 
     public ICommand SelectCommand { get; }
+
+    /// <summary>Takes this workspace out of the strip without deleting it.</summary>
+    /// <remarks>
+    /// Disables the workspace rather than removing it, the same thing the startup panel's own x does to a
+    /// tab: the sources behind it took work to assemble and closing a tab is a statement about the strip,
+    /// not about them. The Quick Panel settings page is where one comes back.
+    /// </remarks>
+    public ICommand CloseCommand { get; }
 
     private bool _isSelected;
 

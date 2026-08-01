@@ -35,7 +35,14 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         // are both answered per list rather than once for a named one. GroupList_Loaded below does the
         // registering as each appears.
 
-
+        // Every one of those lists is torn down when the panel closes, so the one _activeList points at
+        // is detached the moment it does. Left dangling it is worse than null: GroupList_Loaded's ??=
+        // would never replace it, and every hotkey on the next open would read the selection of a list
+        // that is no longer on screen -- which is always empty, silently.
+        IsVisibleChanged += (_, e) =>
+        {
+            if (e.NewValue is false) _activeList = null;
+        };
     }
 
 
@@ -112,27 +119,14 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     /// </remarks>
     private bool TrySwitchWorkspace(System.Windows.Input.KeyEventArgs e)
     {
-        var modifier = Core.UserSettings.Load().Hotkeys.SelectJumpModifier;
-        if (string.IsNullOrEmpty(modifier)) return false;
-
-        // The numpad row counts as the same number: MatchesHotkey parses "Ctrl+3" to Key.D3, so a numpad
-        // press is compared as the digit it typed rather than as the key it came from.
-        var digit = e.Key switch
-        {
-            >= Key.D1 and <= Key.D9 => e.Key - Key.D1 + 1,
-            >= Key.NumPad1 and <= Key.NumPad9 => e.Key - Key.NumPad1 + 1,
-            _ => 0,
-        };
-        if (digit == 0) return false;
-        if (!Helpers.WpfUiHelper.MatchesHotkey($"{modifier}+{digit}", Keyboard.Modifiers, Key.D1 + (digit - 1)))
-            return false;
-
-        if (DataContext is not QuickPanelViewModel viewModel) return false;
+        var index = WorkspaceIndexFor(e.Key, Keyboard.Modifiers, Core.UserSettings.Load().Hotkeys.SelectJumpModifier);
+        if (index == 0 || DataContext is not QuickPanelViewModel viewModel) return false;
 
         e.Handled = true;
-        _ = viewModel.SelectTabAtAsync(digit);
+        _ = viewModel.SelectTabAtAsync(index);
         return true;
     }
+
 
     /// <summary>Runs an action's configured hotkey against the selection, without opening the menu.</summary>
     /// <remarks>
@@ -225,38 +219,21 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     /// </remarks>
     private void Content_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        // Whatever else this press turns out to be -- a row click, the start of a rubber band, a click on
+        // nothing -- the list it landed in is the one the user is now working in. Only right-click and
+        // double-click used to say so, so a plain left-click (or a band) left the hotkeys acting on
+        // whichever list had been double-clicked last.
+        if (e.OriginalSource is DependencyObject clicked
+            && FindAncestor<System.Windows.Controls.ListBox>(clicked) is { } list)
+            _activeList = list;
+
+        // Not while a selection is being extended. Ctrl or Shift on blank space is the start of adding
+        // to what is already selected -- a rubber band drawn with Ctrl held, most obviously -- and this
+        // runs first, so without the check it would empty the very selection that gesture is extending.
+        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0) return;
+
         if (e.OriginalSource is DependencyObject source && IsClickOnNothing(source))
             ClearSelection((DependencyObject)sender);
-    }
-
-    /// <summary>Whether what was hit is blank space rather than something that acts on its own.</summary>
-    /// <remarks>
-    /// A row, obviously. Also anything in a group header: collapsing a group or switching its order is
-    /// not a click on nothing, and taking the selection away with it would be a surprise.
-    /// </remarks>
-    internal static bool IsClickOnNothing(DependencyObject source)
-        => FindAncestor<System.Windows.Controls.ListBoxItem>(source) == null
-           && FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) == null;
-
-    private static T? FindAncestor<T>(DependencyObject from) where T : DependencyObject
-    {
-        for (var node = from; node != null; node = VisualTreeHelper.GetParent(node))
-        {
-            if (node is T match) return match;
-        }
-        return null;
-    }
-
-    internal static void ClearSelection(DependencyObject root)
-    {
-        if (root is System.Windows.Controls.ListBox list)
-        {
-            list.UnselectAll();
-            return;
-        }
-
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-            ClearSelection(VisualTreeHelper.GetChild(root, i));
     }
 
     private void GroupList_Loaded(object sender, RoutedEventArgs e)

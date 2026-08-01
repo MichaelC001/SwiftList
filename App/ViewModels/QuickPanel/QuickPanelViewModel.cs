@@ -13,7 +13,7 @@ namespace SwiftList.App.ViewModels.QuickPanel;
 // are visible and in what order, and what each group is called. Loading a source's entries is
 // QuickPanelSourceLoader's job, and both it and the settings arrive through the constructor so the
 // assembly logic here can be tested without an index behind it.
-public class QuickPanelViewModel : ViewModelBase
+public partial class QuickPanelViewModel : ViewModelBase
 {
     private readonly Func<QuickPanelSettings> _readSettings;
     private readonly Func<QuickPanelFolderSource, CancellationToken, Task<List<SearchResult>>> _load;
@@ -23,12 +23,21 @@ public class QuickPanelViewModel : ViewModelBase
 
     private string _activeTabId = string.Empty;
 
+    private readonly Action _saveSettings;
+
     public QuickPanelViewModel(
         Func<QuickPanelSettings>? readSettings = null,
-        Func<QuickPanelFolderSource, CancellationToken, Task<List<SearchResult>>>? load = null)
+        Func<QuickPanelFolderSource, CancellationToken, Task<List<SearchResult>>>? load = null,
+        Action? saveSettings = null)
     {
         _readSettings = readSettings ?? (() => UserSettings.Load().QuickPanel);
         _load = load ?? QuickPanelSourceLoader.LoadAsync;
+        _saveSettings = saveSettings ?? (() => UserSettings.Load().Save());
+
+        // Dragging a tab reorders this collection in place (a remove and an insert, which is what
+        // DragReorder does to any IList), so the strip is where a new order first exists and this is the
+        // only place that can notice it.
+        Tabs.CollectionChanged += (_, _) => PersistTabOrder();
     }
 
     /// <summary>The workspace strip. Empty until the first refresh, and rebuilt by every one after.</summary>
@@ -83,18 +92,32 @@ public class QuickPanelViewModel : ViewModelBase
             && _workspaces.Any(tab => tab.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
+    private bool _rebuildingTabs;
+
     private void RebuildTabs()
     {
-        Tabs.Clear();
-        foreach (var workspace in _workspaces)
+        // Rebuilding empties and refills the strip one item at a time, and every one of those steps is a
+        // collection change like any other. Without this the first Clear would persist an empty order.
+        _rebuildingTabs = true;
+        try
         {
-            // Captured by value: the workspace list is replaced wholesale on every refresh, so a command
-            // that closed over the object would keep the old one alive and switch to a stale copy.
-            var id = workspace.Id;
-            Tabs.Add(new QuickPanelTabViewModel(id, NameOf(workspace), () => _ = SelectTabAsync(id))
+            Tabs.Clear();
+            foreach (var workspace in _workspaces)
             {
-                IsSelected = id == _activeTabId,
-            });
+                // Captured by value: the workspace list is replaced wholesale on every refresh, so a
+                // command that closed over the object would keep the old one alive and act on a stale
+                // copy.
+                var id = workspace.Id;
+                Tabs.Add(new QuickPanelTabViewModel(
+                    id, NameOf(workspace), () => _ = SelectTabAsync(id), () => _ = CloseTabAsync(id))
+                {
+                    IsSelected = id == _activeTabId,
+                });
+            }
+        }
+        finally
+        {
+            _rebuildingTabs = false;
         }
         OnPropertyChanged(nameof(HasTabStrip));
     }
@@ -102,6 +125,34 @@ public class QuickPanelViewModel : ViewModelBase
     private static string NameOf(QuickPanelTab workspace) => string.IsNullOrWhiteSpace(workspace.Name)
         ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
         : workspace.Name.Trim();
+
+    /// <summary>Drops everything on screen, for when the panel is hidden.</summary>
+    /// <remarks>
+    /// The window is hidden and reused rather than closed, so without this it keeps the last workspace's
+    /// groups behind it until the next refresh replaces them -- and anything that gets a frame in before
+    /// that lands shows another workspace's files rather than nothing.
+    ///
+    /// Which workspace was active is deliberately kept: that is where the panel reopens, and it is the
+    /// one piece of this that is not on screen.
+    /// </remarks>
+    public void Clear()
+    {
+        Groups.Clear();
+        // Under the same flag a rebuild uses: emptying the strip on the way out is not the user putting
+        // the workspaces in a new order, and it is the one order that must never be written.
+        _rebuildingTabs = true;
+        try
+        {
+            Tabs.Clear();
+        }
+        finally
+        {
+            _rebuildingTabs = false;
+        }
+        IsEmpty = true;
+        OnPropertyChanged(nameof(HasTabStrip));
+        OnPropertyChanged(nameof(HasContent));
+    }
 
     /// <summary>Switches the panel to another workspace, reloading it. Nothing else about the panel moves.</summary>
     public async Task SelectTabAsync(string tabId, CancellationToken token = default)

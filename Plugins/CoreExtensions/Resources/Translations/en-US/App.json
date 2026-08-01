@@ -1,4 +1,4 @@
-{
+﻿{
   "Settings_Title": "SwiftList Settings",
   "Settings_SearchPlaceholder": " Search settings...",
   "Settings_SearchNoResults": "No matching settings found.",
@@ -59,6 +59,7 @@
   "QuickPanel_SortByModified": "Sort by date modified",
   "QuickPanel_ViewList": "Show as list",
   "QuickPanel_ViewThumbnails": "Show as thumbnails",
+  "QuickPanel_CloseWorkspaceTooltip": "Close this workspace (turn it back on under Settings > Quick Panel)",
   "StartupPanel_Enabled": "Enable the startup panel",
   "StartupPanel_TabRecentFiles": "Recent Files",
   "StartupPanel_SecondsAgo": "{0}s ago",

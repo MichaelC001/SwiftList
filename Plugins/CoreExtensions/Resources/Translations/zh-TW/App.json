@@ -1,4 +1,4 @@
-{
+﻿{
   "Settings_Title": "SwiftList 設定",
   "Settings_SearchPlaceholder": " 搜尋設定...",
   "Settings_SearchNoResults": "未找到匹配的設定項。",
@@ -59,6 +59,7 @@
   "QuickPanel_SortByModified": "按修改時間排序",
   "QuickPanel_ViewList": "以清單顯示",
   "QuickPanel_ViewThumbnails": "以縮圖顯示",
+  "QuickPanel_CloseWorkspaceTooltip": "關閉此工作區(可在 設定 > 快速面板 中重新啟用)",
   "StartupPanel_Enabled": "啟用初始面板",
   "StartupPanel_TabRecentFiles": "最近檔案",
   "StartupPanel_SecondsAgo": "{0}秒前",
