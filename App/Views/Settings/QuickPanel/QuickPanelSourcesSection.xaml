@@ -35,10 +35,28 @@
                                       ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceVisibleTooltip]}"/>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource RuleTextBox}"
-                                         Tag="{Binding DefaultName}"
-                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceNameTooltip]}"/>
+                                <Grid>
+                                    <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource RuleTextBox}"
+                                             ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceNameTooltip]}"/>
+                                    <!-- The name this group will actually carry, shown while the box is
+                                         empty. Without it an unrenamed row is a blank rectangle, and
+                                         the built-in sources have no path underneath to hint at it. -->
+                                    <TextBlock Text="{Binding DefaultName}" IsHitTestVisible="False"
+                                               Margin="10,0,0,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondary}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DisplayName}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
                                 <TextBlock Text="{Binding Path}" Style="{StaticResource SettingsHintText}"
                                            TextTrimming="CharacterEllipsis" Margin="2,3,0,0"
                                            Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"/>
@@ -152,11 +170,10 @@
                        Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0"/>
         </DockPanel>
 
-        <ItemsControl x:Name="ListQuickPanelSources" ItemsSource="{Binding Sources}" ItemTemplate="{StaticResource SourceRowTemplate}"/>
-
-        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ProcessesDesc]}"
-                   Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,16,0,6"/>
-        <TextBox x:Name="RowQuickPanelProcesses" Style="{StaticResource RuleBulkTextBox}" MinHeight="70"
-                 Text="{Binding ProcessesText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        <!-- Scrolls inside its own pane: a workspace with a dozen sources, or one row expanded, must
+             not stretch the card past the bottom of the window. -->
+        <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="ListQuickPanelSources" ItemsSource="{Binding Sources}" ItemTemplate="{StaticResource SourceRowTemplate}"/>
+        </ScrollViewer>
     </StackPanel>
 </UserControl>

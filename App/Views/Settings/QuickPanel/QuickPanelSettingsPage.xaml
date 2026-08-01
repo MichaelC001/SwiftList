@@ -7,8 +7,8 @@
              xmlns:local="clr-namespace:SwiftList.App.Views.Settings.QuickPanel"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="760">
-    <!-- Workspaces on the left, the selected one's sources on the right. Two panes rather than a
-         dropdown above one list: a workspace IS a set of sources, and the shape should say so. -->
+    <!-- Workspaces on the left, the selected one on the right. Two panes rather than a dropdown above
+         one list: a workspace IS a set of sources, and the shape should say so. -->
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,25 +16,59 @@
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SearchWindow.xaml"/>
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Themed rather than the stock ListBoxItem, whose selection is a flat system-blue block
+                 that ignores the app's palette entirely. Same rounded/accent-bar shape the plugin list
+                 uses for its own master list, which is the identical job. -->
+            <Style x:Key="WorkspaceItemStyle" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Margin" Value="0,0,0,2"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Grid>
+                                <Rectangle x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
+                                           RadiusX="1.5" RadiusY="1.5" Fill="Transparent" Margin="0,1"/>
+                                <Border x:Name="Bd" Background="Transparent" CornerRadius="6" Margin="6,0,0,0" Padding="8,6">
+                                    <ContentPresenter/>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBackground}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBackground}"/>
+                                    <Setter TargetName="AccentBar" Property="Fill" Value="{DynamicResource AccentBlue}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,8,0">
-            <CheckBox x:Name="RowQuickPanelEnabled" Margin="0,0,0,8"
+        <StackPanel Margin="0,0,10,0">
+            <TextBlock Style="{StaticResource SettingsSectionTitle}"
+                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_QuickPanel]}"/>
+
+            <CheckBox x:Name="RowQuickPanelEnabled" Margin="0,12,0,8"
                       IsChecked="{Binding Enabled, Mode=TwoWay}"
                       Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Enabled]}"/>
             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_HotkeyHint]}"
                        Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
             <Border Style="{StaticResource SettingsCard}">
-                <Grid MinHeight="320">
+                <Grid MinHeight="360">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="190"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <DockPanel Grid.Column="0" Margin="0,0,14,0">
+                    <DockPanel Grid.Column="0" Margin="0,0,16,0">
                         <TextBlock DockPanel.Dock="Top" Margin="0,0,0,6"
                                    Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Workspaces]}"/>
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
@@ -54,25 +88,53 @@
                                     ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveDownTooltip]}"
                                     Command="{Binding MoveTabDownCommand}"/>
                         </StackPanel>
+                        <!-- Bounded so a long workspace list scrolls inside its own pane instead of
+                             stretching the card past the window. -->
                         <ListBox x:Name="ListQuickPanelWorkspaces" ItemsSource="{Binding Tabs}"
                                  SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
-                                 BorderThickness="1" BorderBrush="{DynamicResource SettingsRowBorderBrush}"
-                                 Background="Transparent">
+                                 ItemContainerStyle="{StaticResource WorkspaceItemStyle}"
+                                 MaxHeight="300" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0" Background="Transparent">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding EffectiveName}" Margin="2,4" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding EffectiveName}" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource TextPrimary2}"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </DockPanel>
 
-                    <StackPanel Grid.Column="1" DataContext="{Binding SelectedTab}">
-                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_WorkspaceName]}"
-                                   Margin="0,0,0,4"/>
-                        <TextBox x:Name="RowQuickPanelWorkspaceName" Style="{StaticResource RuleTextBox}" Margin="0,0,0,14"
-                                 Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <local:QuickPanelSourcesSection/>
-                    </StackPanel>
+                    <!-- Deliberately NOT DataContext="{Binding SelectedTab}": the sub-tab state below
+                         lives on this page's own view model, so the pane keeps it and reaches the
+                         selected workspace through SelectedTab. -->
+                    <DockPanel Grid.Column="1">
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_WorkspaceName]}"
+                                       Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,12">
+                                <TextBox x:Name="RowQuickPanelWorkspaceName" Style="{StaticResource RuleTextBox}"
+                                         Text="{Binding SelectedTab.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <!-- Watermark: an unnamed workspace shows the name it will actually be
+                                     called, rather than an empty box the user has to guess at. -->
+                                <TextBlock Text="{Binding SelectedTab.EffectiveName}" IsHitTestVisible="False"
+                                           Margin="10,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextSecondary}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedTab.Name}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+
+                        <local:QuickPanelWorkspaceTabs/>
+                    </DockPanel>
                 </Grid>
             </Border>
 

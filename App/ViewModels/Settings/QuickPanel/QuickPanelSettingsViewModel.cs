@@ -35,6 +35,7 @@ public class QuickPanelSettingsViewModel : ViewModelBase
 
         _selectedTab = Tabs.FirstOrDefault(t => t.Id == panel.ActiveTabId) ?? Tabs.FirstOrDefault();
 
+        SelectSubTabCommand = new RelayCommand<string>(tab => SelectedSubTab = tab ?? "Sources");
         AddTabCommand = new RelayCommand(AddTab);
         DuplicateTabCommand = new RelayCommand(DuplicateTab, () => SelectedTab != null);
         RemoveTabCommand = new RelayCommand(RemoveTab, () => Tabs.Count > 1 && SelectedTab != null);
@@ -50,6 +51,21 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         get => _enabled;
         set => SetProperty(ref _enabled, value);
     }
+
+    private string _selectedSubTab = "Sources";
+
+    /// <summary>
+    /// Which half of the selected workspace is on screen: its sources, or the apps it belongs to. The
+    /// process list is a few lines typed once and then forgotten, so it earns a tab of its own rather
+    /// than sitting under the source list pushing it up the page.
+    /// </summary>
+    public string SelectedSubTab
+    {
+        get => _selectedSubTab;
+        set => SetProperty(ref _selectedSubTab, value);
+    }
+
+    public ICommand SelectSubTabCommand { get; }
 
     private string _blacklistText;
 
