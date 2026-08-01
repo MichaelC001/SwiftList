@@ -200,9 +200,27 @@
                                                          would squeeze the line out of existence, and the
                                                          line is the part that can be any length without
                                                          losing anything. -->
-                                                    <Border Grid.Column="3" Height="1" Margin="10,0,10,0"
+                                                    <!-- The left margin is the smaller of the two on
+                                                         purpose when there is no heading: the chevron
+                                                         carries its own 8px trailing margin, which is
+                                                         the gap between it and the title while there is
+                                                         one. With the title gone the rule inherits that
+                                                         gap on top of its own, and sat visibly further
+                                                         from the chevron than from the buttons. -->
+                                                    <Border Grid.Column="3" Height="1"
                                                             VerticalAlignment="Center"
-                                                            Background="{DynamicResource SeparatorBrush}"/>
+                                                            Background="{DynamicResource SeparatorBrush}">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Margin" Value="10,0,10,0"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ShowsHeading}" Value="False">
+                                                                        <Setter Property="Margin" Value="2,0,10,0"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                    </Border>
 
                                                     <StackPanel Grid.Column="4" Orientation="Horizontal"
                                                                 VerticalAlignment="Center">
