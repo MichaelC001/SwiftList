@@ -31,12 +31,6 @@ UI itself.
 - **Double left-click in empty space** — checkbox, default on.
 - **Middle-click in empty space** — checkbox, default on.
 
-**Startup Panel** group:
-
-- Next Startup Panel Tab (`Ctrl+Right`), Previous Startup Panel Tab (`Ctrl+Left`) — cycle the
-  [Startup Panel](./startup-panel)'s tab strip with wraparound; only active while that panel is
-  actually showing.
-
 ## Plugin Actions
 
 One entry per action a plugin has registered (e.g. copy path, run as admin), grouped by plugin

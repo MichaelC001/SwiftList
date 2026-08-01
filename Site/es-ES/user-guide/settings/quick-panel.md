@@ -1,17 +1,20 @@
 # Panel Rápido
 
 Un panel flotante que se invoca con una tecla y se acopla en la esquina inferior derecha de la ventana que esté en
-primer plano, con la mitad de su alto y la mitad de su ancho. Muestra las carpetas que le indiques — como miniaturas
-o como lista — para llegar a archivos, arrastrarlos fuera o soltarlos dentro sin salir de la ventana en la que estás
+primer plano, con la mitad de su alto y la mitad de su ancho. Muestra las carpetas que le indiques, y las listas que
+aportan tus plugins — como miniaturas o como lista — para llegar a archivos, arrastrarlos fuera o soltarlos dentro sin salir de la ventana en la que estás
 trabajando. Arrastra su borde superior para moverlo a otro sitio durante la invocación actual.
 
 - **Activar el panel rápido** — interruptor general; apagado, la tecla no hace nada.
 
 La tecla que lo invoca está en la página de [Atajos](./hotkeys-page) (`Ctrl+F2` por defecto).
 
+La página bajo ese interruptor se divide en dos: **Espacios de trabajo**, los conjuntos de carpetas que reúnes tú, y
+**Pestañas de plugin**, las que aportan tus plugins. Ambas acaban en la misma franja de pestañas.
+
 ## Espacios de trabajo
 
-El panel muestra un **espacio de trabajo** cada vez, y cada espacio de trabajo es una pestaña de su franja. Un
+El panel muestra una pestaña cada vez, y un **espacio de trabajo** es una de ellas. Un
 espacio de trabajo es un conjunto de fuentes reunido para un tipo de trabajo: las carpetas de un proyecto, el sitio
 donde guardas material de referencia, una bandeja de entrada donde vas dejando cosas.
 
@@ -27,8 +30,7 @@ izquierda a derecha en la franja de pestañas del panel.
   rehacer la lista de fuentes. La **×** de una pestaña del panel en vivo hace exactamente esto, y por eso volver a
   activarlo se hace aquí.
 
-El espacio de trabajo seleccionado se edita en tres subpestañas: **Fuentes**, **Fuentes de complementos** y
-**Aplicaciones**.
+El espacio de trabajo seleccionado se edita en dos subpestañas: **Fuentes** y **Aplicaciones**.
 
 ## Fuentes
 
@@ -65,19 +67,36 @@ donde se guardan cosas. El espacio de trabajo con el que llega una instalación 
 propósito: Escritorio, Descargas y Documentos son sitios a los que las cosas llegan, y empiezan en archivos
 cambiados recientemente.
 
-## Fuentes de complementos
+## Pestañas de plugin
 
-Fuentes aportadas por plugins. Marca una para añadirla a este espacio de trabajo; a partir de ahí aparece en la
-lista **Fuentes** junto a las carpetas y se ordena, renombra y oculta exactamente igual que una. CoreExtensions trae
-tres: **Elementos recientes de Windows** (la propia lista de documentos recientes del shell, resuelta a los
-archivos a los que apunta, lo más nuevo primero), **Historial** (lo que has abierto desde el propio SwiftList, lo
-más reciente primero: otra lista distinta, y la única de las dos que incluye aplicaciones) y **Favoritos** (tus
-[Favoritos](./favorites), en el orden en que los colocaste).
+Pestañas aportadas por plugins, listadas en la segunda pestaña de la propia página y no dentro de un espacio de
+trabajo: lo que ofrece un plugin es una colección entera, y no tiene más que ver con las carpetas de un espacio de
+trabajo que con las de otro. Cada una se marca para meterla en la franja o se desmarca para sacarla, una sola vez y
+para el panel entero.
 
-Añadir una es una decisión que se toma una vez, y por eso es una pestaña aparte de la lista donde se ordena y se
-renombra. Solo se listan las fuentes cuyo componente de plugin está habilitado en [Plugins](./plugins). Un id cuyo
-plugin ha desaparecido conserva su sitio en lugar de podarse, así que un plugin apagado una semana vuelve donde lo
-pusiste.
+CoreExtensions trae cinco:
+
+| Pestaña | Qué lista |
+|---|---|
+| **Favoritos** | Tus [Favoritos](./favorites), en el orden en que los colocaste. Las direcciones web se abren en el navegador. |
+| **Historial** | Lo que has abierto desde el propio SwiftList, lo más reciente primero: la única de estas que incluye aplicaciones. |
+| **Elementos recientes de Windows** | La propia lista de documentos recientes del shell, resuelta a los archivos a los que apunta, lo más nuevo primero. |
+| **Última carpeta** | La carpeta que estabas mirando por última vez, sea en el Explorador o en el diálogo de archivos de cualquier aplicación, para que el panel te devuelva la carpeta de la que acabas de venir. |
+| **Archivos recientes** | Los archivos más nuevos de las carpetas que el panel tiene configuradas para vigilar, respondido desde el índice en lugar de recorriéndolas. Solo archivos. |
+
+- La casilla mete la pestaña en la franja o la saca. La **×** de una pestaña viva hace lo mismo, y por eso volver a
+  marcarla se hace aquí.
+- **Mostrar como lista** — la pestaña se abre como lista de detalle en lugar de como miniaturas, la misma elección
+  que tiene una fuente de carpeta, preguntada aquí porque una pestaña de plugin no tiene una fila en ninguna lista
+  de fuentes donde preguntarla. El conmutador del propio encabezado del panel la sigue anulando mientras el panel
+  esté abierto.
+- Solo se listan las pestañas cuyo componente de plugin está habilitado en [Plugins](./plugins), y esa es otra
+  pregunta: desmarcar aquí saca la pestaña de la franja, deshabilitar allí impide que el proveedor se ejecute
+  siquiera. Una pestaña cerrada mientras su plugin estaba apagado sigue cerrada cuando el plugin vuelve — el estado
+  se guarda contra el componente, no se reconstruye a partir de lo que resulte estar cargado.
+
+Una pestaña de plugin contiene una sola lista y no lleva encabezado: la pestaña ya tiene su nombre. No acepta
+archivos soltados, y un plugin que no devuelve nada no llega a tener pestaña.
 
 ## Aplicaciones
 
@@ -109,9 +128,11 @@ merezcan un bloqueo global.
   moviéndose fila a fila, tal como está dispuesta la cuadrícula. Los atajos configurados de "seleccionar elemento
   siguiente/anterior" (`Ctrl+N`/`Ctrl+P` por defecto) hacen lo mismo, salvo que haya una acción de plugin asignada
   a esa misma tecla, que tiene prioridad.
-- **Cambiar de espacio de trabajo** — mantén el modificador de "saltar al resultado N" (`Ctrl` por defecto, ver
-  [Atajos](../hotkeys)) y pulsa 1–9, o haz clic en una pestaña. Las pestañas se arrastran para reordenarlas, y cada
-  una tiene una **×** que apaga ese espacio de trabajo. Cerrar la última cierra el panel.
+- **Cambiar de pestaña** — mantén el modificador de "saltar al resultado N" (`Ctrl` por defecto, ver
+  [Atajos](../hotkeys)) y pulsa 1–9, o haz clic en una pestaña. Los espacios de trabajo y las pestañas de plugin
+  comparten una sola franja y un solo orden; las pestañas se arrastran para reordenarlas, y cada una tiene una **×**
+  que la saca de la franja (apagando el espacio de trabajo, o cerrando la pestaña de plugin: ambas cosas se deshacen
+  en los ajustes de arriba). Cerrar la última cierra el panel.
 - **Los encabezados de grupo** llevan un conmutador de orden (por nombre / por fecha de modificación), uno de vista
   (miniaturas / lista) y una flecha para plegar. Lo que hagas aquí dura mientras el panel esté abierto; el estado
   inicial es el que digan los ajustes de arriba.

@@ -44,9 +44,9 @@ where and how they appear.
 
 ## Basic search
 
-Clearing the search box (or opening the quick window fresh) shows the
-[Startup Panel](./settings/startup-panel) instead of an empty result list — a tab strip with quick
-access to recent files, favorites, and history, no query needed.
+Recent files, favorites and history are reachable without typing anything at all — they are tabs in
+the [Quick Panel](./settings/quick-panel), which opens over whatever window is in front rather than
+inside the search window.
 
 Just start typing. Results update as you type, ranked by relevance (see
 [Search Syntax](./search-syntax) for how matching and ranking work). Use the

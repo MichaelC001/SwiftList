@@ -9,18 +9,16 @@ here. See [Settings → Hotkeys page](./settings/hotkeys-page) for the settings 
 |---|---|---|
 | Toggle quick window | Double-tap `Ctrl` | Can also be set to a full combo (e.g. `Alt+Space`) instead of a double-tap. |
 | Quick switch | `Ctrl+G` | Switches between the inline (embedded-in-Explorer) search bar and the main window. |
-| Select next item | `Ctrl+N` | Also works as the literal Down arrow. |
-| Select previous item | `Ctrl+P` | Also works as the literal Up arrow. |
+| Select next item | `Ctrl+N` | Also works as the literal Down arrow. In the [Quick Panel](./settings/quick-panel) it walks the whole tab rather than one group, carrying on into the next group at the end of the current one. |
+| Select previous item | `Ctrl+P` | Also works as the literal Up arrow. Same whole-tab walk in the Quick Panel. |
 | Jump to result 1–9 | `Ctrl` + digit | The modifier is configurable; the digit is always 1–9. The quick window shows each visible result's shortcut as a small badge next to it, so you don't have to count rows. |
 | Open actions menu | `Ctrl+O` | Also works as the literal Right arrow on a selected result. |
 | Complete from selection | `Ctrl+Tab` | In the quick window, fills the search box with the selected result's name/path. |
-| QuickLook preview | `Alt+P` | Toggles the preview pane for the selected result. |
+| QuickLook preview | `Alt+P` | Toggles the preview pane for the selected result. The [Quick Panel](./settings/quick-panel) takes the same key, and docks the preview to whichever side of itself has room for it. |
 | Previous keyword history | `Alt+Up` | Cycles backward through your recently typed queries. |
 | Next keyword history | `Alt+Down` | Cycles forward through your recently typed queries. |
 | Delete keyword history entry | `Ctrl+Delete` | |
 | Open full window | *(none)* | Opens the full window directly, carrying over the current query — same effect as left-clicking the [Quick Window's own logo](#search-box-logo-icon) and choosing Show Main Window from the menu that opens, without that extra step. Not bound by default; set one from **Settings → Hotkeys**. |
-| Next Startup Panel tab | `Ctrl+Right` | Wraps from the last tab back to the first. Only active while the [Startup Panel](./settings/startup-panel) is showing — otherwise the key does its normal job (e.g. moving the caret while typing a query). |
-| Previous Startup Panel tab | `Ctrl+Left` | Wraps from the first tab back to the last. Same active-only-while-showing rule as above. |
 | Keep window open | `Ctrl+T` | Stops the window hiding when focus moves elsewhere, so a query can be assembled out of text copied from other windows — hiding would otherwise clear the search box each time. Lasts for the current summon and ends with the next hide. In the quick window, middle-clicking the logo does the same thing and the logo brightens while it is on; pressing the summon hotkey while it is up but unfocused brings it back rather than hiding it. The [Quick Panel](./settings/quick-panel) takes the same key, with a pin button of its own as the visible marker. |
 | Toggle quick panel | `Ctrl+F2` | Opens the [Quick Panel](./settings/quick-panel) docked into the bottom-right corner of whatever window is in front, or closes it if it is already up. Once it is open, holding the "jump to result 1–9" modifier and pressing 1–9 switches workspaces. |
 

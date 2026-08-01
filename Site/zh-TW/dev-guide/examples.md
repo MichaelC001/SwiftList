@@ -11,10 +11,10 @@ SwiftList 自帶兩個外掛，都是很有參考價值的真實案例——都�
   `ShellMenuActionProvider`——正是它讓真正的 Windows 右鍵選單(包括「傳送到」這類串接式子選單)出現在 SwiftList 自己的動作選單裡。如果你想在 SwiftList 裡呈現*任何*外部、動態建構的選單，而不是一份固定的動作清單，這是值得照抄的模式。
 - **`IConfigurable.GetConfigSchema()`** 展示了帶巢狀欄位分組和 `StringList` 欄位型別的設定結構
   ——如果你的外掛在設定 → 外掛的設定對話方塊裡需要的不只是一份平坦的布林值清單，值得讀一下這部分。
-- `FavoritesTabProvider` 和 `HistoryTabProvider` 各自實作了
-  [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider)，把既有的清單以標籤的形式呈現在[起始面板](../user-guide/settings/startup-panel)裡——是這個介面的一個最精簡參考實作，因為兩者都只是把一份已經查詢好的清單包一層，自己沒有額外的狀態。
-- `FavoritesSourceProvider` 和 `WindowsRecentSourceProvider` 對
-  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider) 做了同樣的事，而且兩者正好涵蓋了這個介面的兩端：前者原樣交出一份記憶體裡的清單，後者則在背景工作上讀目錄、透過 COM 解析 shell 捷徑，先截斷再做那件昂貴的事，並給每個項目填上 `Metadata.Modified`，好讓分組的「最新在前」真的有意義。
+- 有五個提供器實作了
+  [`IQuickPanelTabProvider`](./sdk/ui-extensions#iquickpaneltabprovider)，而且它們正好涵蓋了這個介面的兩端。`FavoritesTabProvider` 和 `HistoryTabProvider` 原樣交出一份記憶體裡的清單——最精簡參考實作，因為兩者自己都沒有額外的狀態。`WindowsRecentTabProvider` 則是另一端：它在背景工作上讀目錄、透過 COM 解析 shell 捷徑，**先**截斷再做那件昂貴的事，並給每個項目填上 `Metadata.Modified`，好讓標籤的「最新在前」真的有意義。
+- `LastDirectoryTabProvider` 和 `RecentFilesTabProvider` 值得讀的理由不太一樣：它們自己壓根沒有資料，而是透過
+  [`ExplorerPathService`](./sdk/services) 和 `RecentFilesService` 向宿主要。只要你的外掛想展示的東西 SwiftList 本來就知道，照抄這個模式就對了。
 
 ## PinyinAlias —— 中文檔名拼音別名
 

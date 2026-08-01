@@ -18,7 +18,7 @@ Cada favorito de la lista muestra su nombre y ruta de destino, con acciones por 
   otros resultados de búsqueda. Cada fila también se puede arrastrar directamente por el asa de seis puntos de su
   borde izquierdo — la misma asa de arrastrar-para-reordenar que usa cualquier otra lista reordenable de
   Configuración (Prioridad de tipo de resultado, Orden de Navegación rápida, Orden de filtros de la barra lateral,
-  Orden de columnas de la cuadrícula de resultados, y Orden de pestañas del Panel de Inicio).
+  y Orden de columnas de la cuadrícula de resultados).
 - **Editar** — vuelve a cargar el elemento en los campos de arriba para modificarlo.
 - **Eliminar** — lo borra.
 

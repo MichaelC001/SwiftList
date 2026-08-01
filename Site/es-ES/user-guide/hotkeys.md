@@ -10,18 +10,16 @@ atajos](./settings/hotkeys-page) para la propia interfaz de configuración.
 |---|---|---|
 | Mostrar/ocultar ventana rápida | Doble pulsación de `Ctrl` | También se puede configurar como una combinación completa (por ejemplo, `Alt+Espacio`) en lugar de una doble pulsación. |
 | Cambio rápido | `Ctrl+G` | Alterna entre la barra de búsqueda en línea (incrustada en el Explorador) y la ventana principal. |
-| Seleccionar elemento siguiente | `Ctrl+N` | También funciona como la flecha Abajo literal. |
-| Seleccionar elemento anterior | `Ctrl+P` | También funciona como la flecha Arriba literal. |
+| Seleccionar elemento siguiente | `Ctrl+N` | También funciona como la flecha Abajo literal. En el [Panel Rápido](./settings/quick-panel) recorre la pestaña entera y no un solo grupo: al final de uno continúa en el siguiente. |
+| Seleccionar elemento anterior | `Ctrl+P` | También funciona como la flecha Arriba literal. En el Panel Rápido recorre igualmente la pestaña entera, cruzando de un grupo al siguiente. |
 | Saltar al resultado 1–9 | `Ctrl` + dígito | El modificador es configurable; el dígito siempre es 1–9. La ventana rápida muestra el atajo de cada resultado visible como una pequeña insignia junto a él, así no tienes que contar filas. |
 | Abrir menú de acciones | `Ctrl+O` | También funciona como la flecha Derecha literal sobre un resultado seleccionado. |
 | Completar desde la selección | `Ctrl+Tab` | En la ventana rápida, rellena el cuadro de búsqueda con el nombre/ruta del resultado seleccionado. |
-| Vista previa QuickLook | `Alt+P` | Alterna el panel de vista previa para el resultado seleccionado. |
+| Vista previa QuickLook | `Alt+P` | Alterna el panel de vista previa para el resultado seleccionado. El [Panel Rápido](./settings/quick-panel) usa la misma tecla, y acopla la vista previa al lado suyo donde haya sitio. |
 | Historial de palabras clave anterior | `Alt+Arriba` | Recorre hacia atrás tus consultas escritas recientemente. |
 | Historial de palabras clave siguiente | `Alt+Abajo` | Recorre hacia delante tus consultas escritas recientemente. |
 | Eliminar entrada del historial de palabras clave | `Ctrl+Supr` | |
 | Abrir ventana completa | *(ninguno)* | Abre la ventana completa directamente, trasladando la consulta actual — el mismo efecto que hacer clic izquierdo en el [propio logotipo de la ventana rápida](#icono-del-logotipo-en-el-cuadro-de-busqueda) y elegir Mostrar ventana principal en el menú que se abre, sin ese paso adicional. No asignado por defecto; configura uno desde **Configuración → Atajos**. |
-| Pestaña siguiente del Panel de Inicio | `Ctrl+Derecha` | Vuelve a la primera pestaña al llegar a la última. Solo activo mientras se muestra el [Panel de Inicio](./settings/startup-panel) — de lo contrario, la tecla hace su función normal (por ejemplo, mover el cursor mientras se escribe una consulta). |
-| Pestaña anterior del Panel de Inicio | `Ctrl+Izquierda` | Vuelve a la última pestaña al llegar a la primera. La misma regla de "solo activo mientras se muestra" que la anterior. |
 | Mantener la ventana abierta | `Ctrl+T` | Impide que la ventana se oculte cuando el foco se va a otro sitio, para poder componer una consulta con texto copiado de otras ventanas: al ocultarse, el cuadro de búsqueda se vaciaría cada vez. Dura lo que dure la invocación actual y termina al ocultarse. En la ventana rápida, un clic con el botón central en el logotipo hace lo mismo, y el logotipo se ilumina mientras está activo; pulsar la tecla de invocación mientras está visible pero sin foco lo devuelve al frente en lugar de ocultarlo. El [Panel Rápido](./settings/quick-panel) usa la misma tecla, con su propio botón de anclaje como indicador visible. |
 | Mostrar/ocultar el Panel Rápido | `Ctrl+F2` | Abre el [Panel Rápido](./settings/quick-panel) acoplado en la esquina inferior derecha de la ventana que esté en primer plano, o lo cierra si ya está abierto. Una vez abierto, mantener el modificador de "saltar al resultado 1–9" y pulsar 1–9 cambia de espacio de trabajo. |
 

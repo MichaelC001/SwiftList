@@ -1,19 +1,23 @@
 # Quick Panel
 
 A floating panel summoned by a hotkey and docked into the bottom-right corner of whatever window is
-in front, at half the height and half the width of it. It shows folders you nominate — as thumbnail
-tiles or as a list — so files can be reached, dragged out of, or dropped into without leaving the
-window you are working in. Drag its top edge to move it somewhere else for the current summon.
+in front, at half the height and half the width of it. It shows folders you nominate, and lists your
+plugins contribute — as thumbnail tiles or as a list — so files can be reached, dragged out of, or
+dropped into without leaving the window you are working in. Drag its top edge to move it somewhere
+else for the current summon.
 
 - **Enable the quick panel** — master switch; off means the hotkey does nothing.
 
 The key that summons it is on the [Hotkeys](./hotkeys-page) page (`Ctrl+F2` by default).
 
+The page below that switch splits in two: **Workspaces**, the sets of folders you assemble yourself,
+and **Plugin tabs**, the ones your plugins contribute. Both end up in the same tab strip.
+
 ## Workspaces
 
-The panel shows one **workspace** at a time, and every workspace is one tab in its tab strip. A
-workspace is a set of sources assembled for one kind of work — a project's folders, a place you keep
-reference material, an inbox you drop things into.
+The panel shows one tab at a time, and a **workspace** is one of them. A workspace is a set of
+sources assembled for one kind of work — a project's folders, a place you keep reference material,
+an inbox you drop things into.
 
 The left-hand list is the workspaces themselves, with **New workspace**, **Duplicate workspace** and
 **Delete workspace** buttons, and the same up/down-arrow (or drag-to-reorder) list used elsewhere in
@@ -26,8 +30,7 @@ Settings (see [Favorites](./favorites)). Top to bottom here is left to right in 
   rebuilding the source list to get it back. The **×** on a tab in the live panel does exactly this,
   which is why turning it back on is done here.
 
-The selected workspace is edited through three sub-tabs: **Sources**, **Plugin sources**, and
-**Apps**.
+The selected workspace is edited through two sub-tabs: **Sources** and **Apps**.
 
 ## Sources
 
@@ -62,19 +65,35 @@ A folder added here starts on **Everything, by name** — a folder picked by han
 place things are kept. The workspace a fresh install comes with is the exception, and deliberately so:
 Desktop, Downloads and Documents are places things arrive, and start on recently-changed files.
 
-## Plugin sources
+## Plugin tabs
 
-Sources provided by plugins. Tick one to add it to this workspace; it then appears in the **Sources**
-list beside the folders and is ordered, renamed and hidden exactly like one. CoreExtensions ships
-three: **Windows Recent Items** (the shell's own recent-documents list, resolved to the files it
-points at, newest first), **History** (what you opened through SwiftList itself, most recent first —
-a different list, and the only one of the two that includes applications) and **Favorites** (your
-[Favorites](./favorites), in the order you arranged them).
+Tabs contributed by plugins, listed on the page's own second tab rather than inside a workspace: what
+a plugin offers is a whole collection, and it has no more to do with one workspace's folders than with
+another's. Each is ticked into the strip or unticked out of it once, for the panel as a whole.
 
-Adding one is a decision made once, which is why it is a separate tab from the list where ordering
-and renaming happen. Only sources whose plugin component is enabled under [Plugins](./plugins) are
-listed. An id whose plugin is gone keeps its place rather than being pruned, so a plugin switched off
-for a week comes back where you put it.
+CoreExtensions ships five:
+
+| Tab | What it lists |
+|---|---|
+| **Favorites** | Your [Favorites](./favorites), in the order you arranged them. Web addresses among them open in your browser. |
+| **History** | What you opened through SwiftList itself, most recent first — the only one of these that includes applications. |
+| **Windows Recent Items** | The shell's own recent-documents list, resolved to the files it points at, newest first. |
+| **Last Directory** | Whatever folder you were last browsing, in Explorer or in any application's file dialog — so the panel can hand back the folder you just came from. |
+| **Recent Files** | The newest files across the folders the panel is set up to watch, answered from the index rather than by walking them. Files only. |
+
+- The checkbox puts the tab in the strip or takes it out. The **×** on a live tab is the same thing,
+  which is why ticking it back on is done here.
+- **Show as list** — the tab opens as a detail list rather than thumbnail tiles, the same choice a
+  folder source has, asked here because a plugin tab has no row in a source list to ask it on. The
+  panel's own header toggle still overrides it for as long as the panel is open.
+
+Only tabs whose plugin component is enabled under [Plugins](./plugins) are listed, and that is a
+different question: unticking here takes the tab out of the strip, disabling there stops the provider
+running at all. A tab closed while its plugin was switched off stays closed when the plugin comes
+back — the state is kept against the component, not rebuilt from whatever happens to be loaded.
+
+A plugin tab holds one list and wears no heading — the tab is already named after it. It takes no
+dropped files, and a plugin that returns nothing gets no tab at all.
 
 ## Apps
 
@@ -105,9 +124,11 @@ a global block.
   tiles, they still move a row at a time as the grid is laid out. The configured "select next/previous
   item" hotkeys (`Ctrl+N`/`Ctrl+P` by default) do the same, unless a plugin action is bound to one of
   them, which wins.
-- **Switching workspaces** — hold the "jump to Nth result" modifier (`Ctrl` by default, see
-  [Hotkeys](../hotkeys)) and press 1–9, or click a tab. Tabs drag to reorder, and each has an **×**
-  that turns that workspace off. Closing the last one closes the panel.
+- **Switching tabs** — hold the "jump to Nth result" modifier (`Ctrl` by default, see
+  [Hotkeys](../hotkeys)) and press 1–9, or click a tab. Workspaces and plugin tabs share one strip and
+  one order; tabs drag to reorder, and each has an **×** that takes it out of the strip (turning a
+  workspace off, or closing a plugin tab — both undone in the settings above). Closing the last one
+  closes the panel.
 - **Group headings** carry a sort toggle (by name / by date modified), a view toggle (tiles / list)
   and a collapse arrow. What you do to a group here lasts for as long as the panel is open; the
   starting state is what the settings above say.

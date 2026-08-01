@@ -31,41 +31,26 @@ interface IResultColumnProvider
 `ResultColumnDefinition` 攜帶欄位 id、表頭文字、寬度，以及可選的 `VisibilityPredicate`/
 `SortComparer` 委派。
 
-## 起始面板
-
-### `IStartupPanelTabProvider`
-
-給快速視窗的「起始面板」貢獻一個標籤——搜尋框為空時結果清單上方顯示的那個標籤列(見[起始面板](../../user-guide/settings/startup-panel))。CoreExtensions 的歷史記錄和我的最愛兩個標籤都是基於這個介面做的;參見[外掛範例](../examples#coreextensions-——-動作與-shell-右鍵選單)。
-
-```csharp
-interface IStartupPanelTabProvider : IPluginComponent
-{
-    IAsyncEnumerable<ISearchResult> GetItemsAsync(CancellationToken cancellationToken = default);
-}
-```
-
-`GetItemsAsync()` 在面板每次啟用時都會呼叫，不做快取。它是串流式的而不是回傳一份完整結果：第一筆到達時標籤就出現，其餘的邊到邊填，所以一個需要慢慢去找的提供器只會讓自己這個標籤晚一點填滿，絕不會拖住面板的出現。資料本來就在記憶體裡的提供器直接從清單 yield 即可，不會為這個形狀付出任何代價。面板關閉或重新啟用時權杖會被取消——請遵守它，別為一個沒人在看的面板繼續列舉下去。
-
-一筆都沒 yield 的提供器，其標籤會被整個排除在標籤列之外，而不是顯示成空的。使用者可以在即時面板裡用 **×** 按鈕單獨隱藏一個標籤，這和在設定 → 外掛裡把該元件整個停用是兩回事，故意分開處理——宿主程式使用元件的具體型別名稱（`GetType().Name`）作為穩定 Key 來持久化隱藏狀態。
-
 ## 快速面板
 
-### `IQuickPanelSourceProvider`
+### `IQuickPanelTabProvider`
 
-給[快速面板](../../user-guide/settings/quick-panel)貢獻一個來源——那個停靠在前景視窗上的浮動面板。一個來源在那裡就是一個分組，有自己的標題，項目由宿主用它自己的結果列渲染，所以圖示、開啟、動作選單都是白送的。CoreExtensions 自帶三個：Windows 歷史記錄、歷史記錄和收藏夾。
+給[快速面板](../../user-guide/settings/quick-panel)貢獻一整個標籤——那個停靠在前景視窗上的浮動面板。標籤以元件命名，裡面裝一份清單，項目由宿主用它自己的結果列渲染，所以圖示、開啟、縮圖和動作選單都是白送的。CoreExtensions 自帶五個：我的最愛、歷史記錄、Windows 歷史記錄、上次目錄和最近檔案。
 
 ```csharp
-interface IQuickPanelSourceProvider : IPluginComponent
+interface IQuickPanelTabProvider : IPluginComponent
 {
     Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default);
 }
 ```
 
-`GetEntriesAsync()` 在面板每次被呼出時呼叫。這裡刻意沒有採用 `IStartupPanelTabProvider` 那種串流形狀：這個面板要把一個來源的項目當作一個**整體**來排序和截斷(最新在前，或者依名稱，且最多幾筆)，所以它沒辦法只顯示其中一半而不在每次新項目到達時重排整個分組。這並不會帶來延遲——每個工作區的每個來源都在各自的工作上載入，面板在第一個到達時就開啟，所以一個需要慢慢去找的提供器只會拖慢自己那個分組。但仍然請遵守權杖：面板關閉時它會被取消。
+是一個標籤，而不是塞進別人標籤裡的一個分組：提供器給出的是一整份清單，它和某個工作區收集的資料夾是正交的，所以它跟那些資料夾並排放，而不必被逐個勾進每一個工作區。
 
-來源知道修改時間的話，就填進 `ISearchResult.Metadata` 的 `Modified`，分組預設的「最新在前」會用它；保持預設值不填，項目就維持你回傳時的順序。回傳空的來源不會產生分組，所有來源都回傳空的工作區不會有標籤。
+`GetEntriesAsync()` 在面板每次被呼出時呼叫，並且回傳的是一份完整結果而不是串流的：面板要把項目當作一個**整體**來排序和截斷(最新在前，且最多幾筆)，所以它沒辦法只顯示其中一半而不在每次新項目到達時重排。這並不會帶來延遲——每個標籤都在各自的工作上載入，面板在第一個到達時就開啟，所以一個需要慢慢去找的提供器只會拖慢自己那個標籤。但仍然請遵守權杖：面板關閉時它會被取消。
 
-來源出現在哪裡由使用者決定：他們在設定 → 快速面板 → 外掛來源裡把它加進想加的工作區，每個工作區各自記住它的位置、是否隱藏、叫什麼名字、怎麼顯示——全部以元件 id 為鍵，和使用者自己的資料夾放在一起。
+來源知道修改時間的話，就填進 `ISearchResult.Metadata` 的 `Modified`——預設的「最新在前」會用它，沒有修改時間的項目則維持你回傳時的順序。什麼都沒回傳的提供器不會有標籤；擲出例外的提供器只賠上自己這一個標籤，不影響其他。
+
+標籤預設以縮圖平鋪開啟，除非使用者在設定 → 快速面板 → 外掛標籤裡為它勾上**以清單顯示**；面板自己標題列上的檢視開關在面板開啟期間仍然可以覆蓋它。用 **×** 關閉一個標籤和在設定 → 外掛裡停用該元件是刻意區分開的兩件事：前者只是把它移出標籤列(在同一個頁面上勾回來即可)，後者則讓它壓根不再載入。宿主用元件 id 作為穩定 Key 來記住關閉狀態和顯示方式，所以外掛被關掉期間關閉的標籤，外掛回來時依然是關著的。
 
 ## 預覽與縮圖
 

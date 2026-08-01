@@ -21,7 +21,7 @@ swiftlist://settings/page/Appearance
 
 1つ目は「report」であらかじめ絞り込まれた状態でクイック検索ウィンドウをアクティブにし、2つ目は設定を外観のページで直接開きます。
 
-`[section]` はトップレベルのサイドバー項目のいずれかに一致します:`Service`、`Index`、`General`、`Appearance`、`Hotkeys`、`Plugins`、`Favorites`、`History`、`StartupPanel`、`About` — 大文字小文字は区別されません。
+`[section]` はトップレベルのサイドバー項目のいずれかに一致します:`Service`、`Index`、`General`、`Appearance`、`Hotkeys`、`Plugins`、`Favorites`、`History`、`QuickPanel`、`About` — 大文字小文字は区別されません。
 
 `[index]` は手入力を想定したものではありません — [設定検索](./instant-answers)が、選択した設定に対して自動的に生成する番号であり、その検索結果の1つを選択すると、そのまま該当する行に直接戻ってこられる仕組みになっています。再起動をまたいでは安定しないため、特定の番号がそのまま維持されることを前提にしないでください。
 

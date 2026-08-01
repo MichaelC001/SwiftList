@@ -11,10 +11,10 @@ SwiftList 自带两个插件，都是很有参考价值的真实案例——都�
   `ShellMenuActionProvider`——正是它让真正的 Windows 右键菜单(包括"发送到"这类级联子菜单)出现在 SwiftList 自己的动作菜单里。如果你想在 SwiftList 里呈现*任何*外部、动态构建的菜单，而不是一份固定的动作列表，这是值得照抄的模式。
 - **`IConfigurable.GetConfigSchema()`** 展示了带嵌套字段分组和 `StringList` 字段类型的配置模式
   ——如果你的插件在设置 → 插件的配置对话框里需要的不只是一份扁平的布尔值列表，值得读一下这部分。
-- `FavoritesTabProvider` 和 `HistoryTabProvider` 各自实现了
-  [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider)，把已有的列表以标签的形式呈现在[初始面板](../user-guide/settings/startup-panel)里——是这个接口的一个最简参考实现，因为两者都只是把一份已经查询好的列表包一层，自己没有额外的状态。
-- `FavoritesSourceProvider` 和 `WindowsRecentSourceProvider` 对
-  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider) 做了同样的事，而且两者正好覆盖了这个接口的两端：前者原样交出一份内存里的列表，后者则在后台任务上读目录、通过 COM 解析 shell 快捷方式，先截断再做那件昂贵的事，并给每个条目填上 `Metadata.Modified`，好让分组的「最新在前」真的有意义。
+- 有五个提供器实现了
+  [`IQuickPanelTabProvider`](./sdk/ui-extensions#iquickpaneltabprovider)，而且它们正好覆盖了这个接口的两端。`FavoritesTabProvider` 和 `HistoryTabProvider` 原样交出一份内存里的列表——最简参考实现，因为两者自己都没有额外的状态。`WindowsRecentTabProvider` 则是另一端：它在后台任务上读目录、通过 COM 解析 shell 快捷方式，**先**截断再做那件昂贵的事，并给每个条目填上 `Metadata.Modified`，好让标签的「最新在前」真的有意义。
+- `LastDirectoryTabProvider` 和 `RecentFilesTabProvider` 值得读的理由不太一样：它们自己压根没有数据，而是通过
+  [`ExplorerPathService`](./sdk/services) 和 `RecentFilesService` 向宿主要。只要你的插件想展示的东西 SwiftList 本来就知道，照抄这个模式就对了。
 
 ## PinyinAlias —— 中文文件名拼音别名
 

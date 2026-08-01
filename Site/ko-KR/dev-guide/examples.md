@@ -19,15 +19,16 @@ SwiftList 자체에는 두 개의 플러그인이 함께 제공되며, 둘 다 �
 - **`IConfigurable.GetConfigSchema()`** 는 중첩된 필드 그룹과 `StringList` 필드 타입을 사용하는 설정
   스키마를 보여줍니다 — 여러분의 플러그인이 설정 → 플러그인 구성 대화상자에서 단순한 불리언 목록 이상을
   필요로 한다면 읽어볼 가치가 있습니다.
-- `FavoritesTabProvider`와 `HistoryTabProvider`는 각각
-  [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider)를 구현하여 기존의 목록을
-  [시작 패널](../user-guide/settings/startup-panel)의 탭으로 노출합니다 — 둘 다 이미 조회된 항목 목록을
-  자체 상태 없이 감싸기만 하므로, 해당 인터페이스에 대한 최소한의 참고 예제입니다.
-- `FavoritesSourceProvider`와 `WindowsRecentSourceProvider`는
-  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider)에 대해 같은 일을 하며,
-  둘이 합쳐 이 인터페이스의 양 극단을 보여줍니다: 앞의 것은 메모리에 있는 목록을 그대로 돌려주고, 뒤의
-  것은 백그라운드 작업에서 디렉터리를 읽고 COM으로 셸 바로 가기를 해석하되 비싼 작업 전에 개수를 먼저
-  잘라내며, 각 항목의 `Metadata.Modified`를 채워 그룹의 최신순 정렬이 의미를 갖게 합니다.
+- 다섯 개의 프로바이더가
+  [`IQuickPanelTabProvider`](./sdk/ui-extensions#iquickpaneltabprovider)를 구현하며, 이들이 합쳐 이
+  인터페이스의 양 극단을 보여줍니다. `FavoritesTabProvider`와 `HistoryTabProvider`는 메모리에 있는
+  목록을 그대로 돌려줍니다 — 둘 다 자체 상태가 없으므로 최소한의 참고 예제입니다.
+  `WindowsRecentTabProvider`가 반대쪽 극단으로, 백그라운드 작업에서 디렉터리를 읽고 COM으로 셸 바로
+  가기를 해석하되 비싼 작업 **전에** 개수를 먼저 잘라내며, 각 항목의 `Metadata.Modified`를 채워 탭의
+  최신순 정렬이 의미를 갖게 합니다.
+- `LastDirectoryTabProvider`와 `RecentFilesTabProvider`는 읽어 볼 이유가 조금 다릅니다: 둘 다 자기
+  데이터가 아예 없고, [`ExplorerPathService`](./sdk/services)와 `RecentFilesService`를 통해 호스트에
+  물어봅니다. 플러그인으로 보여 주고 싶은 것을 SwiftList가 이미 알고 있다면 이 패턴을 따라 하세요.
 
 ## PinyinAlias — 중국어 파일명을 위한 병음 별칭
 

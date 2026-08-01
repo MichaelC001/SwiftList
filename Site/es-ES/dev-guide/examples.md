@@ -19,17 +19,17 @@ carpeta `Plugins/` del repositorio de SwiftList.
 - **`IConfigurable.GetConfigSchema()`** muestra un esquema de configuración con grupos de campos anidados y un
   tipo de campo `StringList` — merece la pena leerlo si tu propio plugin necesita algo más que una lista plana de
   booleanos en su cuadro de configuración de Configuración → Plugins.
-- `FavoritesTabProvider` y `HistoryTabProvider` implementan cada uno
-  [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider) para mostrar sus
-  listas existentes como pestañas en el [Panel de Inicio](../user-guide/settings/startup-panel) — una referencia mínima
-  para esa interfaz, ya que ambos simplemente envuelven una lista de elementos ya consultada, sin
-  estado adicional propio.
-- `FavoritesSourceProvider` y `WindowsRecentSourceProvider` hacen lo mismo para
-  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider), y entre los dos cubren ambos
-  extremos de esa interfaz: el primero devuelve tal cual una lista que ya está en memoria, mientras que el
-  segundo lee un directorio y resuelve accesos directos del shell por COM en una tarea en segundo plano,
-  recorta el conjunto antes de hacer la parte cara, y rellena el `Metadata.Modified` de cada entrada para que
-  el orden por lo más nuevo del grupo signifique algo.
+- Cinco proveedores implementan
+  [`IQuickPanelTabProvider`](./sdk/ui-extensions#iquickpaneltabprovider), y entre ellos cubren ambos
+  extremos de esa interfaz. `FavoritesTabProvider` y `HistoryTabProvider` devuelven tal cual una lista que
+  ya está en memoria — la referencia mínima, ya que ninguno lleva estado propio. `WindowsRecentTabProvider`
+  es el otro extremo: lee un directorio y resuelve accesos directos del shell por COM en una tarea en
+  segundo plano, recorta el conjunto *antes* de hacer la parte cara, y rellena el `Metadata.Modified` de
+  cada entrada para que el orden por lo más nuevo de la pestaña signifique algo.
+- `LastDirectoryTabProvider` y `RecentFilesTabProvider` merecen leerse por otro motivo: ninguno tiene datos
+  propios. Se los piden al anfitrión a través de [`ExplorerPathService`](./sdk/services) y
+  `RecentFilesService`, que es el patrón a copiar siempre que lo que tu plugin quiere mostrar sea algo que
+  SwiftList ya sabe.
 
 ## PinyinAlias — alias en pinyin para nombres de archivo en chino
 

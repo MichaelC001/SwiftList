@@ -33,12 +33,6 @@ Grupo **Navegación rápida**:
 - **Doble clic izquierdo en espacio vacío** — casilla, activada por defecto.
 - **Clic central en espacio vacío** — casilla, activada por defecto.
 
-Grupo **Panel de Inicio**:
-
-- Pestaña siguiente del Panel de Inicio (`Ctrl+Derecha`), Pestaña anterior del Panel de Inicio (`Ctrl+Izquierda`)
-  — recorren la franja de pestañas del [Panel de Inicio](./startup-panel) con vuelta al principio/final; solo
-  activo mientras ese panel se está mostrando realmente.
-
 ## Acciones de plugins
 
 Una entrada por cada acción que haya registrado un plugin (por ejemplo, copiar ruta, ejecutar como administrador),

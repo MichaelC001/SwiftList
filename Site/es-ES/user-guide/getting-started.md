@@ -46,9 +46,9 @@ diferencia está puramente en dónde y cómo aparecen.
 
 ## Búsqueda básica
 
-Borrar el cuadro de búsqueda (o abrir la ventana rápida recién abierta) muestra el
-[Panel de Inicio](./settings/startup-panel) en lugar de una lista de resultados vacía — una franja de pestañas con
-acceso rápido a archivos recientes, favoritos e historial, sin necesidad de ninguna consulta.
+Los archivos recientes, los favoritos y el historial están al alcance sin escribir nada — son pestañas del
+[Panel Rápido](./settings/quick-panel), que se abre sobre la ventana que tengas delante en lugar de dentro de la
+ventana de búsqueda.
 
 Simplemente empieza a escribir. Los resultados se actualizan a medida que escribes, ordenados por relevancia (ver
 [Sintaxis de búsqueda](./search-syntax) para saber cómo funcionan la coincidencia y la clasificación). Usa los

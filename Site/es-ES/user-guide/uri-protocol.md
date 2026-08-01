@@ -27,7 +27,7 @@ El primero activa la ventana de búsqueda rápida ya filtrada a "report"; el seg
 directamente en la página Apariencia.
 
 `[section]` coincide con una de las entradas de nivel superior de la barra lateral: `Service`, `Index`, `General`,
-`Appearance`, `Hotkeys`, `Plugins`, `Favorites`, `History`, `StartupPanel`, `About` — sin distinguir mayúsculas de
+`Appearance`, `Hotkeys`, `Plugins`, `Favorites`, `History`, `QuickPanel`, `About` — sin distinguir mayúsculas de
 minúsculas.
 
 `[index]` no está pensado para escribirse a mano — es un número que la propia [Búsqueda de

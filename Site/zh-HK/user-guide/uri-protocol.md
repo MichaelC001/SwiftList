@@ -23,7 +23,7 @@ swiftlist://settings/page/Appearance
 第一個會激活快速搜尋視窗，並已經用"report"過濾好；第二個會直接打開設定視窗的"外觀"頁。
 
 `[分區]` 對應側邊欄頂層的某一項：`Service`、`Index`、`General`、`Appearance`、`Hotkeys`、
-`Plugins`、`Favorites`、`History`、`StartupPanel`、`About`——不區分大小寫。
+`Plugins`、`Favorites`、`History`、`QuickPanel`、`About`——不區分大小寫。
 
 `[序號]` 不是給人手動輸入用的——它是[設定搜尋](./instant-answers)在你選中某項設定結果時自己生成的一個數字，選中結果會自動帶上這個序號，原樣跳轉回那一項設定。這個序號在重啓之間並不穩定，不要指望某個具體數字每次都對應同一項設定。
 

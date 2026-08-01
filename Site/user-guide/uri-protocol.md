@@ -28,7 +28,7 @@ The first activates the quick search window already filtered to "report"; the se
 Settings directly on the Appearance page.
 
 `[section]` matches one of the top-level sidebar entries: `Service`, `Index`, `General`,
-`Appearance`, `Hotkeys`, `Plugins`, `Favorites`, `History`, `StartupPanel`, `About` — not
+`Appearance`, `Hotkeys`, `Plugins`, `Favorites`, `History`, `QuickPanel`, `About` — not
 case-sensitive.
 
 `[index]` isn't meant to be typed by hand — it's a number [Settings Search](./instant-answers)

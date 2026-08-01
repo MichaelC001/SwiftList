@@ -27,7 +27,7 @@ swiftlist://settings/page/Appearance
 엽니다.
 
 `[section]`은 다음 최상위 사이드바 항목 중 하나와 매칭됩니다: `Service`, `Index`, `General`,
-`Appearance`, `Hotkeys`, `Plugins`, `Favorites`, `History`, `StartupPanel`, `About` — 대소문자를
+`Appearance`, `Hotkeys`, `Plugins`, `Favorites`, `History`, `QuickPanel`, `About` — 대소문자를
 구분하지 않습니다.
 
 `[index]`는 직접 손으로 입력하도록 만들어진 값이 아닙니다 — 이는 선택한 설정에 대해
