@@ -50,7 +50,10 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <!-- Horizontal explicitly Disabled, not left at the default: Hidden still measures the content
+         with unbounded width, so a long path in a source row resolved its Star column to the full
+         path length and pushed that row's buttons off the right edge with no bar to reach them. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,10,0">
             <TextBlock Style="{StaticResource SettingsSectionTitle}"
                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_QuickPanel]}"/>
@@ -85,13 +88,24 @@
                             <TextBlock VerticalAlignment="Center"
                                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Workspaces]}"/>
                         </DockPanel>
-                        <!-- Sizes to its rows, capped only where a very long list would out-grow the
-                             window; anything shorter leaves no empty pane behind it. -->
+                        <!-- Sizes to its rows and stops there: past that it scrolls inside its own
+                             pane rather than pushing the card past the bottom of the window, however
+                             many workspaces get added.
+
+                             HorizontalScrollBarVisibility="Disabled" for the reason the plugin array
+                             editor's own master list documents: left at the default, each row is
+                             handed an unbounded width, so the Star column resolves to however long
+                             the name happens to be and the list grows a horizontal bar instead of
+                             eliding. Bounding it to the pane is what makes TextTrimming work at all.
+                             CanContentScroll="False" so the vertical bar measures pixels rather than
+                             whole rows, which is what put a phantom bar on the sidebar. -->
                         <ListBox x:Name="ListQuickPanelWorkspaces" ItemsSource="{Binding Tabs}"
                                  SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
                                  ItemContainerStyle="{StaticResource WorkspaceItemStyle}"
-                                 VerticalAlignment="Top" MaxHeight="420"
+                                 VerticalAlignment="Top" MaxHeight="260"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.CanContentScroll="False"
                                  HorizontalContentAlignment="Stretch"
                                  BorderThickness="0" Background="Transparent">
                             <ListBox.ItemTemplate>
