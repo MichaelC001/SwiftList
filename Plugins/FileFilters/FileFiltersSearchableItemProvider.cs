@@ -21,19 +21,14 @@ public class FileFiltersSearchableItemProvider : ISearchableItemProvider, IDispo
 
     private readonly List<FilterItem> _registeredFilters = new();
 
+    private readonly IDisposable _directoryWatch;
+
     public FileFiltersSearchableItemProvider()
     {
-        DirectoryIndexerService.DirectoryChanged += OnDirectoryChanged;
+        // Only this plugin's own registered folders reach here -- no id to check.
+        _directoryWatch = DirectoryIndexerService.WatchDirectories("FileFilters", () => ItemsChanged?.Invoke());
         PluginSettingsService.SettingChanged += OnSettingChanged;
         ReloadFilters();
-    }
-
-    private void OnDirectoryChanged(string pluginId)
-    {
-        if (string.Equals(pluginId, "FileFilters", StringComparison.OrdinalIgnoreCase))
-        {
-            ItemsChanged?.Invoke();
-        }
     }
 
     private void OnSettingChanged(string pluginId, string key)
@@ -160,7 +155,7 @@ public class FileFiltersSearchableItemProvider : ISearchableItemProvider, IDispo
 
     public void Dispose()
     {
-        DirectoryIndexerService.DirectoryChanged -= OnDirectoryChanged;
+        _directoryWatch.Dispose();
         PluginSettingsService.SettingChanged -= OnSettingChanged;
         DirectoryIndexerService.UnregisterDirectories("FileFilters");
         GC.SuppressFinalize(this);

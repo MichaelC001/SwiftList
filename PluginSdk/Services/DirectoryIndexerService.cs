@@ -29,16 +29,85 @@ public static class DirectoryIndexerService
     /// </summary>
     public static Func<string, bool, string, int, CancellationToken, IAsyncEnumerable<Abstractions.ISearchResult>>? EnumerateDirectoryFunc { get; set; }
 
-    /// <summary>
-    /// Event fired when a monitored directory's content changes.
-    /// Parameters: (pluginId)
-    /// </summary>
-    public static event Action<string>? DirectoryChanged;
+    private static readonly Dictionary<string, List<Action>> _watchers = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Invokes the DirectoryChanged event. Should only be called by the host application.
+    /// Calls <paramref name="onChanged"/> whenever something changes under a directory registered by
+    /// <paramref name="pluginId"/>. Dispose the returned handle to stop listening.
     /// </summary>
-    public static void NotifyDirectoryChanged(string pluginId) => DirectoryChanged?.Invoke(pluginId);
+    /// <remarks>
+    /// Per registrant, not a broadcast: a subscriber hears about its own directories and nothing else,
+    /// so there is no id to compare and no chance of acting on somebody else's change by forgetting
+    /// to. The host has already worked out whose directories a change falls under (it is what the
+    /// registrations are for) -- making every plugin repeat that test was asking each of them to
+    /// re-derive an answer the host was holding.
+    ///
+    /// Raised on a background thread, already debounced: a bulk copy is one call once the directory
+    /// settles, not one per file. Marshal to your own thread if you need to.
+    /// </remarks>
+    public static IDisposable WatchDirectories(string pluginId, Action onChanged)
+    {
+        lock (_watchers)
+        {
+            if (!_watchers.TryGetValue(pluginId, out var handlers))
+                _watchers[pluginId] = handlers = new List<Action>();
+            handlers.Add(onChanged);
+        }
+        return new Subscription(pluginId, onChanged);
+    }
+
+    /// <summary>
+    /// Tells the plugin that registered them that its directories changed. Host application only.
+    /// </summary>
+    public static void NotifyDirectoryChanged(string pluginId)
+    {
+        Action[] handlers;
+        lock (_watchers)
+        {
+            if (!_watchers.TryGetValue(pluginId, out var registered) || registered.Count == 0)
+                return;
+            // Copied before leaving the lock: a handler is free to unsubscribe itself while running,
+            // and a plugin being torn down mid-notification is the ordinary case for one that does.
+            handlers = registered.ToArray();
+        }
+
+        foreach (var handler in handlers)
+        {
+            try
+            {
+                handler();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"[DirectoryIndexerService] A '{pluginId}' change handler threw: {ex.Message}", LogLevel.Error);
+            }
+        }
+    }
+
+    private sealed class Subscription : IDisposable
+    {
+        private readonly string _pluginId;
+        private Action? _handler;
+
+        public Subscription(string pluginId, Action handler)
+        {
+            _pluginId = pluginId;
+            _handler = handler;
+        }
+
+        public void Dispose()
+        {
+            var handler = Interlocked.Exchange(ref _handler, null);
+            if (handler == null)
+                return;
+
+            lock (_watchers)
+            {
+                if (_watchers.TryGetValue(_pluginId, out var handlers) && handlers.Remove(handler) && handlers.Count == 0)
+                    _watchers.Remove(_pluginId);
+            }
+        }
+    }
 
     /// <summary>
     /// Registers a directory to be indexed and monitored by the host system (service or app manager).

@@ -5,7 +5,9 @@ namespace SwiftList.Core.Indexer.NetworkDrive;
 // partial class) to keep NetworkIndexer.cs under the project's line limit. Shares NetworkIndexer's own
 // _gate/_statuses/_indexes dictionaries by reference rather than owning copies, since both types need
 // to observe the same live state.
-internal sealed class NetworkIndexerPublisher
+// Partial: the change-tracking half (StoreStatus/RecordChange) lives in
+// NetworkIndexerPublisherChangeTracking.cs, to keep this file under the project's line limit.
+internal sealed partial class NetworkIndexerPublisher
 {
     private readonly object _gate;
     private readonly Dictionary<string, NetworkIndexStatus> _statuses;
@@ -52,8 +54,11 @@ internal sealed class NetworkIndexerPublisher
             // drive the user just disabled.
             if (!_statuses.TryGetValue(drive, out var current))
                 return;
-            _statuses[drive] = NetworkIndexerHelper.CreateStatus(
-                drive, state, items ?? current.Items, null, current, error ?? string.Empty);
+            // No RecordChange: this reports progress, a state transition or an error, none of which is
+            // the index taking content in. Bumping the revision here is what used to make every scan
+            // look like a thousand separate changes to anything watching a directory on this drive.
+            StoreStatus(drive, NetworkIndexerHelper.CreateStatus(
+                drive, state, items ?? current.Items, null, current, error ?? string.Empty));
         }
         PublishStatusesChanged();
     }
@@ -83,7 +88,10 @@ internal sealed class NetworkIndexerPublisher
             {
                 _indexes.TryGetValue(drive, out old);
                 _indexes[drive] = index;
-                _statuses[drive] = NetworkIndexerHelper.CreateStatus(drive, "ready", index.Count, index, null);
+                StoreStatus(drive, NetworkIndexerHelper.CreateStatus(drive, "ready", index.Count, index, null));
+                // A whole tree replaced at once: what moved inside it is not knowable from here, so
+                // this says so rather than guessing, and every subscriber re-lists.
+                RecordChange(drive, null);
             }
             else
             {
@@ -138,7 +146,7 @@ internal sealed class NetworkIndexerPublisher
         }
     }
 
-    public void PublishIncrementalUpdate(string drive, NetworkIndex index)
+    public void PublishIncrementalUpdate(string drive, NetworkIndex index, IReadOnlyCollection<string>? changedDirectories = null)
     {
         // Same fix, same reason as UsnIndexer.UpdateDriveCounts's markReady guard: the watcher for this
         // drive is already live from the moment it's configured (Scheduler.StartRefresh attaches it
@@ -168,7 +176,11 @@ internal sealed class NetworkIndexerPublisher
         {
             if (!_statuses.TryGetValue(drive, out var current) || current.State == "indexing")
                 return;
-            _statuses[drive] = NetworkIndexerHelper.CreateStatus(drive, "ready", index.Count, index, current);
+            StoreStatus(drive, NetworkIndexerHelper.CreateStatus(drive, "ready", index.Count, index, current));
+            // The one path here that knows where: these come from the watcher events this publish is
+            // the debounced tail of, so a plugin watching one folder on a share is woken by changes in
+            // that folder and by nothing else on the share.
+            RecordChange(drive, changedDirectories);
         }
         PublishStatusesChanged();
     }
@@ -205,7 +217,7 @@ internal sealed class NetworkIndexerPublisher
                 // have tripped yet.
                 if (token.IsCancellationRequested || !_statuses.ContainsKey(drive))
                     return;
-                _statuses[drive] = NetworkIndexerHelper.CreateStatus(drive, "indexing", CountLiveRecords(store), currentBeforeSave, null);
+                StoreStatus(drive, NetworkIndexerHelper.CreateStatus(drive, "indexing", CountLiveRecords(store), currentBeforeSave, null));
             }
             PublishStatusesChanged();
             return;
@@ -241,7 +253,10 @@ internal sealed class NetworkIndexerPublisher
                 _indexes.TryGetValue(drive, out old);
                 _indexes[drive] = index;
                 stored = true;
-                _statuses[drive] = NetworkIndexerHelper.CreateStatus(drive, "indexing", index.Count, index, null);
+                StoreStatus(drive, NetworkIndexerHelper.CreateStatus(drive, "indexing", index.Count, index, null));
+                // A checkpoint swaps in a whole partial tree, so where it moved is no more knowable
+                // than for a finished rescan.
+                RecordChange(drive, null);
             }
             // old is normally null (already released above); only genuinely non-null (and needing its own
             // dispose) if PublishIncrementalUpdate/OnRefreshFinished raced in and stored something new into

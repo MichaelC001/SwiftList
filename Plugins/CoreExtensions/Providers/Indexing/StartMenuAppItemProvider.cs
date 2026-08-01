@@ -13,11 +13,18 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
 {
     public string Name => TranslationService.Get("Plugins_StartMenuAppItemProviderName");
 
+    /// <summary>What this provider's directories are registered and notified under.</summary>
+    private const string RegistrationId = "CoreExtensions.StartMenu";
+
     public event Action? ItemsChanged;
+
+    private readonly IDisposable _directoryWatch;
 
     public StartMenuAppItemProvider()
     {
-        DirectoryIndexerService.DirectoryChanged += OnDirectoryChanged;
+        // Only this provider's own directories reach here, so there is nothing to check: the host knows
+        // whose registration a change fell under and calls the one that owns it.
+        _directoryWatch = DirectoryIndexerService.WatchDirectories(RegistrationId, () => ItemsChanged?.Invoke());
         PluginSettingsService.SettingChanged += OnSettingChanged;
         try
         {
@@ -27,20 +34,12 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
                     continue;
 
                 // Register directory to the host system indexer for global monitoring and search
-                DirectoryIndexerService.RegisterDirectory("CoreExtensions.StartMenu", root, recursive: true, filterPattern: "*.lnk");
+                DirectoryIndexerService.RegisterDirectory(RegistrationId, root, recursive: true, filterPattern: "*.lnk");
             }
         }
         catch (Exception ex)
         {
             PluginSdk.Logger.Log($"[StartMenuAppItemProvider] Failed to register directories to indexer: {ex.Message}", PluginSdk.LogLevel.Warn);
-        }
-    }
-
-    private void OnDirectoryChanged(string pluginId)
-    {
-        if (string.Equals(pluginId, "CoreExtensions.StartMenu", StringComparison.OrdinalIgnoreCase))
-        {
-            ItemsChanged?.Invoke();
         }
     }
 
@@ -55,11 +54,11 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
 
     public void Dispose()
     {
-        DirectoryIndexerService.DirectoryChanged -= OnDirectoryChanged;
+        _directoryWatch.Dispose();
         PluginSettingsService.SettingChanged -= OnSettingChanged;
         try
         {
-            DirectoryIndexerService.UnregisterDirectories("CoreExtensions.StartMenu");
+            DirectoryIndexerService.UnregisterDirectories(RegistrationId);
         }
         catch { }
         GC.SuppressFinalize(this);

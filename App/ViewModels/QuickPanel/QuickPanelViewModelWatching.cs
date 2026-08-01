@@ -9,6 +9,7 @@ public partial class QuickPanelViewModel
 {
     // The registration keys currently held, one per group on screen. Empty means nothing is subscribed.
     private readonly List<string> _watchKeys = new();
+    private readonly List<IDisposable> _watches = new();
 
     // Each source subscribes under its own key, so the notification names which group to reload rather
     // than "something the panel is showing changed". Prefixed to keep it clear of a plugin's own id,
@@ -34,7 +35,6 @@ public partial class QuickPanelViewModel
         // Touching Instance is what binds the SDK delegates this then calls through; without it the
         // registration below is a silent no-op.
         _ = Core.Services.Plugin.DirectoryIndex.CoreDirectoryIndexManager.Instance;
-        PluginSdk.Services.DirectoryIndexerService.DirectoryChanged += OnDirectoryChanged;
 
         foreach (var group in Groups)
         {
@@ -46,6 +46,10 @@ public partial class QuickPanelViewModel
             // one of them, and one that does not is not.
             PluginSdk.Services.DirectoryIndexerService.RegisterDirectory(
                 key, group.FolderPath, source.Recursive, "*");
+            // One subscription per registration, each closing over the group it belongs to: what comes
+            // back is "this group's folder changed", not "somebody's folder changed, was it yours".
+            var sourceId = group.SourceId;
+            _watches.Add(PluginSdk.Services.DirectoryIndexerService.WatchDirectories(key, () => ReloadGroup(sourceId)));
             _watchKeys.Add(key);
         }
     }
@@ -53,7 +57,9 @@ public partial class QuickPanelViewModel
     /// <summary>Stops, and forgets, everything StartWatching set up. Safe to call when nothing is running.</summary>
     public void StopWatching()
     {
-        PluginSdk.Services.DirectoryIndexerService.DirectoryChanged -= OnDirectoryChanged;
+        foreach (var watch in _watches)
+            watch.Dispose();
+        _watches.Clear();
 
         foreach (var key in _watchKeys)
             PluginSdk.Services.DirectoryIndexerService.UnregisterDirectories(key);
@@ -73,16 +79,8 @@ public partial class QuickPanelViewModel
     }
 
     /// <summary>Reloads the one group whose folder settled. Raised off the UI thread, so it comes back.</summary>
-    /// <remarks>
-    /// The registry is process-wide and every plugin's registrations report through the same event, so
-    /// the key is checked rather than assumed: everything not registered by this panel is somebody
-    /// else's.
-    /// </remarks>
-    private void OnDirectoryChanged(string key)
+    private void ReloadGroup(string sourceId)
     {
-        if (!_watchKeys.Contains(key)) return;
-
-        var sourceId = key["__quickpanel::".Length..];
         var dispatcher = System.Windows.Application.Current?.Dispatcher;
         if (dispatcher == null) return;
 

@@ -28,5 +28,9 @@ internal static class NetworkIndexerHelper
         CachePath = current?.CachePath ?? IndexerHelper.GetCachePath(drive),
         LastUpdated = index?.LastUpdated ?? current?.LastUpdated,
         Error = error
+        // Revision/ChangedDirectories are deliberately NOT set here. This rebuilds the status object
+        // from scratch and several callers pass current: null, which would reset a revision that must
+        // only ever go up -- NetworkIndexerPublisher.StoreStatus carries them across instead, in the
+        // one place that owns the drive's status dictionary.
     };
 }

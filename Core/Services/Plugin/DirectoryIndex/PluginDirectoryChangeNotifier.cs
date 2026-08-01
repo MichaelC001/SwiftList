@@ -1,6 +1,7 @@
 using SwiftList.Core.DriveMonitoring;
 
 using SwiftList.Core.Indexer.NetworkDrive;
+using SwiftList.Core.Indexer.Usn;
 
 using SwiftList.Core.Services.Network;
 
@@ -37,6 +38,7 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
     private readonly KeyedDebouncer<string> _debouncer = new(QuietPeriodMs, StringComparer.OrdinalIgnoreCase);
     private readonly Func<IReadOnlyList<(string PluginId, string Path)>> _registrations;
     private readonly Dictionary<string, long> _lastLocalRevisions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _lastNetworkRevisions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private CancellationTokenSource? _localStatusCts;
     private bool _subscribedToNetwork;
@@ -86,13 +88,34 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
             _localStatusCts?.Dispose();
             _localStatusCts = null;
             _lastLocalRevisions.Clear();
+            _lastNetworkRevisions.Clear();
         }
     }
 
+    // Network shares, WSL distros and folder indexes, all through the same shape as a local drive: a
+    // status arrives here for progress, a state change or an error just as often as for the index
+    // taking content in, and only the revision tells those apart. Reporting on every status meant a
+    // scan that publishes its progress a hundred times re-listed every plugin's directories a hundred
+    // times over.
     private void OnNetworkStatuses(IReadOnlyList<NetworkIndexStatus> statuses)
     {
         foreach (var status in statuses)
-            ReportSource(status.Drive);
+        {
+            if (string.IsNullOrEmpty(status.Drive))
+                continue;
+
+            long previousRevision;
+            lock (_gate)
+            {
+                var known = _lastNetworkRevisions.TryGetValue(status.Drive, out previousRevision);
+                _lastNetworkRevisions[status.Drive] = status.Revision;
+                if (!known || previousRevision == status.Revision)
+                    continue;
+            }
+
+            foreach (var pluginId in PluginsForChange(status.Drive, status.ChangedDirectories, previousRevision, _registrations()))
+                Report(pluginId);
+        }
     }
 
     // The elevated service publishes a status update after every applied change batch (see
@@ -161,34 +184,36 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
 
     private void ReportLocalChange(Indexer.Usn.UsnIndexer.DriveIndexStatus drive, long previousRevision)
     {
-        foreach (var pluginId in PluginsForLocalChange(drive, previousRevision, _registrations()))
+        foreach (var pluginId in PluginsForChange(drive.Drive, drive.ChangedDirectories, previousRevision, _registrations()))
             Report(pluginId);
     }
 
     /// <summary>
-    /// The plugins a local drive's revision move actually concerns, from the directories it moved in.
+    /// The plugins a revision move actually concerns, from the directories it moved in. One rule for
+    /// every index behind it -- local drive, network share, WSL distro or folder index.
     /// </summary>
     /// <remarks>
-    /// Falls back to the whole drive when the change list cannot account for everything since
-    /// <paramref name="previousRevision"/> -- a batch too wide to enumerate, or one whose entries have
-    /// since fallen off the end. Losing precision there costs a refresh nobody needed; assuming
-    /// nothing happened would cost a plugin the change it was watching for, so the imprecise answer is
-    /// the safe one.
+    /// Falls back to the whole source when the change list cannot account for everything since
+    /// <paramref name="previousRevision"/> -- a batch too wide to enumerate, a rescan that replaced a
+    /// whole tree, or entries that have since fallen off the end. Losing precision there costs a
+    /// refresh nobody needed; assuming nothing happened would cost a plugin the change it was watching
+    /// for, so the imprecise answer is the safe one.
     /// </remarks>
-    internal static IEnumerable<string> PluginsForLocalChange(
-        Indexer.Usn.UsnIndexer.DriveIndexStatus drive,
+    internal static IEnumerable<string> PluginsForChange(
+        string sourceKey,
+        DriveChangedDirectories changed,
         long previousRevision,
         IReadOnlyList<(string PluginId, string Path)> registrations)
     {
-        if (!drive.ChangedDirectories.Covers(previousRevision))
+        if (!changed.Covers(previousRevision))
         {
-            foreach (var pluginId in PluginsUnderSource(drive.Drive, registrations))
+            foreach (var pluginId in PluginsUnderSource(sourceKey, registrations))
                 yield return pluginId;
             yield break;
         }
 
         var reported = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var directory in drive.ChangedDirectories.DirectoriesAfter(previousRevision))
+        foreach (var directory in changed.DirectoriesAfter(previousRevision))
         {
             foreach (var (pluginId, path) in registrations)
             {

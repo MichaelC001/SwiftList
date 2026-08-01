@@ -82,78 +82,91 @@ public sealed class PluginDirectoryChangeNotifierTests
         ("FileFilters", @"C:\Movies"),
     };
 
-    private static UsnIndexer.DriveIndexStatus Drive(long revision, DriveChangedDirectories changed)
-        => new() { Drive = "C", Revision = revision, ChangedDirectories = changed };
+    private static List<string> Affected(DriveChangedDirectories changed, long previousRevision, string source = "C")
+        => PluginDirectoryChangeNotifier.PluginsForChange(source, changed, previousRevision, Registrations).ToList();
 
-    // The bug this whole mechanism exists for: a drive revision alone says "C: moved", which is true of
-    // every temp file write, and the Start Menu sits on C: like everything else does.
+    // The bug this whole mechanism exists for: a revision alone says "C: moved", which is true of every
+    // temp file write, and the Start Menu sits on C: like everything else does.
     [TestMethod]
-    public void PluginsForLocalChange_ChangeElsewhereOnTheDrive_WakesNobody()
+    public void PluginsForChange_ChangeElsewhereOnTheSource_WakesNobody()
     {
         var changed = new DriveChangedDirectories();
         changed.Record(1, new[] { @"C:\Users\me\AppData\Local\Temp" });
 
-        Assert.IsEmpty(PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(1, changed), 0, Registrations).ToList());
+        Assert.IsEmpty(Affected(changed, 0));
     }
 
     [TestMethod]
-    public void PluginsForLocalChange_ChangeInsideARegisteredDirectory_WakesThatPluginOnly()
+    public void PluginsForChange_ChangeInsideARegisteredDirectory_WakesThatPluginOnly()
     {
         var changed = new DriveChangedDirectories();
         changed.Record(1, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
 
-        CollectionAssert.AreEqual(
-            new[] { "CoreExtensions.StartMenu" },
-            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(1, changed), 0, Registrations).ToList());
+        CollectionAssert.AreEqual(new[] { "CoreExtensions.StartMenu" }, Affected(changed, 0));
     }
 
     // Several directories under the same registration in one span is still one refresh.
     [TestMethod]
-    public void PluginsForLocalChange_ReportsEachPluginOnce()
+    public void PluginsForChange_ReportsEachPluginOnce()
     {
         var changed = new DriveChangedDirectories();
         changed.Record(1, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
         changed.Record(2, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Tools" });
 
-        CollectionAssert.AreEqual(
-            new[] { "CoreExtensions.StartMenu" },
-            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(2, changed), 0, Registrations).ToList());
+        CollectionAssert.AreEqual(new[] { "CoreExtensions.StartMenu" }, Affected(changed, 0));
     }
 
     // Only what happened since this subscriber's own revision: an older entry it already acted on must
     // not make it act again.
     [TestMethod]
-    public void PluginsForLocalChange_IgnoresDirectoriesItHasAlreadySeen()
+    public void PluginsForChange_IgnoresDirectoriesItHasAlreadySeen()
     {
         var changed = new DriveChangedDirectories();
         changed.Record(1, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
         changed.Record(2, new[] { @"C:\Users\me\AppData\Local\Temp" });
 
-        Assert.IsEmpty(PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(2, changed), 1, Registrations).ToList());
+        Assert.IsEmpty(Affected(changed, 1));
     }
 
-    // A gap means "something happened and I cannot tell you where". Refreshing everything under the
-    // drive is a wasted pass; concluding nothing happened would lose the change.
+    // A gap means "something happened and I cannot tell you where" -- a batch too wide to enumerate, or
+    // a rescan that replaced a whole tree. Refreshing everything under the source is a wasted pass;
+    // concluding nothing happened would lose the change.
     [TestMethod]
-    public void PluginsForLocalChange_WhenTheChangeListHasAGap_FallsBackToTheWholeDrive()
+    public void PluginsForChange_WhenTheChangeListHasAGap_FallsBackToTheWholeSource()
     {
         var changed = new DriveChangedDirectories();
         changed.RecordUnknown(5);
 
         CollectionAssert.AreEquivalent(
             new[] { "CoreExtensions.StartMenu", "FileFilters" },
-            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(5, changed), 0, Registrations).ToList());
+            Affected(changed, 0));
     }
 
     // A plugin registered ABOVE the directory that changed is affected too -- its listing includes it.
     [TestMethod]
-    public void PluginsForLocalChange_ChangeBelowARegisteredDirectory_StillWakesIt()
+    public void PluginsForChange_ChangeBelowARegisteredDirectory_StillWakesIt()
     {
         var changed = new DriveChangedDirectories();
         changed.Record(1, new[] { @"C:\Movies\2024\Summer" });
 
+        CollectionAssert.AreEqual(new[] { "FileFilters" }, Affected(changed, 0));
+    }
+
+    // Same rule whatever index is behind it: a share, a WSL distro and a folder index all report through
+    // the one path now, so a directory under a UNC root behaves exactly as one under a drive letter.
+    [TestMethod]
+    public void PluginsForChange_WorksTheSameForANetworkSource()
+    {
+        var registrations = new List<(string PluginId, string Path)>
+        {
+            ("Plugin.Share", @"\\nas\media\music"),
+            ("Plugin.Elsewhere", @"\\nas\media\video"),
+        };
+        var changed = new DriveChangedDirectories();
+        changed.Record(1, new[] { @"\\nas\media\music\albums" });
+
         CollectionAssert.AreEqual(
-            new[] { "FileFilters" },
-            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(1, changed), 0, Registrations).ToList());
+            new[] { "Plugin.Share" },
+            PluginDirectoryChangeNotifier.PluginsForChange(@"\\nas\media", changed, 0, registrations).ToList());
     }
 }
