@@ -11,8 +11,13 @@ namespace SwiftList.App.Services.QuickPanel;
 /// service, which sends QuickPanelHotkey when the configured combination fires.
 /// </summary>
 /// <remarks>
-/// The panel is created once and reused, hidden rather than closed, matching the quick window. That is
-/// also why Alt+F4 is suppressed on it: an OS close would leave this holding a dead window.
+/// A window per open, closed on the way out, deliberately unlike the quick window which is reused. What
+/// that window costs to build lands inside the load this already awaits, and what it buys is that no
+/// state can survive an open it was not meant to -- see the note on its construction below for the five
+/// defects that did.
+///
+/// The view model outlives them. It holds what should carry across (which workspace was active, what the
+/// user did to a group while the panel was up) and nothing that is the window's own.
 ///
 /// Show returns without opening when there is nothing to show. An empty shell over the window in front
 /// would only be in the way.
@@ -54,6 +59,18 @@ public sealed class QuickPanelManager : IDisposable
 
     public void Toggle()
     {
+        // Before the foreground is even read, let alone shown to. A shell light-dismiss overlay -- the
+        // Start Menu, Search, the notification centre -- does not hand over keyboard focus the normal
+        // way: once anything of ours calls Show or SetForegroundWindow, GetForegroundWindow() starts
+        // reporting US while the overlay silently keeps every keystroke, and no API reveals the
+        // mismatch afterwards. So it has to be caught while it is still truthfully foreground. The quick
+        // window does the same thing at the same point, for the same reason.
+        //
+        // Earlier here than there, because this panel also DOCKS to the foreground window: summoned
+        // over an open Start Menu it would otherwise pin itself to the Start Menu's corner and come up
+        // unable to receive a keystroke.
+        Views.QuickSearchWindow.Helpers.ShellOverlayDismissHelper.DismissOverlayIfForeground();
+
         // Read the foreground window before showing anything: the panel docks to whatever was in front
         // at the moment it was asked for, and showing first would make that "whatever was in front
         // before us", which is only the same window by luck.
@@ -119,11 +136,15 @@ public sealed class QuickPanelManager : IDisposable
 
     private async Task ShowCoreAsync(IntPtr host, string? process)
     {
+        // Cancels a trim that is armed but has not fired, before anything else runs: emptying the
+        // working set moments before a summon is strictly worse than never emptying it.
+        Services.IdleWorkingSetTrimmer.WindowShowing();
+
         _viewModel ??= new QuickPanelViewModel();
 
-        // Every open, not just the first: the panel is reused rather than rebuilt, so without this it
-        // would keep showing whatever was true the first time it was ever opened. Awaited before the
-        // window appears because the decision below depends on the result.
+        // Loaded before there is a window to put it in: whether one is built at all depends on what this
+        // turns up, and the panel shows what is recent and where you currently are, so it has to be
+        // asked on every open rather than once.
         await _viewModel.RefreshAsync(process);
 
         // Nothing to show, nothing to open: the panel exists to put content over the window in front,
@@ -135,43 +156,64 @@ public sealed class QuickPanelManager : IDisposable
         }
 
 
-        if (_window == null)
+        // A window per open, closed on the way out. The view model outlives them, so where the user left
+        // the panel -- the active workspace, and what they did to a group while it was up -- carries
+        // across; everything that is purely the window's is destroyed with it.
+        //
+        // This replaced a single reused window, and the reason is worth keeping: five separate defects
+        // came out of that one instance holding state between opens. A drag snapshot stranded on its
+        // adorner layer. A hotkey reference to a list that had been torn down. The dismissal path
+        // emptying a panel that had already reopened behind it. A first frame painted from the previous
+        // open's containers. Each was fixed on its own; none of them could have happened here. Building
+        // one costs about 60ms, which lands inside the load this already awaits.
+        _window = new QuickPanelWindow(_viewModel);
+
+        // Closing is the only way out, so this is the one place the reference is dropped -- whether the
+        // close came from Hide, from Escape, or from anything else that ever gets to close a window.
+        _window.Closed += (_, _) =>
         {
-            _window = new QuickPanelWindow(_viewModel);
-            // Losing the foreground dismisses the panel, the way the inline window goes when the user
-            // clicks away. Subscribed once at construction rather than per show: the window is reused,
-            // so wiring it on each Show would stack a fresh handler every time.
-            _window.Deactivated += (_, _) =>
-            {
-                // Not while the window is being dragged: DragMove runs a modal loop the window comes
-                // out of deactivated, which is not the user clicking away.
-                if (_window is { IsDraggingWindow: true }) return;
+            _window = null;
 
-                // Nor while the action flyout is up. It hangs its key handler on this window and
-                // needs it alive to reach it, so hiding here would take the menu down with the panel
-                // and leave every shortcut on it looking dead.
-                if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
+            // Armed, not done. The settings and full search windows trim their working set on Closed,
+            // but those are closed rarely; this one closes as often as the quick window hides, which is
+            // the case IdleWorkingSetTrimGate was written for after measuring it: the trim frees no
+            // committed memory at all, and every evicted page is faulted back on the next summon --
+            // ~17MB of them, in the phase that is 70% of a summon. So it waits for the process to go
+            // genuinely quiet, and a burst of summons pays nothing.
+            //
+            // The window itself is garbage the moment this runs; the next collection has it, with no
+            // help from here. Nor is the icon cache touched: it is shared with the quick window, and
+            // dropping it here would make both re-resolve every icon.
+            Services.IdleWorkingSetTrimmer.WindowHidden();
+        };
 
-                // Nor while the workspace on screen has a group that takes dropped files. Dragging one
-                // in from Explorer begins by clicking Explorer, which is this very event -- so a panel
-                // that dismissed itself here would be gone before the drag it exists for could start.
-                // It closes on the hotkey or Escape instead, for as long as that is true.
-                if (_viewModel is { AcceptsDrops: true }) return;
+        // Losing the foreground dismisses the panel, the way the inline window goes when the user clicks
+        // away. Wired per window because there is a new one each open, which is also what stops these
+        // handlers stacking up the way they would have on a reused one.
+        _window.Deactivated += (_, _) =>
+        {
+            // Not while the window is being dragged: DragMove runs a modal loop the window comes out of
+            // deactivated, which is not the user clicking away.
+            if (_window is { IsDraggingWindow: true }) return;
 
-                Hide();
-            };
-        }
+            // Nor while the action flyout is up. It hangs its key handler on this window and needs it
+            // alive to reach it, so closing here would take the menu down with the panel and leave every
+            // shortcut on it looking dead.
+            if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
+
+            // Nor while the workspace on screen has a group that takes dropped files. Dragging one in
+            // from Explorer begins by clicking Explorer, which is this very event -- so a panel that
+            // dismissed itself here would be gone before the drag it exists for could start. It closes
+            // on the hotkey or Escape instead, for as long as that is true.
+            if (_viewModel is { AcceptsDrops: true }) return;
+
+            Hide();
+        };
 
         // Positioned before Show: placing it afterwards lets the window paint once at its old location
-        // and jump, which reads as a flicker every time the panel opens.
+        // and jump, which reads as a flicker every time the panel opens. A brand-new window has no old
+        // location, but it does have a default one, and that is just as wrong to paint first.
         PositionAgainst(host);
-
-        // And laid out before Show, for the same reason one step further in. A hidden window does not
-        // lay itself out, so the groups replaced above are still only a collection: the containers on
-        // screen are the previous open's, at the previous open's size, and they are what the first
-        // painted frame would show before the post-show pass replaced them. The quick window's own Show
-        // forces the same pass for the same reason.
-        _window.UpdateLayout();
         _window.Show();
 
         // After Show, and only then: the window has to exist as a real HWND before it can be given the
@@ -183,33 +225,24 @@ public sealed class QuickPanelManager : IDisposable
 
     private bool _hiding;
 
+    /// <summary>Closes the panel. There is nothing to tidy up afterwards -- the window IS the state.</summary>
+    /// <remarks>
+    /// Closing raises Deactivated, which is wired to this same method, so without the guard the first
+    /// close re-enters. The Closed handler is what drops the reference, so nothing here has to.
+    /// </remarks>
     public void Hide()
     {
         if (_window == null || _hiding) return;
 
-        // Hiding the window raises Deactivated, which is itself wired to this method, so without the
-        // guard the first hide re-enters and deactivates the view model twice.
         _hiding = true;
         try
         {
-            _window.Hide();
+            _window.Close();
         }
         finally
         {
             _hiding = false;
         }
-
-        // After the window is gone, never before: clearing while it is still up would lay the panel out
-        // empty in front of the user on the way out. Everything it shows is loaded fresh on the next
-        // open anyway, so holding the last workspace's groups behind a hidden window buys nothing and
-        // costs a frame of the wrong content if anything renders before that load lands.
-        //
-        // Only if it is still gone. Window.Hide() pumps, so a hotkey press queued behind it can run an
-        // entire Show -- awaits included -- before this line is reached, and clearing then empties a
-        // panel that is on screen and freshly loaded. That is the "no tabs, nothing to show" state that
-        // turned up over a window the user had just clicked back into.
-        if (_window is { IsVisible: false })
-            _viewModel?.Clear();
     }
 
     /// <summary>Docks the panel inside the host window's bottom-right corner.</summary>

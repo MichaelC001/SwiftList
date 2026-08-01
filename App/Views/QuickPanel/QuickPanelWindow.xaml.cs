@@ -5,7 +5,6 @@ using SwiftList.App;
 using SwiftList.App.Services;
 using SwiftList.App.Services.ShellMenu.ActionFlyout;
 using SwiftList.App.ViewModels.QuickPanel;
-using Native = SwiftList.App.Views.InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods;
 
 namespace SwiftList.App.Views.QuickPanel;
 
@@ -25,9 +24,9 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     public QuickPanelWindow(QuickPanelViewModel viewModel)
     {
         InitializeComponent();
-        // Both suppressed, as on the quick window: this panel is shown and hidden rather than opened
-        // and closed, and the manager keeps the one instance, so letting Alt+F4 destroy it would leave
-        // that reference pointing at a dead window with nothing to bring back.
+        // The system menu and its Alt+F4 stay blocked, though closing is now the normal way out: this
+        // window has no title bar to right-click and no close button, so the menu has nothing to offer,
+        // and the manager's own Escape and hotkey are the ways out that leave it in a known state.
         Helpers.Visuals.SystemMenuBlocker.Attach(this);
         DataContext = viewModel;
 
@@ -35,14 +34,6 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         // are both answered per list rather than once for a named one. GroupList_Loaded below does the
         // registering as each appears.
 
-        // Every one of those lists is torn down when the panel closes, so the one _activeList points at
-        // is detached the moment it does. Left dangling it is worse than null: GroupList_Loaded's ??=
-        // would never replace it, and every hotkey on the next open would read the selection of a list
-        // that is no longer on screen -- which is always empty, silently.
-        IsVisibleChanged += (_, e) =>
-        {
-            if (e.NewValue is false) _activeList = null;
-        };
     }
 
 
@@ -52,40 +43,35 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
 
 
 
-    /// <summary>Takes the foreground and puts keyboard focus on the list.</summary>
+    /// <summary>Takes the foreground and puts keyboard focus in the filter box.</summary>
     /// <remarks>
-    /// The window is ShowActivated="False", so it comes up without focus and a plain Activate() from a
-    /// thread that does not own the foreground is ignored by Windows. Attaching to the foreground
-    /// thread's input queue for the duration is what makes the call land, the same approach and the
-    /// same P/Invokes the inline search window uses to focus its own search box.
+    /// The quick window's own summon, step for step, rather than a second way of doing this: the
+    /// overlay dismissal has already run in QuickPanelManager.Toggle (it has to, before anything is
+    /// shown), and what is left is ForceForeground through the hook, then Activate, then the box.
+    ///
+    /// ForceForeground rather than a bare Activate: this window is ShowActivated="False", so it comes up
+    /// without focus, and Windows ignores a foreground grab from a thread that does not already own it.
+    /// The hook process does own real recent input, which is what makes the handover land -- the same
+    /// route and the same helper the quick window goes through.
+    ///
+    /// Queued at Input priority so it runs after the layout and render that Show just scheduled; asking
+    /// for focus before the box exists on screen is asking a control that is not there yet.
+    ///
+    /// The box rather than a list: the panel is summoned to reach something, and typing towards it is
+    /// the fastest way in when the workspace holds more than a screenful. What it costs is that a bare
+    /// key is now typing rather than running an action -- TryRunActionHotkey stands down while the box
+    /// has focus, by design, and a click on a row is what hands the keyboard back to the list.
     /// </remarks>
-    public bool ActivateAndFocus()
+    public void ActivateAndFocus() => Dispatcher.BeginInvoke(new Action(() =>
     {
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+            Views.QuickSearchWindow.Helpers.QuickSearchWindowController.ForceForeground(hwnd);
 
-        var foreground = Native.GetForegroundWindow();
-        var currentThread = Native.GetCurrentThreadId();
-        var foregroundThread = foreground != IntPtr.Zero
-            ? Native.GetWindowThreadProcessId(foreground, out _)
-            : 0;
-
-        var attached = false;
-        try
-        {
-            if (foregroundThread != 0 && foregroundThread != currentThread)
-                attached = Native.AttachThreadInput(currentThread, foregroundThread, true);
-
-            Activate();
-            _activeList?.Focus();
-            if (_activeList != null) Keyboard.Focus(_activeList);
-
-            return IsActive;
-        }
-        finally
-        {
-            if (attached)
-                Native.AttachThreadInput(currentThread, foregroundThread, false);
-        }
-    }
+        Activate();
+        Focus();
+        FilterBox.FocusInput();
+    }), System.Windows.Threading.DispatcherPriority.Input);
 
 
     // Escape does what losing the foreground does. Previewed rather than handled on the way up, since

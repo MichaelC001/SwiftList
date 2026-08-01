@@ -99,8 +99,8 @@
                     </Grid.ColumnDefinitions>
 
                     <local:QuickPanelTabStrip Grid.Column="0" VerticalAlignment="Bottom"/>
-                    <local:QuickPanelSearchBox Grid.Column="1" Width="150" Margin="8,0,0,4"
-                                               VerticalAlignment="Bottom"/>
+                    <local:QuickPanelSearchBox x:Name="FilterBox" Grid.Column="1" Width="150"
+                                               Margin="8,0,0,4" VerticalAlignment="Bottom"/>
                 </Grid>
 
 

@@ -17,6 +17,13 @@ public partial class QuickPanelViewModel
     /// </remarks>
     public async Task RefreshAsync(string? processName = null, CancellationToken token = default)
     {
+        // Each open starts unfiltered. The box is part of the window and every open builds a new one, so
+        // it is empty on screen -- a query left on this view model would narrow the list by something
+        // the user cannot see and did not type. Assigned to the field rather than the property: there is
+        // nothing to re-filter, the groups it would run over are about to be replaced.
+        _searchQuery = string.Empty;
+        OnPropertyChanged(nameof(SearchQuery));
+
         var settings = _readSettings();
         // Disabled workspaces are dropped here rather than filtered at every use: a workspace that has
         // no tab must also not be reachable by a process rule or by the number keys.

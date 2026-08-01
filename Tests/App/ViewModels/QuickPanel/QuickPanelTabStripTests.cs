@@ -138,9 +138,8 @@ public sealed class QuickPanelTabStripTests
 
         await vm.RefreshAsync();
         await vm.RefreshAsync();
-        vm.Clear();
 
-        Assert.AreEqual(0, saves.Count, "rebuilding and emptying the strip are not orders the user chose");
+        Assert.AreEqual(0, saves.Count, "rebuilding the strip is not an order the user chose");
         CollectionAssert.AreEqual(new[] { "w1", "w2" }, settings.Tabs.Select(t => t.Id).ToList());
     }
 }

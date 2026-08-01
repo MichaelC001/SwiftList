@@ -202,42 +202,6 @@ public sealed class QuickPanelViewModelTests
         Assert.IsFalse(vm.Groups[0].IsThumbnailView);
         Assert.IsFalse(vm.Groups[0].IsExpanded);
     }
-    // before the next load lands cannot show the last workspace's files.
-    [TestMethod]
-    public async Task Clear_EmptiesEverythingThatIsOnScreen()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Name = "Other" });
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-
-        vm.Clear();
-
-        Assert.IsEmpty(vm.Groups);
-        Assert.IsEmpty(vm.Tabs);
-        Assert.IsTrue(vm.IsEmpty);
-        Assert.IsFalse(vm.HasContent);
-        Assert.IsFalse(vm.HasTabStrip);
-    }
-
-    // The active workspace is the one piece of the panel's state that is not on screen, so clearing
-    // must not take it: that is where the panel reopens.
-    [TestMethod]
-    public async Task Clear_KeepsWhereTheUserLeftThePanel()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        var second = new QuickPanelTab { Id = "w2", Name = "Other" };
-        second.Folders.Add(Folder(@"C:\b", "s2"));
-        settings.Tabs.Add(second);
-
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-        await vm.SelectTabAsync("w2");
-        vm.Clear();
-        await vm.RefreshAsync();
-
-        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
-    }
 
     // The whole way round, because the two halves agree only if every id survives the trip: the settings
     // page edits a clone, files the new name under the source's id, and Save puts the clone back -- and

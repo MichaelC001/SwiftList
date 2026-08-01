@@ -139,38 +139,6 @@ public partial class QuickPanelViewModel : ViewModelBase
         ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
         : workspace.Name.Trim();
 
-    /// <summary>Drops everything on screen, for when the panel is hidden.</summary>
-    /// <remarks>
-    /// The window is hidden and reused rather than closed, so without this it keeps the last workspace's
-    /// groups behind it until the next refresh replaces them -- and anything that gets a frame in before
-    /// that lands shows another workspace's files rather than nothing.
-    ///
-    /// Which workspace was active is deliberately kept: that is where the panel reopens, and it is the
-    /// one piece of this that is not on screen.
-    /// </remarks>
-    public void Clear()
-    {
-        Groups.Clear();
-        _content = new Dictionary<string, List<QuickPanelGroupViewModel>>(StringComparer.OrdinalIgnoreCase);
-        // The box on screen is emptied with everything else, so the next open is not silently filtered
-        // by something typed into a panel that has since been away.
-        SearchQuery = string.Empty;
-        // Under the same flag a rebuild uses: emptying the strip on the way out is not the user putting
-        // the workspaces in a new order, and it is the one order that must never be written.
-        _rebuildingTabs = true;
-        try
-        {
-            Tabs.Clear();
-        }
-        finally
-        {
-            _rebuildingTabs = false;
-        }
-        IsEmpty = true;
-        OnPropertyChanged(nameof(HasTabStrip));
-        OnPropertyChanged(nameof(HasContent));
-    }
-
     /// <summary>Switches the panel to another workspace. Everything is already loaded, so this is a swap.</summary>
     public Task SelectTabAsync(string tabId, CancellationToken token = default)
     {

@@ -147,17 +147,19 @@ public sealed class QuickPanelFilterTests
         Assert.HasCount(2, vm.Groups);
     }
 
-    // The panel is hidden with something typed, and comes back showing everything: the box on screen is
-    // empty again, so a list still narrowed by it would be narrowed by nothing visible.
+    // The panel is closed with something typed and opened again: every open builds a new box, which is
+    // empty on screen, so a query surviving on the view model would narrow the list by something the
+    // user cannot see and did not type.
     [TestMethod]
-    public async Task Clear_ForgetsWhatWasTyped()
+    public async Task Refresh_ForgetsWhatWasTyped()
     {
         var vm = await Loaded();
         vm.SearchQuery = "report";
 
-        vm.Clear();
+        await vm.RefreshAsync();
 
         Assert.AreEqual(string.Empty, vm.SearchQuery);
+        Assert.AreEqual(2, vm.Groups[0].Count, "and the list it had narrowed comes back whole");
     }
 
     // What the manager reads to decide whether losing the foreground should dismiss the panel: dragging
