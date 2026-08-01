@@ -14,7 +14,7 @@ namespace SwiftList.Plugins.CoreExtensions.Providers.QuickPanel;
 /// Capped at 20, like the startup panel's History tab and for the same reason: there is no settings page
 /// of its own to put the number on.
 /// </remarks>
-public class HistorySourceProvider : IQuickPanelSourceProvider
+public class HistorySourceProvider : IQuickPanelTabProvider
 {
     private const int MaxItems = 20;
 

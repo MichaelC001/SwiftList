@@ -21,8 +21,12 @@ public partial class QuickPanelViewModel : ViewModelBase
     private readonly Func<QuickPanelFolderSource, CancellationToken, Task<List<SearchResult>>> _load;
     private readonly Action _saveSettings;
 
-    /// <summary>The workspaces with a tab: enabled, and with something behind them.</summary>
-    private List<QuickPanelTab> _workspaces = new();
+    /// <summary>The tabs on screen: enabled, and with something behind them.</summary>
+    /// <remarks>
+    /// Workspaces and plugin tabs together, in one order. Which kind a tab is matters only while it
+    /// loads and when it is closed, both of which the source answers for itself.
+    /// </remarks>
+    private List<IQuickPanelTabSource> _tabs = new();
 
     /// <summary>What each of those loaded, so switching between them is a swap rather than a reload.</summary>
     private Dictionary<string, List<QuickPanelGroupViewModel>> _content = new(StringComparer.OrdinalIgnoreCase);
@@ -88,9 +92,16 @@ public partial class QuickPanelViewModel : ViewModelBase
     /// because nothing has loaded yet when this runs: the answer is what the panel WANTS to open on, and
     /// AddWorkspaceTab settles for something else only until that one arrives.
     /// </remarks>
-    private string ResolveActiveTabId(QuickPanelSettings settings, string? processName, List<QuickPanelTab> candidates)
+    /// <remarks>
+    /// Only a workspace can be claimed by the app in front: claiming is a statement that this app means
+    /// these folders, and a plugin's list is not anyone's folders. Everything after that is answered over
+    /// the whole strip, plugin tabs included -- they can be the last tab you were on, and they can be the
+    /// only tab there is.
+    /// </remarks>
+    private string ResolveActiveTabId(
+        QuickPanelSettings settings, string? processName, List<QuickPanelTab> workspaces, List<IQuickPanelTabSource> candidates)
     {
-        var claimed = QuickPanelTabSelection.SelectTabId(processName, candidates);
+        var claimed = QuickPanelTabSelection.SelectTabId(processName, workspaces);
         if (claimed != null)
             return claimed;
         if (Contains(_activeTabId))
@@ -113,14 +124,13 @@ public partial class QuickPanelViewModel : ViewModelBase
         try
         {
             Tabs.Clear();
-            foreach (var workspace in _workspaces)
+            foreach (var tab in _tabs)
             {
-                // Captured by value: the workspace list is replaced wholesale on every refresh, so a
-                // command that closed over the object would keep the old one alive and act on a stale
-                // copy.
-                var id = workspace.Id;
+                // Captured by value: the tab list is replaced wholesale on every refresh, so a command
+                // that closed over the source object would keep the old one alive and act on a stale copy.
+                var id = tab.Id;
                 Tabs.Add(new QuickPanelTabViewModel(
-                    id, NameOf(workspace), () => _ = SelectTabAsync(id), () => _ = CloseTabAsync(id))
+                    id, tab.Name, () => _ = SelectTabAsync(id), () => _ = CloseTabAsync(id))
                 {
                     IsSelected = id == _activeTabId,
                 });
@@ -133,34 +143,30 @@ public partial class QuickPanelViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasTabStrip));
     }
 
-    private static string NameOf(QuickPanelTab workspace) => string.IsNullOrWhiteSpace(workspace.Name)
-        ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
-        : workspace.Name.Trim();
-
-    /// <summary>Switches the panel to another workspace. Everything is already loaded, so this is a swap.</summary>
+    /// <summary>Switches the panel to another tab. Everything is already loaded, so this is a swap.</summary>
     public Task SelectTabAsync(string tabId, CancellationToken token = default)
     {
         if (string.IsNullOrEmpty(tabId) || tabId == _activeTabId)
             return Task.CompletedTask;
-        if (!_workspaces.Any(tab => tab.Id == tabId))
+        if (!_tabs.Any(tab => tab.Id == tabId))
             return Task.CompletedTask;
 
         _activeTabId = tabId;
         foreach (var tab in Tabs)
             tab.IsSelected = tab.Id == tabId;
 
-        ShowActiveWorkspace();
+        ShowActiveTab();
         return Task.CompletedTask;
     }
 
-    /// <summary>Switches to the nth workspace in the strip, for the number-key shortcut. 1-based.</summary>
+    /// <summary>Switches to the nth tab in the strip, for the number-key shortcut. 1-based.</summary>
     public Task SelectTabAtAsync(int oneBasedIndex, CancellationToken token = default)
         => oneBasedIndex >= 1 && oneBasedIndex <= Tabs.Count
             ? SelectTabAsync(Tabs[oneBasedIndex - 1].Id, token)
             : Task.CompletedTask;
 
-    /// <summary>Puts the active workspace's groups on screen, keeping whatever is typed in the box.</summary>
-    private void ShowActiveWorkspace()
+    /// <summary>Puts the active tab's groups on screen, keeping whatever is typed in the box.</summary>
+    private void ShowActiveTab()
     {
         Groups.Clear();
         if (_content.TryGetValue(_activeTabId, out var groups))

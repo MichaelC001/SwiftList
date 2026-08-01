@@ -53,6 +53,8 @@ public class QuickPanelSettingsViewModel : ViewModelBase
             Tabs.Add(BindRow(new QuickPanelTabSettingsViewModel(model)));
 
         _selectedTab = Tabs.FirstOrDefault(t => t.Id == panel.ActiveTabId) ?? Tabs.FirstOrDefault();
+
+        PluginTabs = QuickPanelPluginTabCatalog.Available(panel);
     }
 
     private readonly ICommand _rowMoveUp;
@@ -137,7 +139,27 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         // Ordered by the strip, not by _models: the list on screen is what the user arranged.
         panel.Tabs = Tabs.Select(t => _models.First(m => m.Id == t.Id)).ToList();
         panel.ActiveTabId = SelectedTab?.Id ?? panel.Tabs.FirstOrDefault()?.Id ?? string.Empty;
+
+        // Only the ones unticked here, and only among the tabs that exist right now: a plugin currently
+        // switched off has no row on this page, and rewriting the list from these rows alone would quietly
+        // reopen a tab the user closed before disabling its plugin.
+        var listed = PluginTabs.Select(option => option.Id).ToList();
+        panel.ClosedPluginTabIds = panel.ClosedPluginTabIds
+            .Where(id => !listed.Contains(id, StringComparer.OrdinalIgnoreCase))
+            .Concat(PluginTabs.Where(option => !option.IsOpen).Select(option => option.Id))
+            .ToList();
     }
+
+    /// <summary>The tabs the installed plugins offer, each ticked while the strip shows it.</summary>
+    /// <remarks>
+    /// A page-level list rather than something inside a workspace: a plugin's list is a whole collection,
+    /// orthogonal to whichever folders a workspace gathers, so it is a tab beside them rather than a
+    /// group inside one. It briefly was the other way, and the settings said so -- Favorites had to be
+    /// ticked into every workspace one at a time, and was missing from every new one.
+    /// </remarks>
+    public IReadOnlyList<QuickPanelPluginTabOption> PluginTabs { get; }
+
+    public bool HasPluginTabs => PluginTabs.Count > 0;
 
     private void AddTab()
     {

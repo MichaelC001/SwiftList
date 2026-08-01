@@ -182,7 +182,7 @@
   "Plugins_TypeThumbnailProvider": "썸네일 제공자",
   "Plugins_TypeQueryTokenProvider": "쿼리 수정자",
   "Plugins_TypeStartupPanelTabProvider": "시작 패널 탭",
-  "Plugins_TypeQuickPanelSourceProvider": "빠른 패널 소스",
+  "Plugins_TypeQuickPanelTabProvider": "빠른 패널 탭",
   "Plugins_TypeDesc_ISearchResultAction": "검색 결과 동작: 선택한 파일 또는 디렉터리에 대해 복사, 열기, 명령줄 실행 등을 수행합니다.",
   "Plugins_TypeDesc_IInstantResultProvider": "즉시 결과 제공자: 검색 상자의 결과나 구성을 실시간으로 계산하고 표시합니다.",
   "Plugins_TypeDesc_ISearchableItemProvider": "검색 가능한 항목 제공자: 메인 검색 색인에 검색 가능한 파일, 설정 또는 프로그램 데이터를 제공합니다.",
@@ -197,7 +197,7 @@
   "Plugins_TypeDesc_IResultColumnProvider": "결과 열 제공자: 검색 결과 목록에 추가 정보 열(예: 파일 크기)을 덧붙입니다.",
   "Plugins_TypeDesc_ISidebarFilterProvider": "사이드바 필터 제공자: 사이드바에 필터 패널(범주, 조건)을 삽입합니다.",
   "Plugins_TypeDesc_IStartupPanelTabProvider": "시작 패널 탭 제공자: 검색어가 비어 있을 때 최근 항목이나 폴더 목록을 표시합니다.",
-  "Plugins_TypeDesc_IQuickPanelSourceProvider": "빠른 패널에 소스를 제공하여 그룹 중 하나로 표시합니다",
+  "Plugins_TypeDesc_IQuickPanelTabProvider": "빠른 패널에 탭을 제공하여 작업 공간과 나란히 스트립에 표시합니다",
   "Plugins_TypeDesc_IFileDialogAdapter": "파일 대화 상자 어댑터: 열기/저장 파일 대화 상자를 가로채어 기능을 강화합니다.",
   "Plugins_TypeDesc_IAliasProvider": "별칭 제공자: 비 ASCII 텍스트 검색을 최적화하기 위해 병음/사용자 지정 별칭을 자동으로 생성합니다.",
   "Plugins_TypeDesc_IDynamicActionProvider": "동적 동작 제공자: 컨텍스트 메뉴에 동적 Windows 셸 메뉴나 사용자 지정 동작을 삽입합니다."

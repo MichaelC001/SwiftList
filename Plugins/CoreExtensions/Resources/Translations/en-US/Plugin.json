@@ -182,7 +182,7 @@
   "Plugins_TypeThumbnailProvider": "Thumbnail Provider",
   "Plugins_TypeQueryTokenProvider": "Query Modifier",
   "Plugins_TypeStartupPanelTabProvider": "Startup Panel Tabs",
-  "Plugins_TypeQuickPanelSourceProvider": "Quick Panel Sources",
+  "Plugins_TypeQuickPanelTabProvider": "Quick Panel Tabs",
   "Plugins_TypeDesc_ISearchResultAction": "Search result action: Performs copy, open, command line execute, etc. on selected files or folders.",
   "Plugins_TypeDesc_IInstantResultProvider": "Instant result provider: Calculates and presents search box results or configurations in real-time.",
   "Plugins_TypeDesc_ISearchableItemProvider": "Searchable item provider: Provides searchable files, settings, or program data for the main search index.",
@@ -197,7 +197,7 @@
   "Plugins_TypeDesc_IResultColumnProvider": "Result column provider: Appends extra information columns (e.g., file size) to the search result list.",
   "Plugins_TypeDesc_ISidebarFilterProvider": "Sidebar filter provider: Injects filter panels (categories, conditions) in the sidebar.",
   "Plugins_TypeDesc_IStartupPanelTabProvider": "Startup panel tab provider: Populates recent entries or folder lists when search query is empty.",
-  "Plugins_TypeDesc_IQuickPanelSourceProvider": "Contributes a source to the Quick Panel, shown as one of its groups",
+  "Plugins_TypeDesc_IQuickPanelTabProvider": "Contributes a tab to the Quick Panel, shown beside the workspaces in its strip",
   "Plugins_TypeDesc_IFileDialogAdapter": "File dialog adapter: Hijacks and enhances open/save file dialogs.",
   "Plugins_TypeDesc_IAliasProvider": "Alias provider: Auto-generates pinyin/custom aliases to optimize search on non-ASCII text.",
   "Plugins_TypeDesc_IDynamicActionProvider": "Dynamic action provider: Inject dynamic Windows shell menus or custom actions in the context menu."

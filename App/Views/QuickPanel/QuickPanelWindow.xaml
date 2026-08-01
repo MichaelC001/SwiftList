@@ -172,9 +172,12 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
+                                                    <!-- Hidden for the single group a plugin tab holds:
+                                                         the tab above already carries that name. -->
                                                     <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold"
                                                                Foreground="{DynamicResource AccentBlue}"
-                                                               VerticalAlignment="Center" Text="{Binding Title}"/>
+                                                               VerticalAlignment="Center" Text="{Binding Title}"
+                                                               Visibility="{Binding ShowsHeading, Converter={StaticResource BoolToVis}}"/>
 
                                                     <TextBlock Grid.Column="1" FontSize="11" Margin="6,0,0,0"
                                                                Foreground="{DynamicResource TextSecondary2}"

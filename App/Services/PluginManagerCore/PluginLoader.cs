@@ -168,10 +168,10 @@ internal static class PluginLoader
                     Logger.Log($"[PluginManager] Loaded startup panel tab provider: '{type.Name}' from {fileName}");
                 }
 
-                if (typeof(PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider).IsAssignableFrom(type))
+                if (typeof(PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider).IsAssignableFrom(type))
                 {
-                    var provider = (PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider)Activator.CreateInstance(type)!;
-                    registry.AddQuickPanelSourceProvider(provider);
+                    var provider = (PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider)Activator.CreateInstance(type)!;
+                    registry.AddQuickPanelTabProvider(provider);
                     Logger.Log($"[PluginManager] Loaded quick panel source provider: '{type.Name}' from {fileName}");
                 }
             }

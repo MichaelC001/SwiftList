@@ -16,68 +16,61 @@ namespace SwiftList.App.ViewModels.QuickPanel;
 // anywhere else two surfaces write one setting -- whoever saves last wins.
 public partial class QuickPanelViewModel
 {
-    /// <summary>Writes the strip's order back over the workspaces it came from.</summary>
+    /// <summary>Writes the strip's order down as the order it now is.</summary>
     /// <remarks>
-    /// Disabled workspaces have no tab to drag, so they are not reordered by one either: the enabled
-    /// workspaces are dealt back into the positions enabled workspaces already held, in the strip's new
-    /// order, and everything else stays where it was. Sorting the whole list by the strip would have
-    /// swept every disabled workspace to the end -- a change to a part of the settings that is not even
-    /// visible from here.
+    /// One list over both kinds of tab, which is what makes a plugin tab draggable to between two
+    /// workspaces at all. It records only what is in the strip: a disabled workspace or a closed plugin
+    /// tab has nothing to drag and keeps whatever position it had, since an id nobody has ordered falls
+    /// back to discovery order rather than to the front.
     /// </remarks>
     private void PersistTabOrder()
     {
         // A drag is a remove followed by an insert, so the strip is briefly one tab short. That halfway
         // state is not an order worth writing, and it is exactly the one where the counts disagree.
-        if (_rebuildingTabs || Tabs.Count != _workspaces.Count) return;
+        if (_rebuildingTabs || Tabs.Count != _tabs.Count) return;
 
         var settings = _readSettings();
-        var byId = settings.Tabs.ToDictionary(tab => tab.Id, StringComparer.OrdinalIgnoreCase);
-        var reordered = settings.Tabs.ToList();
-        var slots = settings.Tabs
-            .Select((tab, index) => (tab, index))
-            .Where(pair => pair.tab.Enabled)
-            .Select(pair => pair.index)
+        var strip = Tabs.Select(tab => tab.Id).ToList();
+
+        // Everything previously ordered that is not on screen right now keeps its relative place after
+        // the strip: it was ordered once and nothing here is a statement about it.
+        var rest = settings.TabOrder.Where(id => !strip.Contains(id, StringComparer.OrdinalIgnoreCase));
+
+        settings.TabOrder = strip.Concat(rest).ToList();
+        _tabs = strip
+            .Select(id => _tabs.First(tab => tab.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
             .ToList();
-        if (slots.Count != Tabs.Count) return;
-
-        for (var n = 0; n < slots.Count; n++)
-        {
-            if (!byId.TryGetValue(Tabs[n].Id, out var workspace)) return;
-            reordered[slots[n]] = workspace;
-        }
-
-        settings.Tabs = reordered;
-        _workspaces = reordered.Where(tab => tab.Enabled).ToList();
         _saveSettings();
     }
 
-    /// <summary>Disables the workspace behind a tab and takes it out of the strip.</summary>
+    /// <summary>Takes a tab out of the strip, by whatever "closed" means for the thing behind it.</summary>
     /// <remarks>
-    /// Disabled, not deleted. The sources behind a workspace took assembling, and closing a tab is a
-    /// statement about the strip rather than about them -- the same thing the startup panel's own x
-    /// means. The settings page is where one comes back.
+    /// Never deleted. A workspace is disabled, keeping the source list that took assembling; a plugin tab
+    /// is recorded as closed, which is a statement about the strip rather than about the plugin (that
+    /// one lives on the Plugins page and stops it loading at all). Both come back from Settings > Quick
+    /// Panel.
     /// </remarks>
     public Task CloseTabAsync(string tabId, CancellationToken token = default)
     {
-        var settings = _readSettings();
-        var workspace = settings.Tabs.FirstOrDefault(tab => tab.Id == tabId);
-        if (workspace is not { Enabled: true }) return Task.CompletedTask;
+        var tab = _tabs.FirstOrDefault(candidate => candidate.Id.Equals(tabId, StringComparison.OrdinalIgnoreCase));
+        if (tab == null) return Task.CompletedTask;
 
-        workspace.Enabled = false;
+        var settings = _readSettings();
+        tab.Close(settings);
         _saveSettings();
 
-        // Dropped from what is already loaded rather than reloaded: closing a tab says nothing about
-        // what the others hold, and the panel is open while this happens.
+        // Dropped from what is already loaded rather than reloaded: closing a tab says nothing about what
+        // the others hold, and the panel is open while this happens.
         _content.Remove(tabId);
-        _workspaces = _workspaces.Where(tab => tab.Id != tabId).ToList();
+        _tabs = _tabs.Where(candidate => candidate.Id != tabId).ToList();
 
         // Closing the tab being looked at leaves the panel on the first one still there, rather than on
-        // a workspace that no longer has a tab to reach it by.
-        if (!_workspaces.Any(tab => tab.Id == _activeTabId))
-            _activeTabId = _workspaces.Count > 0 ? _workspaces[0].Id : string.Empty;
+        // one that no longer has a tab to reach it by.
+        if (!_tabs.Any(candidate => candidate.Id == _activeTabId))
+            _activeTabId = _tabs.Count > 0 ? _tabs[0].Id : string.Empty;
 
         RebuildTabs();
-        ShowActiveWorkspace();
+        ShowActiveTab();
         return Task.CompletedTask;
     }
 }

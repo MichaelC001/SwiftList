@@ -104,7 +104,7 @@ public sealed class QuickPanelTabStripTests
     // Dragging is a remove and an insert on the strip itself, which is what DragReorder does to any
     // IList -- so this is the shape the view model actually has to notice.
     [TestMethod]
-    public async Task DraggingATab_StoresTheNewWorkspaceOrder()
+    public async Task DraggingATab_StoresTheNewOrder()
     {
         var settings = Settings(Workspace("w1"), Workspace("w2"), Workspace("w3"));
         var (vm, saves) = Build(settings);
@@ -114,14 +114,17 @@ public sealed class QuickPanelTabStripTests
         vm.Tabs.RemoveAt(2);
         vm.Tabs.Insert(0, dragged);
 
-        CollectionAssert.AreEqual(new[] { "w3", "w1", "w2" }, settings.Tabs.Select(t => t.Id).ToList());
+        // One order over both kinds of tab, which is what lets a plugin tab be dragged to between two
+        // workspaces. It is stored on its own rather than by shuffling the workspace list, because a
+        // plugin tab has no place in that list to be shuffled to.
+        CollectionAssert.AreEqual(new[] { "w3", "w1", "w2" }, settings.TabOrder);
         Assert.AreEqual(1, saves.Count, "the half-finished strip mid-drag is not an order worth storing");
     }
 
-    // A disabled workspace has no tab to drag, so a drag must not move it either -- the enabled ones are
-    // dealt back into the positions enabled ones already held.
+    // A disabled workspace has no tab to drag, so a drag says nothing about it: it is left out of the
+    // order entirely, which is what keeps its discovery position waiting for it when it comes back.
     [TestMethod]
-    public async Task DraggingATab_LeavesDisabledWorkspacesWhereTheyWere()
+    public async Task DraggingATab_SaysNothingAboutWorkspacesWithNoTab()
     {
         var settings = Settings(Workspace("w1"), Workspace("off", enabled: false), Workspace("w2"));
         var (vm, _) = Build(settings);
@@ -131,7 +134,11 @@ public sealed class QuickPanelTabStripTests
         vm.Tabs.RemoveAt(1);
         vm.Tabs.Insert(0, dragged);
 
-        CollectionAssert.AreEqual(new[] { "w2", "off", "w1" }, settings.Tabs.Select(t => t.Id).ToList());
+        CollectionAssert.AreEqual(new[] { "w2", "w1" }, settings.TabOrder);
+        CollectionAssert.AreEqual(
+            new[] { "w1", "off", "w2" },
+            settings.Tabs.Select(t => t.Id).ToList(),
+            "the workspaces themselves are not what the strip's order is stored in");
     }
 
     [TestMethod]

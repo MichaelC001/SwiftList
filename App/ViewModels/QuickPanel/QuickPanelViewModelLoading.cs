@@ -1,4 +1,4 @@
-﻿using SwiftList.App.ViewModels.Search;
+using SwiftList.App.ViewModels.Search;
 using SwiftList.Core;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
@@ -38,61 +38,60 @@ public partial class QuickPanelViewModel
         OnPropertyChanged(nameof(SearchQuery));
 
         var settings = _readSettings();
-        // Disabled workspaces are dropped here rather than filtered at every use: a workspace that has
-        // no tab must also not be reachable by a process rule or by the number keys.
-        var enabled = settings.Tabs.Where(tab => tab.Enabled).ToList();
+        // Disabled workspaces and closed plugin tabs are dropped here rather than filtered at every use:
+        // a tab that isn't in the strip must also not be reachable by a process rule or the number keys.
+        var workspaces = settings.Tabs.Where(tab => tab.Enabled).ToList();
+        var candidates = OrderedTabs(settings, workspaces);
 
         _content = new Dictionary<string, List<QuickPanelGroupViewModel>>(StringComparer.OrdinalIgnoreCase);
-        _workspaces = new List<QuickPanelTab>();
-        _pendingWorkspaces = enabled;
+        _tabs = new List<IQuickPanelTabSource>();
+        _pendingTabs = candidates;
         // What the panel wants to open on, decided before anything has loaded. _activeTabId is what it
         // is actually showing, which may be a stand-in until the wanted one turns up -- or forever, if
-        // that workspace has nothing in it.
-        _wantedTabId = ResolveActiveTabId(settings, processName, enabled);
+        // that tab has nothing in it.
+        _wantedTabId = ResolveActiveTabId(settings, processName, workspaces, candidates);
         _activeTabId = string.Empty;
 
         RebuildTabs();
-        ShowActiveWorkspace();
+        ShowActiveTab();
 
         // Completed by the first group to land. Nothing else awaits it, so a summon that turns up empty
         // still finishes -- through the WhenAll below rather than through this.
         var firstArrival = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _firstArrival = firstArrival;
 
-        var everything = Task.WhenAll(enabled.Select(workspace => LoadWorkspaceAsync(workspace, token)));
+        var everything = Task.WhenAll(candidates.Select(tab =>
+            tab.LoadAsync((group, rank) => Place(tab, group, rank), token)));
 
         // Whichever comes first: something to show, or nothing left to wait for.
         await Task.WhenAny(firstArrival.Task, everything).ConfigureAwait(true);
         _firstArrival = null;
     }
 
-    /// <summary>Enabled workspaces still loading, in configured order -- what a group's rank is read from.</summary>
-    private List<QuickPanelTab> _pendingWorkspaces = new();
+    /// <summary>Tabs still loading, in configured order -- what a tab's own position is read from.</summary>
+    private List<IQuickPanelTabSource> _pendingTabs = new();
 
     private TaskCompletionSource? _firstArrival;
 
-    /// <summary>Loads one workspace's visible sources, each on its own, and files each result as it lands.</summary>
-    private async Task LoadWorkspaceAsync(QuickPanelTab workspace, CancellationToken token)
+    /// <summary>Loads one workspace's visible folders, each on its own, and files each as it lands.</summary>
+    internal async Task LoadWorkspaceAsync(
+        QuickPanelTab workspace, Action<QuickPanelGroupViewModel, int> place, CancellationToken token)
     {
-        // Folders and plugin sources share one id space and one order, which is what lets the settings
-        // page's single list arrange them together and every per-group preference key work for both.
         var visible = QuickPanelGroupOrdering.Resolve(
-            workspace.Folders.Select(folder => folder.Id).Concat(workspace.PluginSourceIds),
+            workspace.Folders.Select(folder => folder.Id),
             workspace.GroupOrder,
             workspace.DisabledGroupIds).ToList();
 
         await Task.WhenAll(visible.Select(async (id, rank) =>
         {
-            var group = workspace.Folders.FirstOrDefault(folder => folder.Id == id) is { } folder
-                ? await BuildGroupAsync(workspace, folder, token).ConfigureAwait(true)
-                : await BuildPluginGroupAsync(workspace, id, token).ConfigureAwait(true);
+            if (workspace.Folders.FirstOrDefault(folder => folder.Id == id) is not { } folder) return;
 
-            if (group != null) Place(workspace, group, rank);
+            var group = await BuildGroupAsync(workspace, folder, token).ConfigureAwait(true);
+            if (group != null) place(group, rank);
         })).ConfigureAwait(true);
     }
 
-
-    /// <summary>Files a finished group under its workspace, in the position the settings give it.</summary>
+    /// <summary>Files a finished group under its tab, in the position the settings give it.</summary>
     /// <remarks>
     /// At its configured rank, never appended. Groups now arrive in whatever order their sources happen
     /// to finish, so appending would let a fast source outrank a slow one and quietly replace the user's
@@ -101,7 +100,7 @@ public partial class QuickPanelViewModel
     /// The tab appears with the workspace's first group, for the same reason it disappears when a
     /// workspace has none: a tab is only worth a place in the strip if there is something behind it.
     /// </remarks>
-    private void Place(QuickPanelTab workspace, QuickPanelGroupViewModel group, int rank)
+    private void Place(IQuickPanelTabSource tab, QuickPanelGroupViewModel group, int rank)
     {
         // Sources finish on their own tasks, so two can land at the same moment. In the running app the
         // UI SynchronizationContext serialises the continuations and this is safe by accident of where
@@ -109,10 +108,10 @@ public partial class QuickPanelViewModel
         // thing holding these collections together anywhere there is no dispatcher.
         lock (_placing)
         {
-            if (!_content.TryGetValue(workspace.Id, out var groups))
+            if (!_content.TryGetValue(tab.Id, out var groups))
             {
-                _content[workspace.Id] = groups = new List<QuickPanelGroupViewModel>();
-                AddWorkspaceTab(workspace);
+                _content[tab.Id] = groups = new List<QuickPanelGroupViewModel>();
+                AddTab(tab);
             }
 
             var at = groups.FindIndex(existing => RankOf(existing.SourceId) > rank);
@@ -120,8 +119,8 @@ public partial class QuickPanelViewModel
             groups.Insert(at, group);
             _ranks[group.SourceId] = rank;
 
-            if (workspace.Id.Equals(_activeTabId, StringComparison.OrdinalIgnoreCase))
-                ShowActiveWorkspace();
+            if (tab.Id.Equals(_activeTabId, StringComparison.OrdinalIgnoreCase))
+                ShowActiveTab();
         }
 
         _firstArrival?.TrySetResult();
@@ -138,37 +137,38 @@ public partial class QuickPanelViewModel
     /// <summary>What the panel wants to be showing, which it may not be able to yet.</summary>
     private string _wantedTabId = string.Empty;
 
-    /// <summary>Gives a workspace its tab, at the position the settings order it in.</summary>
+    /// <summary>Gives a tab its place in the strip, at the position the settings order it in.</summary>
     /// <remarks>
-    /// Tabs arrive in whatever order their workspaces first produce something, so the position comes
-    /// from the configured order rather than from arrival -- appending would let a fast workspace
-    /// outrank a slow one and quietly replace the user's own order with a race.
+    /// Tabs arrive in whatever order they first produce something, so the position comes from the
+    /// configured order rather than from arrival -- appending would let a fast tab outrank a slow one and
+    /// quietly replace the user's own order with a race.
     ///
-    /// The wanted workspace may be slower than another, or may have nothing at all. Until it arrives the
-    /// panel shows the first tab it has, and switches the moment the wanted one does turn up. The wanted
-    /// id is never overwritten by that stand-in, which is what lets it still be honoured later.
+    /// The wanted tab may be slower than another, or may have nothing at all. Until it arrives the panel
+    /// shows the first tab it has, and switches the moment the wanted one does turn up. The wanted id is
+    /// never overwritten by that stand-in, which is what lets it still be honoured later.
     /// </remarks>
-    private void AddWorkspaceTab(QuickPanelTab workspace)
+    private void AddTab(IQuickPanelTabSource tab)
     {
-        var at = _pendingWorkspaces.IndexOf(workspace);
-        var before = _workspaces.FindIndex(existing => _pendingWorkspaces.IndexOf(existing) > at);
-        if (before < 0) before = _workspaces.Count;
-        _workspaces.Insert(before, workspace);
+        var at = _pendingTabs.IndexOf(tab);
+        var before = _tabs.FindIndex(existing => _pendingTabs.IndexOf(existing) > at);
+        if (before < 0) before = _tabs.Count;
+        _tabs.Insert(before, tab);
 
-        var isWanted = workspace.Id.Equals(_wantedTabId, StringComparison.OrdinalIgnoreCase);
+        var isWanted = tab.Id.Equals(_wantedTabId, StringComparison.OrdinalIgnoreCase);
         var showingNothing = string.IsNullOrEmpty(_activeTabId)
-            || !_workspaces.Any(tab => tab.Id.Equals(_activeTabId, StringComparison.OrdinalIgnoreCase));
+            || !_tabs.Any(existing => existing.Id.Equals(_activeTabId, StringComparison.OrdinalIgnoreCase));
 
         if (isWanted || showingNothing)
-            _activeTabId = isWanted ? workspace.Id : _workspaces[0].Id;
+            _activeTabId = isWanted ? tab.Id : _tabs[0].Id;
 
         RebuildTabs();
-        if (isWanted || showingNothing) ShowActiveWorkspace();
+        if (isWanted || showingNothing) ShowActiveTab();
     }
 
     /// <summary>The folder source behind a group, looked up across every workspace this refresh knows.</summary>
-    private QuickPanelFolderSource? SourceOf(string sourceId) => _pendingWorkspaces
-        .SelectMany(workspace => workspace.Folders)
+    private QuickPanelFolderSource? SourceOf(string sourceId) => _pendingTabs
+        .OfType<WorkspaceTabSource>()
+        .SelectMany(tab => tab.Workspace.Folders)
         .FirstOrDefault(folder => folder.Id.Equals(sourceId, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Loads one group's source again and puts the result back into that same group.</summary>

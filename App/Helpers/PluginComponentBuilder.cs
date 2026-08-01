@@ -111,10 +111,10 @@ internal static class PluginComponentBuilder
             var id = PluginLoaderHelper.MakeId(dllName, PluginComponentType.StartupPanelTabProvider, prov.GetType().Name);
             components.Add(new PluginComponentViewModel(id, PluginComponentType.StartupPanelTabProvider, prov.Name, !disabledSet.Contains(id), GetDescriptionWithFallback(prov)));
         }
-        foreach (var prov in manager.AllQuickPanelSourceProviders.Where(p => p.GetType().Assembly == assembly))
+        foreach (var prov in manager.AllQuickPanelTabProviders.Where(p => p.GetType().Assembly == assembly))
         {
-            var id = PluginLoaderHelper.MakeId(dllName, PluginComponentType.QuickPanelSourceProvider, prov.GetType().Name);
-            components.Add(new PluginComponentViewModel(id, PluginComponentType.QuickPanelSourceProvider, prov.Name, !disabledSet.Contains(id), GetDescriptionWithFallback(prov)));
+            var id = PluginLoaderHelper.MakeId(dllName, PluginComponentType.QuickPanelTabProvider, prov.GetType().Name);
+            components.Add(new PluginComponentViewModel(id, PluginComponentType.QuickPanelTabProvider, prov.Name, !disabledSet.Contains(id), GetDescriptionWithFallback(prov)));
         }
         foreach (var prov in manager.AllTranslationProviders.Where(p => p.GetType().Assembly == assembly))
         {
@@ -165,7 +165,7 @@ internal static class PluginComponentBuilder
         if (component is IResultColumnProvider) return TranslationService.Get("Plugins_TypeDesc_IResultColumnProvider");
         if (component is ISidebarFilterProvider) return TranslationService.Get("Plugins_TypeDesc_ISidebarFilterProvider");
         if (component is IStartupPanelTabProvider) return TranslationService.Get("Plugins_TypeDesc_IStartupPanelTabProvider");
-        if (component is IQuickPanelSourceProvider) return TranslationService.Get("Plugins_TypeDesc_IQuickPanelSourceProvider");
+        if (component is IQuickPanelTabProvider) return TranslationService.Get("Plugins_TypeDesc_IQuickPanelTabProvider");
         if (component is IFileDialogAdapter) return TranslationService.Get("Plugins_TypeDesc_IFileDialogAdapter");
         if (component is IAliasProvider) return TranslationService.Get("Plugins_TypeDesc_IAliasProvider");
         if (component is IDynamicActionProvider) return TranslationService.Get("Plugins_TypeDesc_IDynamicActionProvider");

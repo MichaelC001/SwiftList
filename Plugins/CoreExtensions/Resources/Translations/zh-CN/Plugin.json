@@ -182,7 +182,7 @@
   "Plugins_TypeThumbnailProvider": "缩略图提供者",
   "Plugins_TypeQueryTokenProvider": "查询修饰符",
   "Plugins_TypeStartupPanelTabProvider": "初始面板标签",
-  "Plugins_TypeQuickPanelSourceProvider": "快速面板来源",
+  "Plugins_TypeQuickPanelTabProvider": "快速面板标签",
   "Plugins_TypeDesc_ISearchResultAction": "搜索结果动作：对选中的文件或目录执行复制、打开、命令行运行等操作。",
   "Plugins_TypeDesc_IInstantResultProvider": "即时结果提供器：在搜索框中实时计算并呈现计算结果、快捷配置或临时操作。",
   "Plugins_TypeDesc_ISearchableItemProvider": "搜索源提供器：为应用的主搜索索引提供待检索的文件、设置项或程序数据。",
@@ -197,7 +197,7 @@
   "Plugins_TypeDesc_IResultColumnProvider": "结果列提供器：为搜索结果列表添加自定义的数据显示列（如文件大小、自定义信息）。",
   "Plugins_TypeDesc_ISidebarFilterProvider": "侧边栏过滤器提供器：在搜索主窗口的侧边栏添加分类或筛选条件过滤面板。",
   "Plugins_TypeDesc_IStartupPanelTabProvider": "初始面板标签提供器：在没有输入关键字时的初始窗口中展示历史或快捷文件夹标签页。",
-  "Plugins_TypeDesc_IQuickPanelSourceProvider": "向快速面板提供一个来源,显示为其中一个分组",
+  "Plugins_TypeDesc_IQuickPanelTabProvider": "向快速面板贡献一个标签,与工作区并排显示在标签栏上",
   "Plugins_TypeDesc_IFileDialogAdapter": "文件对话框适配器：为系统的打开/保存文件对话框提供底层的接管与增强功能。",
   "Plugins_TypeDesc_IAliasProvider": "别名提供器：为搜索项生成别名（如拼音首字母或自定义别名）以加速非 ASCII 文本的检索。",
   "Plugins_TypeDesc_IDynamicActionProvider": "动态动作提供器：在搜索结果右键菜单中动态加载第三方菜单或操作项。"

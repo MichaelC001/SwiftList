@@ -18,7 +18,7 @@ namespace SwiftList.Plugins.CoreExtensions.Providers.QuickPanel;
 /// are ever resolved. It buys the real name, the real folder and, in a panel that shows thumbnail tiles
 /// by default, the file's own thumbnail instead of a shortcut icon for every entry alike.
 /// </remarks>
-public class WindowsRecentSourceProvider : IQuickPanelSourceProvider
+public class WindowsRecentSourceProvider : IQuickPanelTabProvider
 {
     // Enough to fill a panel that is a quarter of a window, and few enough that resolving every one of
     // them is not something the user waits on. Fixed rather than configurable for the same reason the

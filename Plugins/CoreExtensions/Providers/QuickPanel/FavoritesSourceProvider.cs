@@ -7,7 +7,7 @@ namespace SwiftList.Plugins.CoreExtensions.Providers.QuickPanel;
 // Quick panel source backed by the host's own favorites (FavoritesService, already wired to
 // SwiftList.Core.UserSettings.Favorites) -- the same list the startup panel's Favorites tab shows, put
 // where the panel can reach it without opening the search window first.
-public class FavoritesSourceProvider : IQuickPanelSourceProvider
+public class FavoritesSourceProvider : IQuickPanelTabProvider
 {
     public string Name => TranslationService.Get("StartupPanel_TabFavorites");
 

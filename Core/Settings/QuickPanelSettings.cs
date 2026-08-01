@@ -36,6 +36,26 @@ public class QuickPanelSettings
     public string ActiveTabId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Plugin-provided tabs the user has closed, by component id. Present unless closed, which is the
+    /// opposite of how a folder source works and is deliberate: a folder is something the user went and
+    /// added, while a plugin tab is something a plugin they installed already offers.
+    /// </summary>
+    public List<string> ClosedPluginTabIds { get; set; } = new();
+
+    /// <summary>
+    /// The strip's order, left to right, over workspaces and plugin tabs at once. An id that isn't listed
+    /// (a workspace just created, a plugin that just appeared) keeps its discovery-order position after
+    /// everything listed -- the same rule <see cref="QuickPanelTab.GroupOrder"/> follows for groups.
+    /// </summary>
+    /// <remarks>
+    /// A single list over both kinds, rather than ordering the workspaces by their own position in
+    /// <see cref="Tabs"/> and the plugin tabs by something else: they share one strip and one set of
+    /// number keys, so any arrangement that cannot interleave them is a rule the user would have to be
+    /// told about.
+    /// </remarks>
+    public List<string> TabOrder { get; set; } = new();
+
+    /// <summary>
     /// Further applications the panel refuses to open over, by process name ("chrome" or "chrome.exe",
     /// either way). Added ON TOP of <see cref="UserSettings.BlacklistedProcesses"/>, never instead of
     /// it: whatever is blocked globally is blocked here too. This list exists for the apps that only
@@ -72,24 +92,16 @@ public class QuickPanelTab
     public List<QuickPanelFolderSource> Folders { get; set; } = new();
 
     /// <summary>
-    /// Plugin-provided sources included in this workspace, by component id. Added the way a folder is
-    /// rather than being present everywhere: a source is a thing you put in a workspace, and a workspace
-    /// assembled for one project has no more reason to carry every plugin's source than every folder.
+    /// Display order, most-preferred first, over this workspace's folders. An id that isn't listed (a
+    /// folder just added) keeps its discovery-order position after everything listed.
     /// </summary>
     /// <remarks>
-    /// Only ids. Everything else a source has here -- where it sits, whether it is hidden, what it is
-    /// called, how it is displayed -- already lives in the three lists below, keyed by that same id, and
-    /// a plugin source uses them exactly as a folder does. Whether the provider is loaded at all is a
-    /// separate question, answered by UserSettings.DisabledPluginComponents on the plugin page.
+    /// Plugin-provided lists are not in here, and were briefly: they were added to a workspace the way a
+    /// folder is, which meant Favorites had to be ticked into every workspace separately and vanished
+    /// from any new one. They are not part of any workspace -- they are whole collections, orthogonal to
+    /// whichever set of folders you are looking at -- so they are tabs of their own now, and their order
+    /// lives in <see cref="QuickPanelSettings.TabOrder"/> alongside the workspaces'.
     /// </remarks>
-    public List<string> PluginSourceIds { get; set; } = new();
-
-    /// <summary>
-    /// Display order, most-preferred first, over every kind of source at once. An id that isn't listed
-    /// (a folder just added, a plugin source that appeared) keeps its discovery-order position after
-    /// everything listed -- same rule as <see cref="StartupPanelSettings.TabOrder"/>. Plugin-provided
-    /// sources will share this id space when they arrive; folder sources use their own Id today.
-    /// </summary>
     public List<string> GroupOrder { get; set; } = new();
 
     /// <summary>
@@ -146,7 +158,6 @@ public class QuickPanelTab
             MaxAgeMinutes = f.MaxAgeMinutes,
             AcceptsDrops = f.AcceptsDrops,
         }).ToList(),
-        PluginSourceIds = new List<string>(PluginSourceIds),
         GroupOrder = new List<string>(GroupOrder),
         DisabledGroupIds = new List<string>(DisabledGroupIds),
         GroupPreferences = GroupPreferences.ToDictionary(

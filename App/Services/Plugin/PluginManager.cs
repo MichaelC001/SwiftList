@@ -37,7 +37,7 @@ public class PluginManager : PluginRegistry
     private readonly List<IThumbnailProvider> _thumbnailProviders = new();
     private readonly List<PluginSdk.Abstractions.Plugins.IQueryTokenProvider> _queryTokenProviders = new();
     private readonly List<PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider> _startupPanelTabProviders = new();
-    private readonly List<PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider> _quickPanelSourceProviders = new();
+    private readonly List<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> _quickPanelSourceProviders = new();
     private uint _nextRuntimeActionId = 0x80000000;
 
     // pluginId -> (field Key -> schema DefaultValue), built once after all plugins are loaded, so
@@ -99,7 +99,7 @@ public class PluginManager : PluginRegistry
     void PluginRegistry.AddThumbnailProvider(IThumbnailProvider p) => _thumbnailProviders.Add(p);
     void PluginRegistry.AddQueryTokenProvider(PluginSdk.Abstractions.Plugins.IQueryTokenProvider p) => _queryTokenProviders.Add(p);
     void PluginRegistry.AddStartupPanelTabProvider(PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider p) => _startupPanelTabProviders.Add(p);
-    void PluginRegistry.AddQuickPanelSourceProvider(PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider p) => _quickPanelSourceProviders.Add(p);
+    void PluginRegistry.AddQuickPanelTabProvider(PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider p) => _quickPanelSourceProviders.Add(p);
 
     // ── Public API ────────────────────────────────────────────────────────
 
@@ -285,8 +285,8 @@ public class PluginManager : PluginRegistry
     public IEnumerable<PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider> StartupPanelTabProviders
         => _startupPanelTabProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.StartupPanelTabProvider, p.GetType().Name));
 
-    public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider> QuickPanelSourceProviders
-        => _quickPanelSourceProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.QuickPanelSourceProvider, p.GetType().Name));
+    public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> QuickPanelTabProviders
+        => _quickPanelSourceProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.QuickPanelTabProvider, p.GetType().Name));
 
     // ── Unfiltered collections (settings UI ?show disabled as unchecked) ─
 
@@ -303,7 +303,7 @@ public class PluginManager : PluginRegistry
     public IEnumerable<PluginSdk.Abstractions.Plugins.IThemeProvider> AllThemeProviders => _themeProviders;
     public IEnumerable<PluginSdk.Abstractions.Plugins.IQueryTokenProvider> AllQueryTokenProviders => _queryTokenProviders;
     public IEnumerable<PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider> AllStartupPanelTabProviders => _startupPanelTabProviders;
-    public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider> AllQuickPanelSourceProviders => _quickPanelSourceProviders;
+    public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> AllQuickPanelTabProviders => _quickPanelSourceProviders;
 
     // ── Search and execution ──────────────────────────────────────────────
 

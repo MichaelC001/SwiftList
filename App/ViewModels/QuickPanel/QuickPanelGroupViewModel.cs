@@ -31,12 +31,14 @@ public class QuickPanelGroupViewModel : ViewModelBase
         QuickPanelSortMode sortMode = QuickPanelSortMode.ModifiedDescending,
         bool thumbnailView = true,
         bool expanded = true,
-        bool acceptsDrops = false)
+        bool acceptsDrops = false,
+        bool showsHeading = true)
     {
         SourceId = sourceId;
         Title = title;
         FolderPath = folderPath;
         AcceptsDrops = acceptsDrops;
+        ShowsHeading = showsHeading;
         _loaded = loaded;
         // The fields, not the properties: each setter rebuilds, and the group has nothing to rebuild
         // from until the call below.
@@ -51,6 +53,14 @@ public class QuickPanelGroupViewModel : ViewModelBase
 
     /// <summary>The heading: the user's own name for the source, or the source's default one.</summary>
     public string Title { get; }
+
+    /// <summary>Whether the heading's name is drawn at all.</summary>
+    /// <remarks>
+    /// False for the one group a plugin tab holds: the tab is already named after it, and a heading
+    /// repeating that name is the panel saying the same word twice, one line apart. Only the name goes --
+    /// the count, the sort toggle, the view toggle and the collapse arrow all still apply.
+    /// </remarks>
+    public bool ShowsHeading { get; }
 
     /// <summary>The folder itself, shown in full beside the heading, and where a drop lands.</summary>
     public string FolderPath { get; }

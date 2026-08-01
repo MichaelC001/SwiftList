@@ -182,7 +182,7 @@
   "Plugins_TypeThumbnailProvider": "サムネイルプロバイダー",
   "Plugins_TypeQueryTokenProvider": "クエリ修飾子",
   "Plugins_TypeStartupPanelTabProvider": "スタートアップパネルタブ",
-  "Plugins_TypeQuickPanelSourceProvider": "クイックパネルのソース",
+  "Plugins_TypeQuickPanelTabProvider": "クイックパネルのタブ",
   "Plugins_TypeDesc_ISearchResultAction": "検索結果アクション: 選択したファイルまたはフォルダーに対してコピー、開く、コマンド実行などを行います。",
   "Plugins_TypeDesc_IInstantResultProvider": "即時結果プロバイダー: 検索ボックスの結果や設定をリアルタイムに計算して表示します。",
   "Plugins_TypeDesc_ISearchableItemProvider": "検索可能項目プロバイダー: メイン検索インデックス用に検索対象のファイル、設定、またはプログラムデータを提供します。",
@@ -197,7 +197,7 @@
   "Plugins_TypeDesc_IResultColumnProvider": "結果列プロバイダー: 検索結果一覧に追加情報の列（例: ファイルサイズ）を付加します。",
   "Plugins_TypeDesc_ISidebarFilterProvider": "サイドバーフィルタープロバイダー: サイドバーにフィルターパネル（カテゴリ、条件）を挿入します。",
   "Plugins_TypeDesc_IStartupPanelTabProvider": "スタートアップパネルタブプロバイダー: 検索クエリが空のときに、最近の項目やフォルダー一覧を表示します。",
-  "Plugins_TypeDesc_IQuickPanelSourceProvider": "クイックパネルにソースを提供し、グループの一つとして表示します",
+  "Plugins_TypeDesc_IQuickPanelTabProvider": "クイックパネルにタブを提供し、ワークスペースと並んでストリップに表示します",
   "Plugins_TypeDesc_IFileDialogAdapter": "ファイルダイアログアダプター: ファイルを開く/保存するダイアログをハイジャックして拡張します。",
   "Plugins_TypeDesc_IAliasProvider": "エイリアスプロバイダー: 非 ASCII テキストの検索を最適化するために、ピンインやカスタムエイリアスを自動生成します。",
   "Plugins_TypeDesc_IDynamicActionProvider": "動的アクションプロバイダー: コンテキストメニューに動的な Windows シェルメニューまたはカスタムアクションを挿入します。"
