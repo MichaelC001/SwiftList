@@ -82,14 +82,15 @@ public sealed class DirectoryEnumeratorTests
         CollectionAssert.AreEqual(new[] { @"C:\Downloads", @"C:\Projects" }, Paths(results));
     }
 
+    // A file pattern: "*.md" is written to pick markdown files, not to hide every folder in the tree.
     [TestMethod]
-    public void Enumerate_FilterPattern_MatchesFilesAndDirectoriesByName()
+    public void Enumerate_FilterPattern_AppliesToFilesButNeverToDirectories()
     {
         using var fixture = BuildSampleDrive();
 
         var (_, results) = Enumerate(fixture, @"C:\Projects", filterPattern: "*.md");
 
-        CollectionAssert.AreEqual(new[] { @"C:\Projects\notes.md" }, Paths(results));
+        CollectionAssert.AreEqual(new[] { @"C:\Projects\notes.md", @"C:\Projects\sub" }, Paths(results));
     }
 
     [TestMethod]
@@ -97,12 +98,12 @@ public sealed class DirectoryEnumeratorTests
     {
         using var fixture = BuildSampleDrive();
 
-        var (_, results) = Enumerate(fixture, @"C:\Projects", recursive: true, filterPattern: "*.md;*.exe");
+        var (_, results) = Enumerate(fixture, @"C:\Downloads", filterPattern: "*.md;*.exe");
 
-        CollectionAssert.AreEqual(new[] { @"C:\Projects\notes.md" }, Paths(results));
+        CollectionAssert.AreEqual(new[] { @"C:\Downloads\install.exe" }, Paths(results));
     }
 
-    // The filter says which entries to RETURN, never where to look -- a subtree behind a directory the
+    // The filter says which files to RETURN, never where to look -- a subtree behind a directory the
     // pattern doesn't match still has to be walked, or "*.txt" would silently miss most of the tree.
     [TestMethod]
     public void Enumerate_FilterPattern_DoesNotGateRecursion()
@@ -111,7 +112,9 @@ public sealed class DirectoryEnumeratorTests
 
         var (_, results) = Enumerate(fixture, @"C:\Projects", recursive: true, filterPattern: "*.txt");
 
-        CollectionAssert.AreEqual(new[] { @"C:\Projects\readme.txt", @"C:\Projects\sub\deep.txt" }, Paths(results));
+        CollectionAssert.AreEqual(
+            new[] { @"C:\Projects\readme.txt", @"C:\Projects\sub", @"C:\Projects\sub\deep.txt" },
+            Paths(results));
     }
 
     [TestMethod]

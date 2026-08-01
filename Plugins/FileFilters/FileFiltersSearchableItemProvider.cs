@@ -124,50 +124,38 @@ public class FileFiltersSearchableItemProvider : ISearchableItemProvider, IDispo
                 };
             }
 
-            foreach (var root in filter.Folders.Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p) && Directory.Exists(p)))
+            foreach (var root in filter.Folders.Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)))
             {
                 try
                 {
-                    // Scan directories for matching files. FilterPattern can list several patterns
-                    // separated by ';' or ',' (e.g. "*.exe;*.lnk") -- Directory.EnumerateFiles only ever
-                    // accepts a single pattern, so each one is enumerated separately and merged, with
-                    // seenFiles deduping a file that happens to match more than one of the patterns.
-                    var seenFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var pattern in SplitFilterPatterns(filter.FilterPattern))
+                    // One walk for the whole subtree, answered from the host's file index rather than by
+                    // reading the disk -- which is what makes a filter over a large or sleeping folder
+                    // cost nothing to rebuild. The host applies FilterPattern (a file pattern; folders
+                    // come back regardless, which is exactly what this provider wants), skips
+                    // hidden/system entries, and falls back to a real filesystem walk on its own for a
+                    // folder no index covers -- an unindexed drive, a network share, a path that doesn't
+                    // exist. So there is deliberately no Directory.Exists check and no live-scan branch
+                    // here anymore: both are the host's job now, and it can answer them without waking
+                    // the disk in the common case.
+                    //
+                    // Blocking on the async sequence is fine and intentional: ISearchableItemProvider is
+                    // synchronous, and SearchableItemCache already calls this from a Task.Run.
+                    foreach (var entry in DirectoryIndexerService
+                        .EnumerateDirectoryAsync(root, recursive: true, filterPattern: filter.FilterPattern)
+                        .ToBlockingEnumerable())
                     {
-                        foreach (var file in Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
-                        {
-                            if (!string.IsNullOrEmpty(Path.GetFileName(file)) && seenFiles.Add(file))
-                                items.Add(BuildItem(file, "File"));
-                        }
-                    }
-
-                    // Subfolders themselves are also searchable -- unlike files, these are never
-                    // filtered by FilterPattern (a pattern like "*.mp4" is meant for file extensions and
-                    // would hide every folder if applied here too), so every folder under root is
-                    // always included regardless of the configured pattern.
-                    var directories = Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories);
-                    foreach (var dir in directories)
-                    {
-                        if (!string.IsNullOrEmpty(Path.GetFileName(dir)))
-                            items.Add(BuildItem(dir, "Directory"));
+                        if (!string.IsNullOrEmpty(entry.Name))
+                            items.Add(BuildItem(entry.FullPath, entry.IsDir ? "Directory" : "File"));
                     }
                 }
                 catch (Exception ex)
                 {
-                    PluginSdk.Logger.Log($"[FileFilters] Error scanning directory '{root}': {ex.Message}", PluginSdk.LogLevel.Warn);
+                    PluginSdk.Logger.Log($"[FileFilters] Error listing directory '{root}': {ex.Message}", PluginSdk.LogLevel.Warn);
                 }
             }
         }
 
         return items;
-    }
-
-    internal static string[] SplitFilterPatterns(string filterPattern)
-    {
-        if (string.IsNullOrWhiteSpace(filterPattern)) return new[] { "*" };
-        var patterns = filterPattern.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return patterns.Length > 0 ? patterns : new[] { "*" };
     }
 
     public void Dispose()

@@ -66,10 +66,11 @@ public static class DirectoryIndexerService
     /// (an unconfigured network share, a drive indexing is disabled for) is walked live instead, so a
     /// caller never has to decide which of the two applies.
     /// <para>
-    /// Results stream as they are produced. Both files and directories are returned, both matched
-    /// against <paramref name="filterPattern"/> by name -- one or more Win32 wildcard patterns
-    /// separated by ';' or ',' (e.g. <c>"*.exe;*.lnk"</c>, default <c>"*"</c>) -- while
-    /// <paramref name="recursive"/> descends regardless of what the pattern selects. Hidden and system
+    /// Results stream as they are produced. <paramref name="filterPattern"/> is a FILE pattern -- one
+    /// or more Win32 wildcards separated by ';' or ',' (e.g. <c>"*.exe;*.lnk"</c>, default <c>"*"</c>)
+    /// -- so directories are always returned whatever it says (drop them with
+    /// <see cref="Abstractions.ISearchResult.IsDir"/> if unwanted), and
+    /// <paramref name="recursive"/> descends regardless of what it selects. Hidden and system
     /// entries are never returned (the same always-on filter the host applies to every search result),
     /// though a hidden directory is still descended into -- only the entry's own attributes count. The
     /// user's exclusion settings are not applied, since the caller named one exact directory to look at.

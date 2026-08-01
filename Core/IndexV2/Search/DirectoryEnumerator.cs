@@ -14,9 +14,9 @@ namespace SwiftList.Core.IndexV2.Search;
 //
 // Related to but not the same as PathSearch.TryDirectoryChildren, which lists ONE level as a ranked
 // search result set for a path-mode query. This is a plain enumeration: no ranking, no fuzzy matching,
-// an optional Win32 filename filter, and it descends. Directories are returned alongside files and are
-// matched against the filter like files are, mirroring Directory.EnumerateFileSystemEntries; neither
-// recursion nor the hidden/system filter below is gated by that filter.
+// an optional Win32 FILE-name filter, and it descends. Directories are returned alongside files but
+// are never matched against that filter (see Visit), and neither recursion nor the hidden/system filter
+// is gated by it either.
 internal static class DirectoryEnumerator
 {
     // False = this snapshot does not hold that path (wrong drive, or no such directory in the index),
@@ -75,7 +75,8 @@ internal static class DirectoryEnumerator
         // Returns false once the limit is reached, i.e. "stop walking".
         bool Visit(int entry, string name, ushort flags)
         {
-            if (recursive && (flags & (ushort)FileRecordFlags.Directory) != 0 && visited.Add(entry))
+            var isDirectory = (flags & (ushort)FileRecordFlags.Directory) != 0;
+            if (recursive && isDirectory && visited.Add(entry))
                 pending.Push(entry);
             // Hidden/system entries are dropped here, the same unconditional filter every other search
             // result goes through (see SearchService.SearchStreamingAsync) -- but only the entry ITSELF:
@@ -85,7 +86,12 @@ internal static class DirectoryEnumerator
             // counting entries the caller actually receives.
             if ((flags & (ushort)(FileRecordFlags.Hidden | FileRecordFlags.System)) != 0)
                 return true;
-            if (patterns != null && !FilterPatternHelper.Matches(name, patterns))
+            // A FILE pattern, the way Directory.EnumerateFiles and every FilterPattern registration in
+            // this codebase already mean it: directories are always listed, never matched against it.
+            // "*.mp4" is written to pick video files, and applying it to directories too would hide
+            // every folder in the tree -- while a caller that wants files only drops them with one
+            // IsDir check, which is not recoverable the other way round.
+            if (!isDirectory && patterns != null && !FilterPatternHelper.Matches(name, patterns))
                 return true;
             onResult(ResultBuilder.ToResult(snapshot, delta, new FzfRank(entry, 0, 0)));
             return limit <= 0 || ++emitted < limit;

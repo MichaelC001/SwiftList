@@ -72,7 +72,7 @@ public static class IndexedDirectoryEnumerator
     }
 
     // Matches the index-side walk's semantics on purpose (DirectoryEnumerator): directories are listed
-    // alongside files and filtered by name like files are, and recursion is never gated by the filter.
+    // alongside files but never matched against the file pattern, and recursion is never gated by it.
     private static void ScanLive(string path, bool recursive, string filterPattern, Action<SearchResult> onResult, int limit, CancellationToken token)
     {
         if (!Directory.Exists(path))
@@ -94,7 +94,7 @@ public static class IndexedDirectoryEnumerator
             // entry-level-only rule the index-side walk applies.
             if (FileSystemItemFilter.IsHiddenOrSystem(info.Attributes))
                 continue;
-            if (patterns != null && !FilterPatternHelper.Matches(info.Name, patterns))
+            if ((info.Attributes & FileAttributes.Directory) == 0 && patterns != null && !FilterPatternHelper.Matches(info.Name, patterns))
                 continue;
             onResult(ToResult(info));
             if (limit > 0 && ++emitted >= limit)
