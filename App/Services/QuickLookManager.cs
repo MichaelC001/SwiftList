@@ -112,10 +112,19 @@ public partial class QuickLookManager
     /// reading would close both windows out from under that click. The search windows do not need this --
     /// they hide on deactivate only when the foreground left the process entirely, which the preview
     /// never does -- but the quick panel's dismissal is stricter than that.
+    ///
+    /// Both readings, because they answer at different moments. IsActive is WPF's own and is set as the
+    /// activation is processed; the foreground handle is the OS's and is what a native preview handler's
+    /// child window reports through. Asking either alone left a window in which neither had said yes yet.
+    ///
+    /// Worth stressing: this is only ever true AFTER the click has been processed. Called from inside a
+    /// Deactivated handler it answers no, whatever the user actually clicked -- Windows makes the new
+    /// window the foreground one after the old one is told it lost it.
     /// </remarks>
     public bool IsPreviewForeground()
     {
         if (_window == null) return false;
+        if (_window.IsActive) return true;
 
         var handle = new System.Windows.Interop.WindowInteropHelper(_window).Handle;
         return handle != IntPtr.Zero && GetForegroundWindow() == handle;

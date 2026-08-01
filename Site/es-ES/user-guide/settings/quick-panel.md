@@ -92,6 +92,12 @@ merezcan un bloqueo global.
 - **Enter** abre lo que esté seleccionado, que es lo mismo que hace un doble clic. La primera entrada está
   seleccionada desde el principio, así que una invocación se resuelve escribiendo y pulsando Enter sin salir nunca
   del cuadro de filtro.
+- **Arriba/Abajo** mueven la selección y cruzan de un grupo al siguiente en vez de detenerse en la última fila de
+  uno: los grupos se leen como una sola lista de arriba abajo. Funcionan desde el cuadro de filtro sin sacarle el
+  teclado, así que filtrar y elegir son el mismo gesto. Dentro de un grupo mostrado como miniaturas siguen
+  moviéndose fila a fila, tal como está dispuesta la cuadrícula. Los atajos configurados de "seleccionar elemento
+  siguiente/anterior" (`Ctrl+N`/`Ctrl+P` por defecto) hacen lo mismo, salvo que haya una acción de plugin asignada
+  a esa misma tecla, que tiene prioridad.
 - **Cambiar de espacio de trabajo** — mantén el modificador de "saltar al resultado N" (`Ctrl` por defecto, ver
   [Atajos](../hotkeys)) y pulsa 1–9, o haz clic en una pestaña. Las pestañas se arrastran para reordenarlas, y cada
   una tiene una **×** que apaga ese espacio de trabajo. Cerrar la última cierra el panel.

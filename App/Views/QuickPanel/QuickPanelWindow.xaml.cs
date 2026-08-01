@@ -151,6 +151,11 @@ public partial class QuickPanelWindow : Window,
             }
 
             TryRunActionHotkey(e);
+
+            // Last, so an action bound to one of these keys wins -- the order the quick window's own
+            // handler puts them in. Nothing above claims a bare arrow, and the workspace switch only
+            // claims its modifier plus a digit, so what reaches here is what nobody else wanted.
+            if (!e.Handled) HandleSelectionKeys(e);
             return;
         }
 

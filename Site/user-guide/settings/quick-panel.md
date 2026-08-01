@@ -90,6 +90,12 @@ a global block.
 - **Enter** opens whatever is selected, which is also what a double-click does. The first entry is
   selected from the start, so a summon can be answered with type-then-Enter without ever leaving the
   filter box.
+- **Up/Down** move the selection, and cross from one group into the next rather than stopping at a
+  group's last row — the groups read as one list top to bottom. They work from the filter box without
+  taking the keyboard out of it, so narrowing and picking are the same gesture. Inside a group shown as
+  tiles, they still move a row at a time as the grid is laid out. The configured "select next/previous
+  item" hotkeys (`Ctrl+N`/`Ctrl+P` by default) do the same, unless a plugin action is bound to one of
+  them, which wins.
 - **Switching workspaces** — hold the "jump to Nth result" modifier (`Ctrl` by default, see
   [Hotkeys](../hotkeys)) and press 1–9, or click a tab. Tabs drag to reorder, and each has an **×**
   that turns that workspace off. Closing the last one closes the panel.

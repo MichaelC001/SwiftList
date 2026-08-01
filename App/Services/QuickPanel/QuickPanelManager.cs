@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using SwiftList.App.ViewModels.QuickPanel;
@@ -184,37 +184,9 @@ public sealed partial class QuickPanelManager : IDisposable
 
         // Losing the foreground dismisses the panel, the way the inline window goes when the user clicks
         // away. Wired per window because there is a new one each open, which is also what stops these
-        // handlers stacking up the way they would have on a reused one.
-        _window.Deactivated += (_, _) =>
-        {
-            // Not while the window is being dragged: DragMove runs a modal loop the window comes out of
-            // deactivated, which is not the user clicking away.
-            if (_window is { IsDraggingWindow: true }) return;
-
-            // Nor while the action flyout is up. It hangs its key handler on this window and needs it
-            // alive to reach it, so closing here would take the menu down with the panel and leave every
-            // shortcut on it looking dead.
-            if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
-
-            // Nor when this summon was asked to stay, by the pin or the same hotkey the quick window
-            // uses for it. The flag lives on the window, so it is gone with the window and the next open
-            // is normal.
-            //
-            // This is also how a drag from Explorer is made possible at all -- that drag begins by
-            // clicking Explorer, which is this very event, so the panel has to have been pinned first.
-            // It briefly stayed up on its own whenever the workspace had a droppable group, which was a
-            // rule the user could neither see nor turn off, on a panel whose whole habit is to get out
-            // of the way. The pin says the same thing, deliberately and visibly.
-            if (_window is { IsStayOpen: true }) return;
-
-            // Nor when the foreground went to the preview this panel opened. Scrolling a document or
-            // playing a video in there needs real focus, so clicking into it deactivates this window --
-            // and it is a window the panel put on screen, reached from a row in the panel. Closing here
-            // would take it down with the panel on the click that reached for it.
-            if (QuickLookManager.Instance.IsPreviewForeground()) return;
-
-            Hide();
-        };
+        // handlers stacking up the way they would have on a reused one. What that means in full is in
+        // QuickPanelManagerDismissal.cs.
+        _window.Deactivated += (_, _) => ScheduleDismiss();
 
         // Positioned before Show: placing it afterwards lets the window paint once at its old location
         // and jump, which reads as a flicker every time the panel opens. A brand-new window has no old
@@ -233,6 +205,7 @@ public sealed partial class QuickPanelManager : IDisposable
         _viewModel.StartWatching();
 
     }
+
 
     private bool _hiding;
 
