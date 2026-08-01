@@ -34,10 +34,14 @@ internal static class FilterPatternHelper
     {
         foreach (var pattern in patterns)
         {
-            // "*.*" is the DOS spelling of "everything" and is what Directory.EnumerateFiles normalizes
-            // it to (FileSystemEnumerableFactory.NormalizeInputs); MatchesWin32Expression on its own
-            // would read it as "name containing a dot" instead.
-            if (IsMatchAll(pattern) || System.IO.Enumeration.FileSystemName.MatchesWin32Expression(pattern, name, ignoreCase: true))
+            // Translated first, exactly as Directory.EnumerateFiles does before matching
+            // (FileSystemEnumerableFactory.NormalizeInputs): that is what turns "*.*" into "everything"
+            // and the trailing dot of "*." into the DOS wildcard meaning "no extension". Matching the
+            // raw expression would read both literally and quietly disagree with a live walk of the
+            // same directory. IsMatchAll stays as a fast path for the pattern nearly everyone uses.
+            if (IsMatchAll(pattern)
+                || System.IO.Enumeration.FileSystemName.MatchesWin32Expression(
+                    System.IO.Enumeration.FileSystemName.TranslateWin32Expression(pattern), name, ignoreCase: true))
                 return true;
         }
         return false;

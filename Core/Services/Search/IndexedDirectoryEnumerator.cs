@@ -52,8 +52,15 @@ public static class IndexedDirectoryEnumerator
         // Network drive, WSL distro or folder index -- these are built and held in this process, so the
         // pipe never knew about them. Cheap to try even when the path belongs to none of them: each
         // index rejects a path outside its own root before touching anything.
-        if (UserNetworkDriveSearch.EnumerateDirectory(path, recursive, filterPattern, limit, onResult, token))
-            return;
+        //
+        // Retried under the location's other spelling (mapped letter vs UNC, \\wsl$ vs \\wsl.localhost)
+        // when there is one: index lookup is a prefix match against the configured root, so the same
+        // directory written the other way matches nothing and would walk the network for no reason.
+        foreach (var spelling in IsInProcessIndexedSource(path) ? IndexedPathSpelling.IndexSpellings(path) : new[] { path })
+        {
+            if (UserNetworkDriveSearch.EnumerateDirectory(spelling, recursive, filterPattern, limit, onResult, token))
+                return;
+        }
 
         // Nothing has it: an unconfigured share, a drive indexing is off for, an index still building,
         // the service down, or a path that simply doesn't exist. Every one of those emitted nothing
