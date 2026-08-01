@@ -1,117 +1,69 @@
-using SwiftList.Core.Services.Search;
+using SwiftList.Core.SearchIndex;
 
+using SwiftList.Core.Services.Search;
 namespace SwiftList.Core.Services.Plugin.DirectoryIndex;
 
 /// <summary>
-/// Answers a plugin's directory search by routing each registered directory to either the USN-service
-/// pipe (local drives, already fully index-watched) or an in-memory Directory.EnumerateFiles scan
-/// (network/UNC shares). Kept separate from <see cref="PluginDirectoryWatchRegistry"/>, which owns
-/// registration and FileSystemWatcher lifecycle -- answering "what matches this query" is a different
-/// concern from "watch for changes."
+/// Answers a plugin's directory search: lists each registered directory out of the index (see
+/// <see cref="IndexedDirectoryEnumerator"/>, which also decides when a real filesystem walk is needed)
+/// and keeps the entries whose name matches the query. Kept separate from
+/// <see cref="PluginDirectoryWatchRegistry"/>, which owns registration and FileSystemWatcher lifecycle
+/// -- answering "what matches this query" is a different concern from "watch for changes."
+/// <para>
+/// There is deliberately no local-versus-network split here any more. There used to be one, and the two
+/// halves quietly disagreed on everything that mattered: the local half ignored both the
+/// <c>FilterPattern</c> and the <c>Recursive</c> flag the plugin registered with, capped itself at 200
+/// results and applied the user's exclusion settings, while the network half honoured the pattern and
+/// the flag, had no cap, and applied no exclusions. Same registration, different answers depending on
+/// which drive the directory happened to live on.
+/// </para>
 /// </summary>
 internal sealed class PluginDirectorySearcher
 {
-    private readonly SearchService _searchService = new();
-
     public async Task<List<SearchResult>> SearchAsync(IReadOnlyList<MonitoredDir> dirs, string query, CancellationToken token)
     {
+        var taskResults = await Task.WhenAll(dirs.Select(dir => SearchDirectoryAsync(dir, query, token))).ConfigureAwait(false);
+
+        // Deduped across directories: a plugin is free to register a directory and something inside it,
+        // and one file is one result either way.
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var results = new List<SearchResult>();
-        var tasks = dirs.Select(dir => SearchDirectoryAsync(dir, query, token));
-        var taskResults = await Task.WhenAll(tasks).ConfigureAwait(false);
-
-        foreach (var subList in taskResults)
+        foreach (var result in taskResults.SelectMany(list => list))
         {
-            if (subList != null)
-                results.AddRange(subList);
+            if (seen.Add(result.Path))
+                results.Add(result);
         }
-
         return results;
     }
 
-    private async Task<List<SearchResult>> SearchDirectoryAsync(MonitoredDir dir, string query, CancellationToken token)
+    private static async Task<List<SearchResult>> SearchDirectoryAsync(MonitoredDir dir, string query, CancellationToken token)
     {
         var list = new List<SearchResult>();
-        if (!Directory.Exists(dir.Path)) return list;
-
-        var isNetwork = IsNetworkOrSharedPath(dir.Path);
-        if (!isNetwork)
+        try
         {
-            // Local physical drive: Route directly to service USN using SearchDir command (already fully index-watched)
-            try
+            await IndexedDirectoryEnumerator.EnumerateAsync(dir.Path, dir.Recursive, dir.FilterPattern, result =>
             {
-                await _searchService.SearchStreamingAsync(query, 200, 0, dir.Path, result =>
-                {
-                    if (result.Path.StartsWith(dir.Path, StringComparison.OrdinalIgnoreCase))
-                    {
-                        list.Add(result);
-                    }
-                }, token).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"[IndexManager] Local directory index query failed for '{dir.Path}': {ex.Message}", LogLevel.Error);
-            }
+                if (MatchesQuery(result.Name, query))
+                    list.Add(result);
+            }, limit: 0, token).ConfigureAwait(false);
         }
-        else
+        catch (OperationCanceledException)
         {
-            // Network drive or UNC share: Scan in App memory, matching wildcard
-            try
-            {
-                var files = await Task.Run(() =>
-                {
-                    var opt = dir.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                    // FilterPattern can list several patterns separated by ';' or ',' (e.g. "*.exe;*.lnk")
-                    // -- Directory.EnumerateFiles only ever accepts a single pattern, so each one is
-                    // enumerated separately and merged, deduped in case a file matches more than one.
-                    var seenFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    var matched = new List<string>();
-                    foreach (var pattern in FilterPatternHelper.Split(dir.FilterPattern))
-                    {
-                        foreach (var file in Directory.EnumerateFiles(dir.Path, pattern, opt))
-                        {
-                            if (seenFiles.Add(file)) matched.Add(file);
-                        }
-                    }
-                    return matched;
-                }, token).ConfigureAwait(false);
-
-                foreach (var file in files)
-                {
-                    token.ThrowIfCancellationRequested();
-                    var name = Path.GetFileName(file);
-                    if (name.Contains(query, StringComparison.OrdinalIgnoreCase))
-                    {
-                        list.Add(new SearchResult
-                        {
-                            Path = file,
-                            Name = name,
-                            IsDir = false
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"[IndexManager] Network directory live scan failed for '{dir.Path}': {ex.Message}", LogLevel.Warn);
-            }
+            throw;
         }
-
+        catch (Exception ex)
+        {
+            Logger.Log($"[IndexManager] Directory query failed for '{dir.Path}': {ex.Message}", LogLevel.Warn);
+        }
         return list;
     }
 
-    private static bool IsNetworkOrSharedPath(string path)
-    {
-        if (path.StartsWith(@"\\")) return true;
-        try
-        {
-            var root = Path.GetPathRoot(path);
-            if (string.IsNullOrEmpty(root)) return false;
-            var driveInfo = new DriveInfo(root);
-            return driveInfo.DriveType == DriveType.Network;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    /// <summary>
+    /// The host's own matching, so a plugin searching its directories finds what the same text would
+    /// find anywhere else in the app -- fuzzy and alias-aware (pinyin included), not a substring test.
+    /// An empty query keeps everything: the caller asked for its directories, and nothing to match on
+    /// means nothing to exclude.
+    /// </summary>
+    internal static bool MatchesQuery(string name, string query)
+        => string.IsNullOrWhiteSpace(query) || FuzzyMatcher.IsMatch(query, name);
 }

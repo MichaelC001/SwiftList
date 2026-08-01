@@ -51,7 +51,12 @@ public static class DirectoryIndexerService
     public static void UnregisterDirectories(string pluginId) => UnregisterDirectoriesAction?.Invoke(pluginId);
 
     /// <summary>
-    /// Searches files within all directories registered by the given plugin.
+    /// Searches within all directories registered by this plugin, honouring the <c>recursive</c> and
+    /// <c>filterPattern</c> each was registered with. Answered from the host's file index wherever one
+    /// covers the directory (see <see cref="EnumerateDirectoryAsync"/> for that routing and for what
+    /// the pattern means); matching is the host's own fuzzy, alias-aware matching, and an empty query
+    /// keeps everything. Directories are returned alongside files -- drop them with
+    /// <see cref="Abstractions.ISearchResult.IsDir"/> if unwanted.
     /// </summary>
     public static async Task<List<Abstractions.ISearchResult>> SearchDirectoriesAsync(string pluginId, string query, CancellationToken token = default)
     {
