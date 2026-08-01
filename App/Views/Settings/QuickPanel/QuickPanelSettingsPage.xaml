@@ -68,9 +68,79 @@
             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_HotkeyHint]}"
                        Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
+            <!-- The page's own two halves. Stacked, they pushed each other off the screen: both are
+                 lists that grow, and the plugin tabs sat below a workspace card tall enough to hide
+                 them. Same tab row the pane inside the workspace card uses for its own two halves. -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <StackPanel>
+                    <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Workspaces]}"
+                            Command="{Binding SelectSectionCommand}" CommandParameter="Workspaces">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedSection}" Value="Workspaces">
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedSection}" Value="Workspaces">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Margin="18,0,0,0"
+                            Visibility="{Binding HasPluginTabs, Converter={StaticResource BoolToVis}}">
+                    <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_PluginTabs]}"
+                            Command="{Binding SelectSectionCommand}" CommandParameter="PluginTabs">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedSection}" Value="PluginTabs">
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedSection}" Value="PluginTabs">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
             <!-- No MinHeight: with one workspace and its sources collapsed, a floor left a slab of
                  empty card under the list. The page scrolls when the content outgrows it instead. -->
-            <Border Style="{StaticResource SettingsCard}">
+            <Border>
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource SettingsCard}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedSection}" Value="Workspaces">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <!-- Both columns are proportional, so widening the window widens the workspace
                          list too instead of leaving it pinned at a width picked for the default size.
@@ -209,14 +279,22 @@
                 </Grid>
             </Border>
 
-            <!-- Page level, not inside a workspace: a plugin's list is a whole collection, orthogonal to
-                 whichever folders a workspace gathers, so it is a tab beside the workspaces rather than a
-                 group inside one. Present unless closed, which is the opposite of how a folder works and
-                 is deliberate: a folder is something the user went and added, while this is something a
-                 plugin they installed already offers. -->
-            <StackPanel Margin="0,18,0,0" Visibility="{Binding HasPluginTabs, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_PluginTabs]}"
-                           FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <!-- Its own section, not inside a workspace: a plugin's list is a whole collection,
+                 orthogonal to whichever folders a workspace gathers, so it is a tab beside the
+                 workspaces rather than a group inside one. Present unless closed, which is the opposite
+                 of how a folder works and is deliberate: a folder is something the user went and added,
+                 while this is something a plugin they installed already offers. -->
+            <StackPanel>
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedSection}" Value="PluginTabs">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
                 <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_PluginTabsDesc]}"
                            Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 

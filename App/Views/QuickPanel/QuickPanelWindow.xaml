@@ -179,10 +179,14 @@
                                                                VerticalAlignment="Center" Text="{Binding Title}"
                                                                Visibility="{Binding ShowsHeading, Converter={StaticResource BoolToVis}}"/>
 
+                                                    <!-- Hidden with the name, not on its own: a count in
+                                                         brackets beside nothing at all reads as a stray
+                                                         number rather than as this group's size. -->
                                                     <TextBlock Grid.Column="1" FontSize="11" Margin="6,0,0,0"
                                                                Foreground="{DynamicResource TextSecondary2}"
                                                                VerticalAlignment="Center"
-                                                               Text="{Binding Count, StringFormat=({0})}"/>
+                                                               Text="{Binding Count, StringFormat=({0})}"
+                                                               Visibility="{Binding ShowsHeading, Converter={StaticResource BoolToVis}}"/>
 
                                                     <TextBlock Grid.Column="2" FontSize="11" Margin="10,0,0,0"
                                                                Foreground="{DynamicResource TextSecondary2}"
@@ -248,8 +252,13 @@
                                                                                  Below the converter's floor it hands out that floor
                                                                                  instead and the panel wraps at four, three, however
                                                                                  many the width really holds. -->
+                                                                            <!-- ItemHeight as well as ItemWidth: one cell size for
+                                                                                 every tile, so a row of mixed content stays a row
+                                                                                 rather than being stretched by whichever member
+                                                                                 happened to have the tallest picture. -->
                                                                             <WrapPanel Orientation="Horizontal"
-                                                                                       ItemWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}}"/>
+                                                                                       ItemWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}}"
+                                                                                       ItemHeight="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=Cell}"/>
                                                                         </ItemsPanelTemplate>
                                                                     </Setter.Value>
                                                                 </Setter>

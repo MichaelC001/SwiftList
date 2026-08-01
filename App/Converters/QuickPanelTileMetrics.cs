@@ -50,15 +50,35 @@ public sealed class QuickPanelTileMetrics : IValueConverter
             return DependencyProperty.UnsetValue;
 
         var slot = SlotFor(available);
-        if (!string.Equals(parameter as string, "Icon", StringComparison.Ordinal))
-            return slot;
 
         // Leaving the name room underneath: the tile is the picture plus up to two lines of text, and a
-        // picture that took the whole slot would push the name out of it. A width only -- the height
-        // follows the picture's own shape, since forcing it square is what left a band of empty tile
-        // above and below every 16:9 thumbnail.
-        return Math.Max(48, slot - SlotChrome);
+        // picture that took the whole slot would push the name out of it.
+        var iconWidth = Math.Max(48, slot - SlotChrome);
+
+        return (parameter as string) switch
+        {
+            "Icon" => iconWidth,
+            "IconHeight" => IconHeight(iconWidth),
+            "Cell" => IconHeight(iconWidth) + TextRoom,
+            _ => slot,
+        };
     }
+
+    // Room under the picture for up to two lines of name, plus the tile's own padding.
+    private const double TextRoom = 52;
+
+    /// <summary>The height of a tile's picture box: wider than tall, and the same for every tile.</summary>
+    /// <remarks>
+    /// A box, not the picture's own height. Letting each picture keep its natural height made every row
+    /// as tall as its tallest member, so a folder of mixed content came out ragged: a square icon set the
+    /// row height and the thumbnails beside it floated in the middle of it.
+    ///
+    /// Landscape rather than square, because a square box is what put a band of empty tile above and
+    /// below every 16:9 thumbnail, and video is what a folder of thumbnails usually is. At two thirds of
+    /// the width a 16:9 picture very nearly fills it, and a square icon simply scales down to fit the
+    /// height instead of stretching the row: both keep their own shape, and the grid stays a grid.
+    /// </remarks>
+    private static double IconHeight(double iconWidth) => Math.Floor(iconWidth * 2 / 3);
 
     /// <summary>How wide each tile is, for a list this wide.</summary>
     /// <remarks>

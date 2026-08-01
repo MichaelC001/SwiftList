@@ -58,6 +58,30 @@ public sealed class QuickPanelTileMetricsTests
     public void TheIconLeavesRoomForTheNameUnderIt()
         => Assert.IsLessThan(Slot(800), Icon(800), "a picture filling the slot would push the name out of the tile");
 
+    // Every tile gets the same cell, so a row of mixed content stays a row. Letting each picture keep
+    // its own height made a row as tall as its tallest member, which came out ragged the moment a
+    // square icon sat next to a thumbnail.
+    [TestMethod]
+    public void ThePictureBoxIsWiderThanItIsTall()
+    {
+        var box = (double)new QuickPanelTileMetrics().Convert(
+            800.0, typeof(double), "IconHeight", CultureInfo.InvariantCulture);
+
+        Assert.IsLessThan(Icon(800), box, "square is what left a band of empty tile around 16:9 thumbnails");
+        Assert.IsGreaterThan(Icon(800) * 0.5625, box, "and a 16:9 picture should very nearly fill it");
+    }
+
+    [TestMethod]
+    public void TheCellIsThePictureBoxPlusRoomForTheName()
+    {
+        var box = (double)new QuickPanelTileMetrics().Convert(
+            800.0, typeof(double), "IconHeight", CultureInfo.InvariantCulture);
+        var cell = (double)new QuickPanelTileMetrics().Convert(
+            800.0, typeof(double), "Cell", CultureInfo.InvariantCulture);
+
+        Assert.IsGreaterThan(box, cell);
+    }
+
     [TestMethod]
     public void AListThatHasNotBeenMeasuredYet_SetsNothing()
     {

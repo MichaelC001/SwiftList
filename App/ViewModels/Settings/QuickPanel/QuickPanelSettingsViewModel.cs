@@ -28,6 +28,7 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         _blacklistText = string.Join(Environment.NewLine, panel.BlacklistedProcesses);
 
         SelectSubTabCommand = new RelayCommand<string>(tab => SelectedSubTab = tab ?? "Sources");
+        SelectSectionCommand = new RelayCommand<string>(section => SelectedSection = section ?? "Workspaces");
         AddTabCommand = new RelayCommand(AddTab);
         DuplicateTabCommand = new RelayCommand(DuplicateTab, () => SelectedTab != null);
         RemoveTabCommand = new RelayCommand(RemoveTab, () => SelectedTab != null);
@@ -90,6 +91,22 @@ public class QuickPanelSettingsViewModel : ViewModelBase
     }
 
     public ICommand SelectSubTabCommand { get; }
+
+    private string _selectedSection = "Workspaces";
+
+    /// <summary>Which half of the page is on screen: the workspaces, or the plugins' own tabs.</summary>
+    /// <remarks>
+    /// A tab row rather than one section under the other. Both are lists that grow, and stacked they
+    /// pushed each other off the page -- the same reason the workspace pane below splits its own two
+    /// halves the same way.
+    /// </remarks>
+    public string SelectedSection
+    {
+        get => _selectedSection;
+        set => SetProperty(ref _selectedSection, value);
+    }
+
+    public ICommand SelectSectionCommand { get; }
 
     private string _blacklistText;
 

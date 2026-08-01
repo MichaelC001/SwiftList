@@ -178,15 +178,16 @@
              QuickPanelTileMetrics) and this fills it. The picture is sized from that same width, so a
              panel docked to a wide window gets thumbnails worth looking at rather than more of them. -->
         <StackPanel Margin="2,4,2,4">
-            <!-- A width, and a ceiling on the height rather than a height. Square boxes left a band of
-                 empty tile above and below every 16:9 thumbnail, which is most of a folder of video:
-                 the picture keeps its own shape now, and a row is as tall as its tallest picture. The
-                 ceiling is what stops a portrait image from making its row three times that. -->
-            <Image Source="{Binding Icon}"
-                   Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=Icon}"
-                   MaxHeight="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=Icon}"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   RenderOptions.BitmapScalingMode="HighQuality"/>
+            <!-- A box every tile shares, with the picture fitted inside it keeping its own shape. The
+                 box is wider than tall (see the converter): square left a band of empty tile above and
+                 below every 16:9 thumbnail, and letting each picture set its own height made every row
+                 as tall as its tallest member, which is what turned a folder of mixed content ragged. -->
+            <Border Height="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=IconHeight}"
+                    Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=Icon}">
+                <Image Source="{Binding Icon}" Stretch="Uniform"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+            </Border>
             <TextBlock FontSize="11" Margin="0,6,0,0"
                        conv:TextHighlighter.Text="{Binding Name}"
                        conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
