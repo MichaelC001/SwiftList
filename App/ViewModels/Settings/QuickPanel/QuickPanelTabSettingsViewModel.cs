@@ -139,11 +139,27 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         if (dialog.ShowDialog() != true)
             return;
 
-        foreach (var path in dialog.FolderNames)
+        AddFolders(dialog.FolderNames);
+    }
+
+    /// <summary>Adds folders as sources, skipping any this workspace already has.</summary>
+    /// <remarks>
+    /// A folder someone has just gone and picked starts as "everything, by name": they chose that folder
+    /// because of what is in it, and a shortcut bar is what a folder added by hand nearly always is.
+    /// Recently-changed-files is the specialised answer -- worth having, and one dropdown away, but a
+    /// poor thing to assume, since it can leave a folder full of files showing nothing at all when
+    /// none of them has been touched lately.
+    ///
+    /// The workspace a fresh install starts with is not this: Desktop, Downloads and Documents are
+    /// recent-files there deliberately, being places things arrive rather than places things are kept.
+    /// </remarks>
+    internal void AddFolders(IEnumerable<string> paths)
+    {
+        foreach (var path in paths)
         {
             if (Sources.Any(r => r.Path.Equals(path, StringComparison.OrdinalIgnoreCase)))
                 continue;
-            var folder = QuickPanelFolderSource.For(path);
+            var folder = QuickPanelFolderSource.For(path, QuickPanelSourceKind.Launcher);
             _model.Folders.Add(folder);
             Sources.Add(QuickPanelSourceRowViewModel.ForFolder(folder));
         }

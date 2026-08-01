@@ -17,6 +17,9 @@
         <ResourceDictionary Source="QuickPanelChromeResources.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- Five tiles to a row, sized from the list's own width: see the converter for why five. -->
+    <conv:QuickPanelTileMetrics x:Key="QuickPanelTileMetrics"/>
+
     <!-- The full window's row, rebuilt for a ListBox. SearchResultItemStyle itself cannot be
          reused: it targets ListViewItem and presents through a GridViewRowPresenter, neither of
          which a plain ListBox has. Everything that makes it behave the way it does is here,
@@ -171,8 +174,17 @@
          The name is allowed two lines before it is cut, a file called something long being the
          normal case rather than the exception at this width. -->
     <DataTemplate x:Key="QuickPanelTileTemplate" DataType="{x:Type app:AppSearchResult}">
-        <StackPanel Width="84" Margin="2,4,2,4">
-            <Image Source="{Binding Icon}" Width="48" Height="48"
+        <!-- No width of its own any more: the wrap panel hands each tile a slot five to a row (see
+             QuickPanelTileMetrics) and this fills it. The picture is sized from that same width, so a
+             panel docked to a wide window gets thumbnails worth looking at rather than more of them. -->
+        <StackPanel Margin="2,4,2,4">
+            <!-- A width, and a ceiling on the height rather than a height. Square boxes left a band of
+                 empty tile above and below every 16:9 thumbnail, which is most of a folder of video:
+                 the picture keeps its own shape now, and a row is as tall as its tallest picture. The
+                 ceiling is what stops a portrait image from making its row three times that. -->
+            <Image Source="{Binding Icon}"
+                   Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=Icon}"
+                   MaxHeight="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}, ConverterParameter=Icon}"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
             <TextBlock FontSize="11" Margin="0,6,0,0"

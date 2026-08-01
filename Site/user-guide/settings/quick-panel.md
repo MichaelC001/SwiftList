@@ -51,7 +51,16 @@ heading (leave it empty for the folder's own name); and **More options** opens t
 - **At most** — how many entries the group shows. 0 means everything the source has.
 - **Changed within (minutes)** — only entries changed within this long qualify. 0 means no age limit.
 - **Show as list** — the group opens as a detail list rather than thumbnail tiles. Which suits a
-  group is a property of the folder: images want tiles, documents want names and dates.
+  group is a property of the folder: images want tiles, documents want names and dates. Tiles divide
+  the row between five, so a panel docked to a wide window gets thumbnails worth looking at rather than
+  more of them — more than five once even five would be wider than a thumbnail can fill, fewer than
+  five on a panel too narrow for that many legible ones. Whatever the count, the row is divided rather
+  than filled with fixed-size tiles, so it never ends in a gap. Each picture keeps its own shape, so a
+  folder of 16:9 video does not become a grid of tall boxes with a band of empty tile in each.
+
+A folder added here starts on **Everything, by name** — a folder picked by hand is nearly always a
+place things are kept. The workspace a fresh install comes with is the exception, and deliberately so:
+Desktop, Downloads and Documents are places things arrive, and start on recently-changed files.
 
 ## Plugin sources
 

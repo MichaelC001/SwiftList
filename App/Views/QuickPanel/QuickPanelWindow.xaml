@@ -240,7 +240,13 @@
                                                                 <Setter Property="ItemsPanel">
                                                                     <Setter.Value>
                                                                         <ItemsPanelTemplate>
-                                                                            <WrapPanel Orientation="Horizontal"/>
+                                                                            <!-- ItemWidth is what caps the row at five: give every
+                                                                                 tile a fifth of the list, and a sixth cannot fit.
+                                                                                 Below the converter's floor it hands out that floor
+                                                                                 instead and the panel wraps at four, three, however
+                                                                                 many the width really holds. -->
+                                                                            <WrapPanel Orientation="Horizontal"
+                                                                                       ItemWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource QuickPanelTileMetrics}}"/>
                                                                         </ItemsPanelTemplate>
                                                                     </Setter.Value>
                                                                 </Setter>

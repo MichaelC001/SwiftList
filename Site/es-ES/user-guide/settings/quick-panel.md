@@ -52,7 +52,18 @@ nombre propio de la carpeta); y **Más opciones** abre el resto:
 - **Cambiado en (minutos)** — solo cuentan las entradas cambiadas dentro de ese tiempo. 0 significa sin límite de
   antigüedad.
 - **Mostrar como lista** — el grupo se abre como lista de detalles en vez de miniaturas. Cuál conviene es una
-  propiedad de la carpeta: las imágenes quieren miniaturas, los documentos quieren nombres y fechas.
+  propiedad de la carpeta: las imágenes quieren miniaturas, los documentos quieren nombres y fechas. Las
+  miniaturas se **reparten** la fila entre cinco: un panel acoplado a una ventana ancha obtiene miniaturas que
+  merece la pena mirar en lugar de más miniaturas. Cinco no es un número fijo: se ponen más en cuanto ni
+  siquiera cinco cabrían sin superar lo que una miniatura puede llenar, y menos en un panel demasiado estrecho
+  para esas cinco legibles. Sean las que sean, la fila se reparte en vez de llenarse con piezas de tamaño fijo,
+  así que nunca termina en un hueco. Cada imagen conserva su propia forma, de modo que una carpeta de vídeo
+  16:9 no se convierte en una cuadrícula de cajas altas con una franja vacía en cada una.
+
+Una carpeta añadida aquí empieza en **Todo, por nombre**: una carpeta elegida a mano casi siempre es un sitio
+donde se guardan cosas. El espacio de trabajo con el que llega una instalación nueva es la excepción, y a
+propósito: Escritorio, Descargas y Documentos son sitios a los que las cosas llegan, y empiezan en archivos
+cambiados recientemente.
 
 ## Fuentes de complementos
 
