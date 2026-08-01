@@ -11,6 +11,7 @@ using DragEventArgs = System.Windows.DragEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using Pen = System.Windows.Media.Pen;
 using Point = System.Windows.Point;
+using Selector = System.Windows.Controls.Primitives.Selector;
 using Size = System.Windows.Size;
 using TextBoxBase = System.Windows.Controls.Primitives.TextBoxBase;
 
@@ -183,8 +184,19 @@ public static class DragReorder
 
         if (newIndex < 0 || newIndex == oldIndex) return;
 
+        // Reordering is a remove followed by an insert, and the remove takes the selection with it:
+        // the selected object leaves the collection, so a Selector clears SelectedItem and a TwoWay
+        // binding writes that null straight into the view model. Re-inserting does not undo it, which
+        // is why a master/detail list (the plugin array editor, the quick panel's workspaces) went
+        // blank on the right the moment a row was dragged. Restored explicitly below.
+        var selector = control as Selector;
+        var wasSelected = selector != null && ReferenceEquals(selector.SelectedItem, s.item);
+
         list.RemoveAt(oldIndex);
         list.Insert(newIndex, s.item);
+
+        if (wasSelected && selector != null)
+            selector.SelectedItem = s.item;
     }
 
     // A Button/TextBox press (Move Up/Down, Edit, Remove, ...) always wins even if it happens to sit
