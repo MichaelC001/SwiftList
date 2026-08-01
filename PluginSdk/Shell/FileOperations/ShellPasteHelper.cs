@@ -1,13 +1,16 @@
 using System.Runtime.InteropServices;
-using SwiftList.PluginSdk;
 
-namespace SwiftList.Plugins.CoreExtensions.Shell.FileOperations;
+namespace SwiftList.PluginSdk.Shell.FileOperations;
 
-// Queues every clipboard file into ONE IFileOperation batch targeting a single destination folder --
+// Queues every source path into ONE IFileOperation batch targeting a single destination folder --
 // same "one native dialog regardless of item count" shape ShellDeleteHelper uses. Copy vs move is the
-// caller's own already-known answer (the clipboard's "Preferred DropEffect" marker, the same one
-// CutFileAction writes), matching Explorer's own Ctrl+V semantics exactly, conflict-resolution prompt
-// (file already exists?) included via IFileOperation's own default UI.
+// caller's own already-known answer (the clipboard's "Preferred DropEffect" marker for a paste, a fixed
+// copy for the quick panel's drop target), matching Explorer's own Ctrl+V semantics exactly,
+// conflict-resolution prompt (file already exists?) included via IFileOperation's own default UI.
+//
+// Lives in the SDK rather than in the plugin that first needed it: the app's own quick panel copies
+// dropped files this way too, and a built-in surface must not stop working because a plugin was
+// disabled. Both reference this project already, so it is the one place both can see.
 public static class ShellPasteHelper
 {
     // Fire-and-forget by design, same reasoning as ShellDeleteHelper.DeleteAsync: nothing downstream

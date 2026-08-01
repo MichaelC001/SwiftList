@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace SwiftList.Plugins.CoreExtensions.Shell.FileOperations;
+namespace SwiftList.PluginSdk.Shell.FileOperations;
 
 // Minimal IFileOperation/IShellItem COM interop -- the same shell API Explorer itself uses for
 // Delete, so a queued DeleteItem batch gets one native progress dialog and one native confirmation

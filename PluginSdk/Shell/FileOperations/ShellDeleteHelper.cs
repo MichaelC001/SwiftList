@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
-using SwiftList.PluginSdk;
 
-namespace SwiftList.Plugins.CoreExtensions.Shell.FileOperations;
+namespace SwiftList.PluginSdk.Shell.FileOperations;
 
 // Queues every path into ONE IFileOperation batch (via IShellItem, which is just a "path -> COM
 // object" wrapper with no notion of a common parent) so a cross-directory, cross-drive multi-select

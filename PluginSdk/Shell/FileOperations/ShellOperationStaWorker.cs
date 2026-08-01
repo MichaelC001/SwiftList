@@ -1,8 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using SwiftList.PluginSdk;
 
-namespace SwiftList.Plugins.CoreExtensions.Shell.FileOperations;
+namespace SwiftList.PluginSdk.Shell.FileOperations;
 
 // Shared dedicated STA thread for IFileOperation-based work (delete, paste/copy/move -- anything
 // whose native confirm/progress/conflict dialog can legitimately sit open for a while waiting on the

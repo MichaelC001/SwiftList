@@ -1,9 +1,9 @@
-using System.Windows.Media;
+﻿using System.Windows.Media;
 using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Services;
 using SwiftList.PluginSdk.Helpers;
 
-using SwiftList.Plugins.CoreExtensions.Shell.FileOperations;
+using SwiftList.PluginSdk.Shell.FileOperations;
 namespace SwiftList.Plugins.CoreExtensions.Actions;
 
 public class DeleteFileAction : ISearchResultAction
