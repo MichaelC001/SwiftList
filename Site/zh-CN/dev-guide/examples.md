@@ -13,6 +13,8 @@ SwiftList 自带两个插件，都是很有参考价值的真实案例——都�
   ——如果你的插件在设置 → 插件的配置对话框里需要的不只是一份扁平的布尔值列表，值得读一下这部分。
 - `FavoritesTabProvider` 和 `HistoryTabProvider` 各自实现了
   [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider)，把已有的列表以标签的形式呈现在[初始面板](../user-guide/settings/startup-panel)里——是这个接口的一个最简参考实现，因为两者都只是把一份已经查询好的列表包一层，自己没有额外的状态。
+- `FavoritesSourceProvider` 和 `WindowsRecentSourceProvider` 对
+  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider) 做了同样的事，而且两者正好覆盖了这个接口的两端：前者原样交出一份内存里的列表，后者则在后台任务上读目录、通过 COM 解析 shell 快捷方式，先截断再做那件昂贵的事，并给每个条目填上 `Metadata.Modified`，好让分组的「最新在前」真的有意义。
 
 ## PinyinAlias —— 中文文件名拼音别名
 

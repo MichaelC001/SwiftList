@@ -18,7 +18,7 @@ English, since translated labels usually run longer than their Chinese originals
 buttons appear at the ends of the row so the rest stay reachable by scrolling, instead of just being
 cut off.
 
-The Settings window has ten sections in its left sidebar:
+The Settings window has eleven sections in its left sidebar:
 
 | Section | Covers |
 |---|---|
@@ -30,6 +30,7 @@ The Settings window has ten sections in its left sidebar:
 | [Favorites](./favorites) | Custom-named shortcuts to folders, files, and URLs. |
 | [History](./history) | Search history and quick-window keyword history. |
 | [Startup Panel](./startup-panel) | The empty-search-box tab strip: Recent Files, Last Directory, and reopening closed plugin tabs. |
+| [Quick Panel](./quick-panel) | The floating panel docked over the window in front: its workspaces, their sources, and which apps each belongs to. |
 | [Appearance](./appearance) | Theme picker (with a preview card per theme) and "follow system light/dark" mode. Pinned above About. |
 | [About](./about) | Version info and update checking. |
 

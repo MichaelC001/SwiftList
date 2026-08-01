@@ -48,16 +48,54 @@ CoreExtensions' History and Favorites tabs are both built on this; see
 ```csharp
 interface IStartupPanelTabProvider : IPluginComponent
 {
-    IEnumerable<ISearchResult> GetItems();
+    IAsyncEnumerable<ISearchResult> GetItemsAsync(CancellationToken cancellationToken = default);
 }
 ```
 
-`GetItems()` runs synchronously on every panel activation and is expected to be fast with no I/O —
-it's called each time the search box is cleared, not cached. A tab that returns no items is left out
-of the strip entirely rather than shown empty. The user can hide a tab from the live panel with its
-**×** button independently of disabling the component altogether in Settings → Plugins — the two
-are deliberately separate; the host uses the component's concrete class type name (`GetType().Name`)
-as the stable key to persist the closed state.
+`GetItemsAsync()` is called each time the panel is activated, not cached. It streams rather than
+returning a finished set: the tab appears when the first item arrives and fills in as the rest do, so
+a provider that has to go and look costs only its own tab's completeness, never the panel's
+appearance. One with everything already in memory can yield straight from a list and pays nothing for
+the shape. The token is cancelled when the panel closes or is reactivated — honour it rather than
+enumerate on for a panel nobody is looking at.
+
+A tab that yields nothing is left out of the strip entirely rather than shown empty. The user can
+hide a tab from the live panel with its **×** button independently of disabling the component
+altogether in Settings → Plugins — the two are deliberately separate; the host uses the component's
+concrete class type name (`GetType().Name`) as the stable key to persist the closed state.
+
+## Quick Panel
+
+### `IQuickPanelSourceProvider`
+
+Contributes a source to the [Quick Panel](../../user-guide/settings/quick-panel) — the floating panel
+docked over whatever window is in front. A source becomes one group there, with its own heading, and
+the host renders the entries through its own result rows, so icons, opening, and the actions menu all
+come for free. CoreExtensions ships two: Windows Recent Items and Favorites.
+
+```csharp
+interface IQuickPanelSourceProvider : IPluginComponent
+{
+    Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default);
+}
+```
+
+`GetEntriesAsync()` is called every time the panel is summoned. Deliberately not the streaming shape
+`IStartupPanelTabProvider` uses: this panel orders and caps a source's entries as a set (newest first,
+or by name, at most so many), so it cannot show half of one without re-sorting the group on every
+arrival. That costs nothing in latency — every source of every workspace loads on its own task and
+the panel opens on the first one to arrive, so a provider that has to go and look delays only its own
+group. Honour the token all the same: it is cancelled when the panel closes.
+
+Fill in `ISearchResult.Metadata`'s `Modified` where the source knows one and the group's default
+newest-first order uses it; leave it at its default and the entries keep the order they were returned
+in. A source that returns nothing produces no group, and a workspace whose sources all return nothing
+gets no tab.
+
+Where the source appears is the user's: they add it to whichever workspaces they want under Settings
+→ Quick Panel → Plugin sources, and each of those remembers its own position, whether it is hidden,
+what it is called and how it is displayed — all keyed by the component id, alongside their own
+folders.
 
 ## Preview & thumbnails
 

@@ -19,7 +19,7 @@ su propia fila de subpestañas en la parte superior de la página. Si las etique
 aparecen botones de flecha izquierda/derecha en los extremos de la fila para que el resto siga siendo alcanzable
 desplazándose, en lugar de quedar simplemente cortado.
 
-La ventana de Configuración tiene diez secciones en su barra lateral izquierda:
+La ventana de Configuración tiene once secciones en su barra lateral izquierda:
 
 | Sección | Cubre |
 |---|---|
@@ -31,6 +31,7 @@ La ventana de Configuración tiene diez secciones en su barra lateral izquierda:
 | [Favoritos](./favorites) | Accesos directos con nombre personalizado a carpetas, archivos y URL. |
 | [Historial](./history) | Historial de búsqueda e historial de palabras clave de la ventana rápida. |
 | [Panel de Inicio](./startup-panel) | La franja de pestañas del cuadro de búsqueda vacío: Archivos recientes, Última carpeta, y reabrir pestañas de plugin cerradas. |
+| [Panel Rápido](./quick-panel) | El panel flotante acoplado sobre la ventana en primer plano: sus espacios de trabajo, las fuentes de cada uno, y a qué aplicaciones pertenecen. |
 | [Apariencia](./appearance) | Selector de tema (con una tarjeta de vista previa por tema) y el modo "seguir el claro/oscuro del sistema". Fijado encima de Acerca de. |
 | [Acerca de](./about) | Información de versión y comprobación de actualizaciones. |
 

@@ -24,6 +24,12 @@ carpeta `Plugins/` del repositorio de SwiftList.
   listas existentes como pestañas en el [Panel de Inicio](../user-guide/settings/startup-panel) — una referencia mínima
   para esa interfaz, ya que ambos simplemente envuelven una lista de elementos ya consultada, sin
   estado adicional propio.
+- `FavoritesSourceProvider` y `WindowsRecentSourceProvider` hacen lo mismo para
+  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider), y entre los dos cubren ambos
+  extremos de esa interfaz: el primero devuelve tal cual una lista que ya está en memoria, mientras que el
+  segundo lee un directorio y resuelve accesos directos del shell por COM en una tarea en segundo plano,
+  recorta el conjunto antes de hacer la parte cara, y rellena el `Metadata.Modified` de cada entrada para que
+  el orden por lo más nuevo del grupo signifique algo.
 
 ## PinyinAlias — alias en pinyin para nombres de archivo en chino
 

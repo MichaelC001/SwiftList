@@ -15,6 +15,8 @@ SwiftList リポジトリの `Plugins/` フォルダーにあります。
 - **`IConfigurable.GetConfigSchema()`** は、ネストされたフィールドグループと `StringList` フィールドタイプを使った設定スキーマの例を示しています——自分のプラグインの 設定 → プラグイン の設定ダイアログに、フラットなブール値のリスト以上のものが必要な場合は一読の価値があります。
 - `FavoritesTabProvider` と `HistoryTabProvider` はそれぞれ
   [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider) を実装し、既存のリストを[スタートアップパネル](../user-guide/settings/startup-panel)のタブとして表示しています——どちらもすでにクエリ済みの項目リストをラップしているだけで、独自の状態を持たないため、このインターフェースの最小限のリファレンス実装になっています。
+- `FavoritesSourceProvider` と `WindowsRecentSourceProvider` は
+  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider) について同じことを行い、2つでこのインターフェースの両極をカバーしています:前者はメモリ上のリストをそのまま返すだけ、後者はバックグラウンドタスクでディレクトリを読み、COM 経由でシェルのショートカットを解決し、高価な処理の前に件数を打ち切り、各項目の `Metadata.Modified` を埋めてグループの新しい順に意味を持たせています。
 
 ## PinyinAlias — 中国語ファイル名向けのピンインエイリアス
 

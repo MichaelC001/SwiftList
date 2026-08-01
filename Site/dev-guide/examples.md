@@ -24,6 +24,12 @@ Two plugins ship with SwiftList itself and are useful, real-world references —
   existing lists as tabs in the [Startup Panel](../user-guide/settings/startup-panel) — a minimal
   reference for that interface, since both just wrap an already-queried list of items with no
   extra state of their own.
+- `FavoritesSourceProvider` and `WindowsRecentSourceProvider` do the same for
+  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider), and between them
+  cover both ends of that interface: the first hands back an in-memory list as it stands, while the
+  second reads a directory and resolves shell shortcuts through COM on a background task, caps the
+  set before doing the expensive part, and fills in each entry's `Metadata.Modified` so the group's
+  newest-first order means something.
 
 ## PinyinAlias — pinyin aliasing for Chinese filenames
 

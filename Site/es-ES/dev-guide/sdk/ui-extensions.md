@@ -50,16 +50,54 @@ Las pestañas Historial y Favoritos de CoreExtensions están construidas sobre e
 ```csharp
 interface IStartupPanelTabProvider : IPluginComponent
 {
-    IEnumerable<ISearchResult> GetItems();
+    IAsyncEnumerable<ISearchResult> GetItemsAsync(CancellationToken cancellationToken = default);
 }
 ```
 
-`GetItems()` se ejecuta de forma síncrona en cada activación del panel, y se espera que sea rápido y sin E/S —
-se llama cada vez que se borra el cuadro de búsqueda, no se cachea. Una pestaña que no devuelve ningún elemento se
-omite por completo de la franja en lugar de mostrarse vacía. El usuario puede ocultar una pestaña del panel en vivo
+`GetItemsAsync()` se llama en cada activación del panel y no se cachea. Transmite en vez de devolver un conjunto
+terminado: la pestaña aparece cuando llega el primer elemento y se va llenando conforme llegan los demás, así que un
+proveedor que tenga que ir a buscar solo retrasa lo completa que esté su propia pestaña, nunca la aparición del
+panel. Uno que ya lo tenga todo en memoria puede hacer yield directamente desde una lista y no paga nada por esta
+forma. El token se cancela cuando el panel se cierra o se reactiva: respétalo en lugar de seguir enumerando para un
+panel que nadie está mirando.
+
+Una pestaña cuyo proveedor no hace yield de nada se omite por completo de la franja en lugar de mostrarse vacía. El
+usuario puede ocultar una pestaña del panel en vivo
 con su botón **×** independientemente de deshabilitar por completo el componente en Configuración → Plugins — las
 dos cosas son deliberadamente independientes; el host usa el nombre de tipo de la clase concreta del componente
 (`GetType().Name`) como clave estable para persistir el estado de cerrado.
+
+## Panel Rápido
+
+### `IQuickPanelSourceProvider`
+
+Aporta una fuente al [Panel Rápido](../../user-guide/settings/quick-panel) — el panel flotante acoplado sobre la
+ventana que esté en primer plano. Una fuente se convierte allí en un grupo, con su propio encabezado, y el host
+renderiza las entradas con sus propias filas de resultado, así que los iconos, la apertura y el menú de acciones
+vienen gratis. CoreExtensions trae dos: Elementos recientes de Windows y Favoritos.
+
+```csharp
+interface IQuickPanelSourceProvider : IPluginComponent
+{
+    Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default);
+}
+```
+
+`GetEntriesAsync()` se llama cada vez que se invoca el panel. Deliberadamente no adopta la forma de transmisión de
+`IStartupPanelTabProvider`: este panel ordena y recorta las entradas de una fuente **como conjunto** (lo más nuevo
+primero, o por nombre, y como mucho tantas), de modo que no puede mostrar la mitad sin reordenar el grupo en cada
+llegada. Eso no cuesta latencia — cada fuente de cada espacio de trabajo se carga en su propia tarea y el panel se
+abre con la primera que llega, así que un proveedor que tenga que ir a buscar solo retrasa su propio grupo. Aun así,
+respeta el token: se cancela cuando el panel se cierra.
+
+Rellena `Modified` en `ISearchResult.Metadata` allí donde la fuente conozca esa fecha y el orden por defecto del
+grupo (lo más nuevo primero) la usará; déjalo con su valor por defecto y las entradas conservarán el orden en que
+las devolviste. Una fuente que no devuelve nada no produce grupo, y un espacio de trabajo cuyas fuentes no devuelven
+nada no obtiene pestaña.
+
+Dónde aparece la fuente lo decide el usuario: la añade a los espacios de trabajo que quiera desde Configuración →
+Panel Rápido → Fuentes de complementos, y cada uno de ellos recuerda su propia posición, si está oculta, cómo se
+llama y cómo se muestra — todo indexado por el id del componente, junto a sus propias carpetas.
 
 ## Vista previa y miniaturas
 

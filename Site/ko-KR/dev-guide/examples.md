@@ -23,6 +23,11 @@ SwiftList 자체에는 두 개의 플러그인이 함께 제공되며, 둘 다 �
   [`IStartupPanelTabProvider`](./sdk/ui-extensions#istartuppaneltabprovider)를 구현하여 기존의 목록을
   [시작 패널](../user-guide/settings/startup-panel)의 탭으로 노출합니다 — 둘 다 이미 조회된 항목 목록을
   자체 상태 없이 감싸기만 하므로, 해당 인터페이스에 대한 최소한의 참고 예제입니다.
+- `FavoritesSourceProvider`와 `WindowsRecentSourceProvider`는
+  [`IQuickPanelSourceProvider`](./sdk/ui-extensions#iquickpanelsourceprovider)에 대해 같은 일을 하며,
+  둘이 합쳐 이 인터페이스의 양 극단을 보여줍니다: 앞의 것은 메모리에 있는 목록을 그대로 돌려주고, 뒤의
+  것은 백그라운드 작업에서 디렉터리를 읽고 COM으로 셸 바로 가기를 해석하되 비싼 작업 전에 개수를 먼저
+  잘라내며, 각 항목의 `Metadata.Modified`를 채워 그룹의 최신순 정렬이 의미를 갖게 합니다.
 
 ## PinyinAlias — 중국어 파일명을 위한 병음 별칭
 

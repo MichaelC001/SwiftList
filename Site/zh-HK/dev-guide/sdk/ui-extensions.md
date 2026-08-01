@@ -41,11 +41,32 @@ interface IResultColumnProvider
 ```csharp
 interface IStartupPanelTabProvider : IPluginComponent
 {
-    IEnumerable<ISearchResult> GetItems();
+    IAsyncEnumerable<ISearchResult> GetItemsAsync(CancellationToken cancellationToken = default);
 }
 ```
 
-`GetItems()` 在面板每次激活時都會同步調用，預期要快、不做 I/O——每次搜尋框被清空都會調它一次，不會做快取。如果沒有返回任何項目，這個標籤會被整個排除在標籤欄之外，而不是顯示成空的。使用者可以在實時面板裏用 **×** 按鈕單獨隱藏一個標籤，這和在設定 → 插件裏把該組件整個禁用是兩回事，故意分開處理——宿主程式使用組件的具體類型名稱（`GetType().Name`）作為穩定 Key 來持久化隱藏狀態。
+`GetItemsAsync()` 在面板每次激活時都會調用，不做快取。它是串流式的而不是返回一份完整結果：第一條到達時標籤就出現，其餘的邊到邊填，所以一個需要慢慢去找的提供器只會讓自己這個標籤晚一點填滿，絕不會拖住面板的出現。數據本來就在記憶體裏的提供器直接從列表 yield 即可，不會為這個形狀付出任何代價。面板關閉或重新激活時權杖會被取消——請遵守它，別為一個沒人在看的面板繼續枚舉下去。
+
+一條都沒 yield 的提供器，其標籤會被整個排除在標籤欄之外，而不是顯示成空的。使用者可以在實時面板裏用 **×** 按鈕單獨隱藏一個標籤，這和在設定 → 插件裏把該組件整個禁用是兩回事，故意分開處理——宿主程式使用組件的具體類型名稱（`GetType().Name`）作為穩定 Key 來持久化隱藏狀態。
+
+## 快速面板
+
+### `IQuickPanelSourceProvider`
+
+給[快速面板](../../user-guide/settings/quick-panel)貢獻一個來源——那個停靠在前景視窗上的浮動面板。一個來源在那裏就是一個分組，有自己的標題，項目由宿主用它自己的結果行渲染，所以圖示、打開、動作選單都是白送的。CoreExtensions 自帶兩個：Windows 歷史記錄和我的最愛。
+
+```csharp
+interface IQuickPanelSourceProvider : IPluginComponent
+{
+    Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default);
+}
+```
+
+`GetEntriesAsync()` 在面板每次被呼出時調用。這裏刻意沒有採用 `IStartupPanelTabProvider` 那種串流形狀：這個面板要把一個來源的項目當作一個**整體**來排序和截斷(最新在前，或者按名稱，且最多幾條)，所以它沒辦法只顯示其中一半而不在每次新項目到達時重排整個分組。這並不會帶來延遲——每個工作區的每個來源都在各自的任務上載入，面板在第一個到達時就打開，所以一個需要慢慢去找的提供器只會拖慢自己那個分組。但仍然請遵守權杖：面板關閉時它會被取消。
+
+來源知道修改時間的話，就填進 `ISearchResult.Metadata` 的 `Modified`，分組預設的「最新在前」會用它；保持預設值不填，項目就維持你返回時的順序。返回空的來源不會產生分組，所有來源都返回空的工作區不會有標籤。
+
+來源出現在哪裏由使用者決定：他們在設定 → 快速面板 → 插件來源裏把它加進想加的工作區，每個工作區各自記住它的位置、是否隱藏、叫甚麼名字、怎麼顯示——全部以組件 id 為鍵，和使用者自己的資料夾放在一起。
 
 ## 預覽與縮略圖
 
