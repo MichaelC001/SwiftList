@@ -22,7 +22,10 @@ internal interface ITabSource
     // Hides this tab from the panel going forward (the x button). Deliberately distinct from a plugin
     // component being disabled -- see PluginTabSource.Close for why the two must not share storage.
     void Close();
-    Task<List<AppSearchResult>> LoadItemsAsync();
+    // Streaming, so a tab appears on its first item rather than when its slowest one arrives. A source
+    // that yields nothing produces no tab at all, which is how empty tabs stay hidden without anyone
+    // having to count first.
+    IAsyncEnumerable<AppSearchResult> LoadItemsAsync(CancellationToken cancellationToken = default);
 }
 
 // The built-in "Recent Files" tab -- distinct from the plugin-provided sources below because it needs
@@ -46,25 +49,30 @@ internal sealed class RecentFilesTabSource : ITabSource
         settings.Save();
     }
 
-    public async Task<List<AppSearchResult>> LoadItemsAsync()
+    // The round trip to the indexing service is one call that either answers or does not, so the
+    // streaming here begins after it: the wait is real and cannot be broken up, but the mapping that
+    // follows can be, and the tab appears on the first mapped row rather than the last.
+    public async IAsyncEnumerable<AppSearchResult> LoadItemsAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var panelSettings = UserSettings.Load().StartupPanel;
         if (panelSettings.RecentFilesDirectories.Count == 0)
-            return new List<AppSearchResult>();
+            yield break;
 
         var recentFiles = await _searchService.GetRecentFilesAsync(
             panelSettings.RecentFilesDirectories, panelSettings.RecentFilesCount, panelSettings.RecentFilesMaxAgeMinutes);
 
-        var uiResults = new List<AppSearchResult>(recentFiles.Count);
         for (var i = 0; i < recentFiles.Count; i++)
         {
+            if (cancellationToken.IsCancellationRequested) yield break;
+
             var uiResult = SearchResultHelper.CreateUiResult(recentFiles[i], string.Empty, i, isApplication: false, scope: null);
             var relativeTime = FormatRelativeTime(recentFiles[i].Metadata.Modified);
             if (!string.IsNullOrEmpty(relativeTime))
                 uiResult.ParentDir = $"{relativeTime} - {uiResult.ParentDir}";
-            uiResults.Add(uiResult);
+
+            yield return uiResult;
         }
-        return uiResults;
     }
 
     // internal so the quick panel can render its second line the same way, for every tab rather than
@@ -121,28 +129,54 @@ internal sealed class LastDirectoryTabSource : ITabSource
         settings.Save();
     }
 
-    public Task<List<AppSearchResult>> LoadItemsAsync()
+    public async IAsyncEnumerable<AppSearchResult> LoadItemsAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var path = InlineSearchManager.Instance.ExplorerTracker.LastActiveExplorerPath;
         // The Desktop is where Explorer/dialogs land by default when nothing more specific has been
         // browsed to yet, so treating it as "last visited" would make this tab show up constantly with
         // a location the user didn't actually navigate to.
         if (string.IsNullOrEmpty(path) || !Directory.Exists(path) || IsCurrentUserDesktop(path))
-            return Task.FromResult(new List<AppSearchResult>());
+            yield break;
 
-        var uiResults = new List<AppSearchResult>();
+        var drive = (Path.GetPathRoot(path) ?? string.Empty).TrimEnd('\\', ':');
+        var exclusions = ExclusionRuleSet.From(UserSettings.Load());
+        var index = 0;
+
+        // Advanced by hand rather than with foreach, because a yield cannot sit inside a try that has a
+        // catch, and the walk genuinely can throw part way through: a folder can be pulled away or its
+        // permissions changed while it is being read. Guarding each step keeps whatever was already
+        // yielded and stops there, where a guard around the whole loop would have to discard it.
+        IEnumerator<FileSystemInfo>? entries = null;
         try
         {
-            var drive = (Path.GetPathRoot(path) ?? string.Empty).TrimEnd('\\', ':');
-            var exclusions = ExclusionRuleSet.From(UserSettings.Load());
-            var index = 0;
-            // A raw filesystem walk sees everything, unlike the real index (which skips hidden/system
-            // entries and anything the user has excluded) -- apply the same two filters here so this
-            // tab doesn't surface things like $RECYCLE.BIN that a normal search never would.
-            foreach (var entry in new DirectoryInfo(path).EnumerateFileSystemInfos())
+            entries = new DirectoryInfo(path).EnumerateFileSystemInfos().GetEnumerator();
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LastDirectoryTabSource] Failed to list '{path}': {ex.Message}", LogLevel.Error);
+            yield break;
+        }
+
+        using (entries)
+        {
+            while (index < MaxItems && !cancellationToken.IsCancellationRequested)
             {
-                if (index >= MaxItems)
+                FileSystemInfo entry;
+                try
+                {
+                    if (!entries.MoveNext()) break;
+                    entry = entries.Current;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"[LastDirectoryTabSource] Stopped listing '{path}': {ex.Message}", LogLevel.Error);
                     break;
+                }
+
+                // A raw filesystem walk sees everything, unlike the real index (which skips hidden/system
+                // entries and anything the user has excluded) -- apply the same two filters here so this
+                // tab doesn't surface things like $RECYCLE.BIN that a normal search never would.
                 if (FileSystemItemFilter.IsHiddenOrSystem(entry.Attributes))
                     continue;
 
@@ -163,16 +197,13 @@ internal sealed class LastDirectoryTabSource : ITabSource
                         entry.LastWriteTime,
                         entry.LastAccessTime),
                 };
-                uiResults.Add(SearchResultHelper.CreateUiResult(item, string.Empty, index, isApplication: false, scope: null));
+
+                yield return SearchResultHelper.CreateUiResult(item, string.Empty, index, isApplication: false, scope: null);
                 index++;
             }
         }
-        catch (Exception ex)
-        {
-            Logger.Log($"[LastDirectoryTabSource] Failed to list '{path}': {ex.Message}", LogLevel.Error);
-            return Task.FromResult(new List<AppSearchResult>());
-        }
-        return Task.FromResult(uiResults);
+
+        await Task.CompletedTask;
     }
 
     private static bool IsCurrentUserDesktop(string path)
@@ -214,19 +245,48 @@ internal sealed class PluginTabSource : ITabSource
         settings.Save();
     }
 
-    public Task<List<AppSearchResult>> LoadItemsAsync()
+    public async IAsyncEnumerable<AppSearchResult> LoadItemsAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        // Advanced by hand for the same reason the last-directory source is: a yield cannot sit inside a
+        // try that has a catch, and a plugin can throw at any point in its enumeration rather than only
+        // when it starts. A provider that fails half way keeps whatever it already yielded and loses the
+        // rest, which costs its own tab and nothing else on the panel.
+        IAsyncEnumerator<PluginSdk.Abstractions.ISearchResult> items;
         try
         {
-            var items = _provider.GetItems()
-                .Select((item, index) => MapToUiResult(item, index))
-                .ToList();
-            return Task.FromResult(items);
+            items = _provider.GetItemsAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
         }
         catch (Exception ex)
         {
-            Logger.Log($"[PluginTabSource] {_provider.GetType().Name}.GetItems() failed: {ex.Message}", LogLevel.Error);
-            return Task.FromResult(new List<AppSearchResult>());
+            Logger.Log($"[PluginTabSource] {_provider.GetType().Name}.GetItemsAsync() failed: {ex.Message}", LogLevel.Error);
+            yield break;
+        }
+
+        var index = 0;
+        try
+        {
+            while (true)
+            {
+                PluginSdk.Abstractions.ISearchResult current;
+                try
+                {
+                    if (!await items.MoveNextAsync().ConfigureAwait(true)) break;
+                    current = items.Current;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"[PluginTabSource] {_provider.GetType().Name}.GetItemsAsync() failed: {ex.Message}", LogLevel.Error);
+                    break;
+                }
+
+                yield return MapToUiResult(current, index);
+                index++;
+            }
+        }
+        finally
+        {
+            await items.DisposeAsync().ConfigureAwait(true);
         }
     }
 

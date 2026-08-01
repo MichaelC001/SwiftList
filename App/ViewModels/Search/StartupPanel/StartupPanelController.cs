@@ -21,6 +21,10 @@ public class StartupPanelController : ViewModelBase
         public required StartupPanelTabViewModel ViewModel { get; init; }
         public required ITabSource Source { get; init; }
         public required List<AppSearchResult> Items { get; init; }
+
+        // Its position in the configured tab order, kept so a tab arriving late still lands where the
+        // user put it rather than where it finished.
+        public required int Rank { get; init; }
     }
 
     private readonly SearchService _searchService;
@@ -51,8 +55,8 @@ public class StartupPanelController : ViewModelBase
         set => SetProperty(ref _visibility, value);
     }
 
-    /// <summary>Fetches every enabled tab source in parallel, keeps only the non-empty ones, and shows
-    /// the first as selected. Returns whether the panel should show at all.</summary>
+    /// <summary>Streams every enabled tab source at once, each tab appearing with its first item and
+    /// filling in after. Returns whether the panel ended up with anything at all.</summary>
     public async Task<bool> TryActivateAsync()
     {
         if (!UserSettings.Load().StartupPanel.Enabled)
@@ -64,23 +68,20 @@ public class StartupPanelController : ViewModelBase
 
         var requestId = ++_requestId;
         var sources = BuildCandidateSources();
-        var itemLists = await Task.WhenAll(sources.Select(FetchSafeAsync));
-
-        if (requestId != _requestId)
-            return false; // superseded by a newer activation/deactivation while fetching
 
         _activeTabs.Clear();
         Tabs.Clear();
-        for (var i = 0; i < sources.Count; i++)
-        {
-            if (itemLists[i].Count == 0)
-                continue;
 
-            var source = sources[i];
-            var tabVm = new StartupPanelTabViewModel(source.Label, () => CloseTab(source), () => SelectTab(source));
-            _activeTabs.Add(new ActiveTab { ViewModel = tabVm, Source = source, Items = itemLists[i] });
-            Tabs.Add(tabVm);
-        }
+        // Every source is consumed at once and each tab appears when its own first item arrives, rather
+        // than the panel waiting for the slowest of them. A source that yields nothing never creates a
+        // tab, which is how empty tabs stay hidden now that nothing counts them up front.
+        //
+        // The whole set is still awaited before returning, because the caller's answer is "did the panel
+        // end up with anything", but the panel is already visible and filling in by then.
+        await Task.WhenAll(sources.Select((source, rank) => StreamTabAsync(source, rank, requestId)));
+
+        if (requestId != _requestId)
+            return false; // superseded by a newer activation/deactivation while fetching
 
         if (_activeTabs.Count == 0)
         {
@@ -88,10 +89,51 @@ public class StartupPanelController : ViewModelBase
             return false;
         }
 
-        Visibility = Visibility.Visible;
-        var toSelect = _activeTabs.FirstOrDefault(t => t.Source.Label == _lastSelectedLabel) ?? _activeTabs[0];
-        SelectTab(toSelect.Source);
         return true;
+    }
+
+    /// <summary>Consumes one source, creating its tab on the first item and appending the rest.</summary>
+    /// <remarks>
+    /// Each append re-applies the selected tab's whole list rather than pushing single items: the apply
+    /// callback is the same one a real search uses and it replaces results wholesale. For a startup
+    /// panel's handful of rows that costs nothing, and it keeps this from needing a second, incremental
+    /// path through the result list that only this feature would use.
+    /// </remarks>
+    private async Task StreamTabAsync(ITabSource source, int rank, int requestId)
+    {
+        ActiveTab? tab = null;
+
+        await foreach (var item in source.LoadItemsAsync().ConfigureAwait(true))
+        {
+            if (requestId != _requestId) return;
+
+            if (tab == null)
+            {
+                var tabVm = new StartupPanelTabViewModel(source.Label, () => CloseTab(source), () => SelectTab(source));
+                tab = new ActiveTab { ViewModel = tabVm, Source = source, Rank = rank, Items = new List<AppSearchResult>() };
+
+                // Inserted at its configured position, not appended. Tabs now appear in the order their
+                // first items happen to arrive, so appending would let a fast source outrank a slow one
+                // and quietly replace the user's own TabOrder with a race.
+                var at = _activeTabs.FindIndex(t => t.Rank > rank);
+                if (at < 0) at = _activeTabs.Count;
+                _activeTabs.Insert(at, tab);
+                Tabs.Insert(at, tabVm);
+
+                Visibility = Visibility.Visible;
+
+                // The remembered tab wins if it turns up, but until it does the first one to arrive is
+                // selected so the panel is never visible with nothing chosen. Selecting again when the
+                // remembered one appears is what makes the preference survive being slower than another.
+                if (_activeTabs.Count == 1 || source.Label == _lastSelectedLabel)
+                    SelectTab(source);
+            }
+
+            tab.Items.Add(item);
+
+            if (tab.ViewModel.IsSelected)
+                _applyResults(tab.Items);
+        }
     }
 
     /// <summary>Hides the panel (an explorer-jump suggestion is taking its slot, a real query started,
@@ -135,18 +177,6 @@ public class StartupPanelController : ViewModelBase
             .ToList();
     }
 
-    private static async Task<List<AppSearchResult>> FetchSafeAsync(ITabSource source)
-    {
-        try
-        {
-            return await source.LoadItemsAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.Log($"[StartupPanelController] '{source.Label}' fetch failed: {ex.Message}", LogLevel.Error);
-            return new List<AppSearchResult>();
-        }
-    }
 
     /// <summary>Moves the selection to the next tab, wrapping from the last back to the first. A no-op
     /// with 0 or 1 active tabs (nothing to cycle to).</summary>

@@ -10,7 +10,19 @@ public class FavoritesTabProvider : IStartupPanelTabProvider
 {
     public string Name => TranslationService.Get("StartupPanel_TabFavorites");
 
-    public IEnumerable<ISearchResult> GetItems() => FavoritesService.GetFavorites()
-        .Where(f => !string.IsNullOrWhiteSpace(f.Path))
-        .Select(f => (ISearchResult)new StartupPanelResultItem(f.Path, f.Name));
+    // Everything is already in memory, so this yields straight through: the streaming shape costs a
+    // provider with nothing to wait for exactly nothing.
+    public async IAsyncEnumerable<ISearchResult> GetItemsAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var favorite in FavoritesService.GetFavorites())
+        {
+            if (cancellationToken.IsCancellationRequested) yield break;
+            if (string.IsNullOrWhiteSpace(favorite.Path)) continue;
+
+            yield return new StartupPanelResultItem(favorite.Path, favorite.Name);
+        }
+
+        await Task.CompletedTask;
+    }
 }

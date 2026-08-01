@@ -14,8 +14,26 @@ public class HistoryTabProvider : IStartupPanelTabProvider
 
     public string Name => TranslationService.Get("StartupPanel_TabHistory");
 
-    public IEnumerable<ISearchResult> GetItems() => HistoryService.GetHistoryEntries()
-        .Where(e => e.Kind == HistoryEntryKind.Application || File.Exists(e.Path) || Directory.Exists(e.Path))
-        .Take(MaxItems)
-        .Select(e => (ISearchResult)new StartupPanelResultItem(e.Path, isApplication: e.Kind == HistoryEntryKind.Application));
+    // Streaming earns its keep here: every entry is checked against the disk, and a stale history full
+    // of paths on a disconnected network drive turns each of those checks into a timeout. Yielded one
+    // at a time, the tab shows what has been confirmed so far rather than nothing until the slowest
+    // entry gives up.
+    public async IAsyncEnumerable<ISearchResult> GetItemsAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var yielded = 0;
+
+        foreach (var entry in HistoryService.GetHistoryEntries())
+        {
+            if (cancellationToken.IsCancellationRequested || yielded >= MaxItems) yield break;
+
+            var isApplication = entry.Kind == HistoryEntryKind.Application;
+            if (!isApplication && !File.Exists(entry.Path) && !Directory.Exists(entry.Path)) continue;
+
+            yielded++;
+            yield return new StartupPanelResultItem(entry.Path, isApplication: isApplication);
+        }
+
+        await Task.CompletedTask;
+    }
 }
