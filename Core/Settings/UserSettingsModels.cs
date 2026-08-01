@@ -54,6 +54,9 @@ public class HotkeyPageSettings
     /// <summary>Same flat format as <see cref="ToggleWindowHotkey"/>.</summary>
     public string QuickSwitchHotkey { get; set; } = "Ctrl+G";
 
+    // Held with 1-9 to jump straight to that result. The quick panel reuses this same modifier to
+    // switch between its workspace tabs -- one "hold this and press a number" key everywhere, rather
+    // than a second setting that would only ever be set to the same thing.
     public string SelectJumpModifier { get; set; } = "Ctrl";
     public string NextItemHotkey { get; set; } = "Ctrl+N";
     public string PreviousItemHotkey { get; set; } = "Ctrl+P";

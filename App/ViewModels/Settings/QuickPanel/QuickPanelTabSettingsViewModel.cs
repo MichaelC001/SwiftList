@@ -1,0 +1,149 @@
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+
+using SwiftList.App.Helpers;
+using SwiftList.App.Services;
+using SwiftList.Core;
+namespace SwiftList.App.ViewModels.Settings.QuickPanel;
+
+/// <summary>
+/// One workspace being edited: its name and its source list, in the order the panel will show them.
+/// The list is the single place every source appears -- folders the user added and the two built-in
+/// ones alike -- so reordering, hiding and renaming are one gesture each rather than three lists to
+/// keep in sync.
+/// </summary>
+public class QuickPanelTabSettingsViewModel : ViewModelBase
+{
+    private readonly QuickPanelTab _model;
+
+    public QuickPanelTabSettingsViewModel(QuickPanelTab model)
+    {
+        _model = model;
+        _name = model.Name;
+
+        foreach (var id in QuickPanelGroupOrdering.Resolve(AvailableIds(model), model.GroupOrder, disabled: null))
+            Sources.Add(BuildRow(model, id));
+
+        AddFolderCommand = new RelayCommand(AddFolder);
+        RemoveSourceCommand = new RelayCommand<QuickPanelSourceRowViewModel>(RemoveSource);
+        MoveUpCommand = new RelayCommand<QuickPanelSourceRowViewModel>(row => Move(row, -1));
+        MoveDownCommand = new RelayCommand<QuickPanelSourceRowViewModel>(row => Move(row, +1));
+    }
+
+    public string Id => _model.Id;
+
+    private string _name;
+
+    /// <summary>Empty falls back to a translated name, so an untouched tab follows the UI language.</summary>
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            if (SetProperty(ref _name, value))
+                OnPropertyChanged(nameof(EffectiveName));
+        }
+    }
+
+    public string EffectiveName => string.IsNullOrWhiteSpace(Name)
+        ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
+        : Name.Trim();
+
+    public ObservableCollection<QuickPanelSourceRowViewModel> Sources { get; } = new();
+
+    public ICommand AddFolderCommand { get; }
+    public ICommand RemoveSourceCommand { get; }
+    public ICommand MoveUpCommand { get; }
+    public ICommand MoveDownCommand { get; }
+
+    /// <summary>Stages everything back into the settings object this was built from.</summary>
+    public void Save()
+    {
+        _model.Name = Name.Trim();
+
+        foreach (var row in Sources)
+            row.SaveFolderFields();
+
+        // Rebuilt from the rows rather than patched: the list IS the order, and a folder removed here
+        // has to leave Folders too.
+        _model.Folders = Sources.Where(r => r.IsFolderSource)
+            .Select(r => _model.Folders.First(f => f.Id == r.Id))
+            .ToList();
+        _model.GroupOrder = Sources.Select(r => r.Id).ToList();
+        _model.DisabledGroupIds = Sources.Where(r => !r.IsVisible).Select(r => r.Id).ToList();
+
+        // Only what the user actually overrode. The rest of a preference (sort, view, expanded) is the
+        // panel's own to write, so an entry that already exists is patched rather than replaced.
+        foreach (var row in Sources)
+        {
+            var custom = row.DisplayName.Trim();
+            if (!_model.GroupPreferences.TryGetValue(row.Id, out var preference))
+            {
+                if (custom.Length == 0)
+                    continue;
+                _model.GroupPreferences[row.Id] = preference = new QuickPanelGroupPreference();
+            }
+            preference.DisplayName = custom;
+        }
+
+        // A source deleted here leaves nothing behind to accumulate in the settings file.
+        var live = new HashSet<string>(Sources.Select(r => r.Id), StringComparer.OrdinalIgnoreCase);
+        foreach (var stale in _model.GroupPreferences.Keys.Where(k => !live.Contains(k)).ToList())
+            _model.GroupPreferences.Remove(stale);
+    }
+
+    private void AddFolder()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Multiselect = true };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        foreach (var path in dialog.FolderNames)
+        {
+            if (Sources.Any(r => r.IsFolderSource && r.Path.Equals(path, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            var folder = QuickPanelFolderSource.For(path);
+            _model.Folders.Add(folder);
+            Sources.Add(QuickPanelSourceRowViewModel.ForFolder(folder));
+        }
+    }
+
+    private void RemoveSource(QuickPanelSourceRowViewModel? row)
+    {
+        // Built-in sources are hidden, never removed: there would be no way to get one back.
+        if (row is not { IsFolderSource: true })
+            return;
+        Sources.Remove(row);
+        _model.Folders.RemoveAll(f => f.Id == row.Id);
+    }
+
+    private void Move(QuickPanelSourceRowViewModel? row, int delta)
+    {
+        if (row == null)
+            return;
+        var from = Sources.IndexOf(row);
+        var to = from + delta;
+        if (from < 0 || to < 0 || to >= Sources.Count)
+            return;
+        Sources.Move(from, to);
+    }
+
+    private static IEnumerable<string> AvailableIds(QuickPanelTab model)
+        => model.Folders.Select(f => f.Id)
+            .Concat(new[] { QuickPanelSourceIds.SystemRecent, QuickPanelSourceIds.Favorites });
+
+    private static QuickPanelSourceRowViewModel BuildRow(QuickPanelTab model, string id)
+    {
+        var folder = model.Folders.FirstOrDefault(f => f.Id == id);
+        var row = folder != null
+            ? QuickPanelSourceRowViewModel.ForFolder(folder)
+            : QuickPanelSourceRowViewModel.ForBuiltIn(id, id == QuickPanelSourceIds.SystemRecent
+                ? "QuickPanel_SystemRecentName"
+                : "QuickPanel_FavoritesName");
+
+        row.IsVisible = !model.DisabledGroupIds.Contains(id, StringComparer.OrdinalIgnoreCase);
+        if (model.GroupPreferences.TryGetValue(id, out var preference))
+            row.DisplayName = preference.DisplayName;
+        return row;
+    }
+}

@@ -20,17 +20,9 @@ internal static class ForegroundProcessGate
             var procName = GetProcessNameById(processId);
             if (string.IsNullOrEmpty(procName)) return false;
 
-            foreach (var blacklisted in blacklistedProcesses)
-            {
-                if (string.IsNullOrEmpty(blacklisted)) continue;
-                if (blacklisted.Equals(procName, StringComparison.OrdinalIgnoreCase) ||
-                    blacklisted.Equals(procName + ".exe", StringComparison.OrdinalIgnoreCase) ||
-                    (procName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
-                     blacklisted.Equals(procName.Substring(0, procName.Length - 4), StringComparison.OrdinalIgnoreCase)))
-                {
-                    return true;
-                }
-            }
+            // The with-or-without-.exe comparison lives in ProcessNameFilter so this gate and the quick
+            // panel's own process rules cannot drift into disagreeing about what "chrome" matches.
+            return ProcessNameFilter.Matches(procName, blacklistedProcesses);
         }
         catch
         {

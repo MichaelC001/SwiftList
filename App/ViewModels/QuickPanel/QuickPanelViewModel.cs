@@ -1,19 +1,8 @@
 using System.IO;
-using System.ComponentModel;
-using System.Windows.Data;
-using System.Globalization;
 using System.Collections.ObjectModel;
-using SwiftList.App;
 using SwiftList.App.ViewModels.Search.StartupPanel;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
-
-/// <summary>What the panel orders its items by, within each folder group.</summary>
-public enum QuickPanelSortMode
-{
-    ModifiedDescending,
-    NameAscending,
-}
 
 // Backs the quick panel: results grouped by the folder they sit in, shown over whatever window is in
 // front.
