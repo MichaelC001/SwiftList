@@ -10,10 +10,22 @@
 | `FavoritesService` | `GetFavorites()` —— 唯讀存取使用者的[我的最愛](../../user-guide/settings/favorites)清單(`FavoriteItem`:Name、Path)。 |
 | `HistoryService` | `GetHistoryEntries()` —— 每一條已記錄的[歷史記錄](../../user-guide/settings/history)項目,按最近開啟優先排序,型別是 `HistoryEntry { Keyword, Path, Kind, Time }`(`Kind` 是 `HistoryEntryKind`:`File` / `Folder` / `Application`;`Keyword` 是開啟時輸入框裡的搜尋文字,沒打字直接從起始面板點開的話就是空字串;`Time` 是 Unix 秒)。同一個路徑最多只會出現一次,歸屬於最近一次帶它進來的那個關鍵字。 |
 | `FileMetadataService` | `GetMetadataAsync(paths)` —— 批次查詢 Size/Created/Modified/Accessed([`FileMetadata`](./abstractions#filemetadata))，用於查詢**不屬於**你目前結果集的路徑——每個 `ISearchResult` 本身就透過自己的 `Metadata` 屬性免費攜帶這些資料(參見[共用抽象契約](./abstractions#isearchresult))，所以只有拿到的路徑不是來自結果物件(比如來自你自己的設定)時才需要用這個服務。 |
-| `DirectoryIndexerService` | `RegisterDirectory(pluginId, path, recursive, filterPattern)` / `UnregisterDirectories(pluginId)` / `SearchDirectoriesAsync(pluginId, query, token)` / `NotifyDirectoryChanged(pluginId)` —— 讓外掛註冊自己的目錄進行背景索引和 USN 監看，而不用自己重新實作這套機制。 |
+| `DirectoryIndexerService` | `RegisterDirectory(pluginId, path, recursive, filterPattern)` / `UnregisterDirectories(pluginId)` / `SearchDirectoriesAsync(pluginId, query, token)` —— 讓外掛註冊自己的目錄進行背景索引和 USN 監看，而不用自己重新實作這套機制。訂閱 `DirectoryChanged` 事件即可在已註冊目錄發生磁碟變化時收到通知(事件帶的是註冊時用的 `pluginId`，不是你的就忽略)；`NotifyDirectoryChanged(pluginId)` 用來觸發它，監看器觸發時宿主會替你呼叫。`EnumerateDirectoryAsync(path, recursive, filterPattern, limit, token)` 從同一份索引(而不是檔案系統)列出某個目錄的內容——宿主已索引的磁碟完全不產生磁碟 I/O，沒索引的目錄則自動改為即時走訪，呼叫方不需要自己判斷屬於哪種情況。它是串流式的；`filterPattern` 篩的是**檔案**(資料夾一律回傳，不需要就按 `IsDir` 過濾)；隱藏和系統項目永遠不回傳；遞迴列舉時值得設 `limit`——`EnumerateDirectoryAsync(@"C:\", recursive: true)` 會老老實實把整個磁碟區的每一筆都交給你。 |
 | `PluginSettingsService` | `GetSetting<T>(pluginId, key, defaultValue)` —— 從宿主的設定儲存區裡唯讀存取外掛自己持久化的設定。回退分三層:使用者存過就用持久化的值;沒存過就用你 `IConfigurable` schema 裡該欄位自己宣告的 `DefaultValue`;兩者都沒有才輪到你傳進來的 `defaultValue` 保底——這樣 schema 裡宣告的預設值就是唯一權威來源,呼叫方不需要在程式碼裡再手寫一份重複的預設值。如果你把某個設定快取了起來而不是每次都重新讀取,記得訂閱 `SettingChanged(pluginId, key)` 事件,在它為你的外掛觸發時清空快取——宿主是在設定頁儲存之後立刻觸發這個事件的,這是唯一可靠的失效時機(不管是按鍵觸發還是輪詢檢查,都要等到別的什麼東西湊巧觸發了才會看到變化,或者乾脆永遠看不到)。 |
 | `SearchRefreshService` | `RefreshIfMatches(queryMatches)` —— 給資料是非同步到達的 `IInstantResultProvider` 用的(參見 [`IInstantResultProvider`](./core-search-actions#iinstantresultprovider)):等你的背景要求完成、結果也快取好之後，呼叫這個方法並傳入一個基於目前查詢文字的判斷函式，宿主會把所有符合這個判斷的、正在進行的搜尋重新跑一遍，這樣剛快取好的結果就能直接顯示出來，不需要使用者重新輸入。 |
 | `Logger` | `Log(message, level = LogLevel.Info)` —— 寫入 App 的記錄檔，和宿主自己的記錄行一樣，顯示在**設定 → 執行狀態 → App** 裡。 |
 | `PluginPromptService` | `Prompt(title, fields, initialValues?)` —— 彈出一個小的強制回應視窗，向使用者詢問給定[`PluginConfigField`](./abstractions#iconfigurable)欄位的值(用的正是 `IConfigurable` 的設定對話方塊那套欄位 schema/繪製邏輯)，按 `Key` 比對從 `initialValues` 預先填入，沒有就用各欄位自己的 `DefaultValue`。回傳按欄位 `Key` 索引的填寫結果，使用者取消則回傳 `null`——這些值不會讀取或寫入外掛真正持久化的設定，所以可以放心重複使用某個設定欄位的 schema 單純做一次性輸入(比如「新增前先給它取個名字」)，不會碰到背後真實的那個設定項目。 |
 
 `LogLevel` 是 `Error` / `Warn` / `Info` / `Debug`，與[執行狀態記錄檢視器](../../user-guide/settings/service-status)裡的層級篩選器一致。
+
+## Shell 檔案操作
+
+`SwiftList.PluginSdk.Shell.FileOperations` —— 對 Windows shell 自己的 `IFileOperation` 的一層薄封裝。外掛搬動檔案時，使用者看到的是和檔案總管一模一樣的進度對話方塊、「檔案已存在」提示和復原記錄，而不是一次行為略有不同的 `System.IO` 呼叫。
+
+| 輔助類別 | 用途 |
+|---|---|
+| `ShellPasteHelper` | `PasteAsync(sourcePaths, destinationFolder, move, onCompleted?)` —— 把任意多個路徑複製(或移動)進同一個資料夾，合併成**一次** shell 操作，所以跨磁碟的多選也只跳一個對話方塊，而不是每個檔案一個。發出即返回：native 對話方塊可能被使用者晾在那裡，阻塞呼叫方只會把介面凍住。`onCompleted` 在操作結束時觸發——不管是複製完了還是使用者取消了，因為對一個正顯示目標資料夾的檢視來說，這兩種情況的應對是同一個：回去重新看一眼。 |
+| `ShellDeleteHelper` | `DeleteAsync(paths, permanent)` —— 放進資源回收筒或永久刪除，同樣合併成一次操作、一次確認。同樣是發出即返回。 |
+| `VirtualFileExtractor` | `HasVirtualFiles(dataObject)` / `Extract(dataObject, targetFolder)` —— 把拖動攜帶的、磁碟上還不存在的檔案寫出來：從瀏覽器拖出的圖片、從郵件用戶端拖出的附件、從壓縮檔預覽裡拖出的檔案。它們都不是路徑，所以 `IDataObject.GetData(DataFormats.FileDrop)` 什麼也拿不到；真正到來的是一份列出檔名的描述元，加上按索引一次給一個的位元組流，這個類別做的就是把它拆出來。刻意不按類型過濾：拒絕拖動方願意交出來的東西，意味著要麼信副檔名、要麼嗅探位元組，這兩件事都不該由它來做。`ResolveDestination(folder, name)` 是它「重名就加 (2) 而不是覆寫」的那套命名規則，單獨暴露出來給自己寫檔案的呼叫方用。 |
+
+兩個非同步輔助類別都跑在 SDK 自己的 STA 工作執行緒上(`ShellOperationStaWorker`，由宿主啟動)——shell 的 COM 介面要求 STA，共用一條意味著外掛不必自己開一個套間。

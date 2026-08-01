@@ -19,6 +19,10 @@ Four sub-tabs: **Recent Files**, **Last Directory**, **Plugin Tabs**, and **Tab 
 - **Time range (minutes)** — only files modified within this many minutes of now are eligible, on
   top of the count cap above. Range 1–43200 (30 days), default 60.
 
+Files only: a folder's own modified time changes whenever anything is added to or removed from it, so
+folders were among the newest things in any directory being worked in and took the top of a list that
+exists to show what you were working *on*.
+
 Each entry's second line is prefixed with a relative time — "X seconds/minutes/hours/days ago" —
 built from that file's last-modified timestamp already stored in the index, so it costs no extra
 disk access. Hours and days drop the smaller unit when it's zero (e.g. "2 hours ago" instead of

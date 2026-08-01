@@ -12,7 +12,7 @@
 | `FavoritesService` | `GetFavorites()` — 사용자의 [즐겨찾기](../../user-guide/settings/favorites) 목록(`FavoriteItem`: Name, Path)에 대한 읽기 전용 접근입니다. |
 | `HistoryService` | `GetHistoryEntries()` — 기록된 모든 [기록](../../user-guide/settings/history) 항목을 최근에 연 순서로, `HistoryEntry { Keyword, Path, Kind, Time }` 형태로 반환합니다(`Kind`는 `HistoryEntryKind`: `File` / `Folder` / `Application`. `Keyword`는 그 항목으로 이어진 검색 텍스트이며, 검색어 없이 시작 패널 탭에서 바로 연 경우에는 빈 문자열입니다. `Time`은 유닉스 초 단위입니다). 각 경로는 가장 최근에 그 경로로 이어진 키워드 아래로 한 번만 나타납니다. |
 | `FileMetadataService` | `GetMetadataAsync(paths)` — 현재 결과 목록에 **이미 포함되어 있지 않은** 경로에 대한 일괄 Size/Created/Modified/Accessed 조회([`FileMetadata`](./abstractions#filemetadata)). 모든 `ISearchResult`는 이미 자체 `Metadata` 속성을 통해 이를 무료로 제공하므로([공유 추상화](./abstractions#isearchresult) 참고), 이 서비스는 다른 방식으로 얻은 경로(예: 자체 설정에서 가져온 경로)에 대해서만 사용하세요. |
-| `DirectoryIndexerService` | `RegisterDirectory(pluginId, path, recursive, filterPattern)` / `UnregisterDirectories(pluginId)` / `SearchDirectoriesAsync(pluginId, query, token)` / `NotifyDirectoryChanged(pluginId)` — 플러그인이 그 메커니즘을 직접 재구현하지 않고도 자체 디렉터리를 백그라운드 인덱싱과 USN 모니터링에 등록할 수 있게 해줍니다. |
+| `DirectoryIndexerService` | `RegisterDirectory(pluginId, path, recursive, filterPattern)` / `UnregisterDirectories(pluginId)` / `SearchDirectoriesAsync(pluginId, query, token)` — 플러그인이 그 메커니즘을 직접 재구현하지 않고도 자체 디렉터리를 백그라운드 인덱싱과 USN 모니터링에 등록할 수 있게 해줍니다. `DirectoryChanged` 이벤트를 구독하면 등록한 디렉터리가 디스크에서 바뀌었을 때 알림을 받습니다(등록할 때 쓴 `pluginId`가 함께 오므로 자기 것이 아니면 무시하세요). `NotifyDirectoryChanged(pluginId)`가 이를 발생시키며, 감시가 반응하면 호스트가 대신 호출해 줍니다. `EnumerateDirectoryAsync(path, recursive, filterPattern, limit, token)`은 파일 시스템이 아니라 같은 인덱스에서 한 디렉터리의 내용을 나열합니다 — 호스트가 인덱싱하는 드라이브라면 디스크 I/O가 전혀 없고, 인덱싱되지 않은 디렉터리는 실제 순회로 자동 전환되므로 호출자가 어느 쪽인지 판단할 필요가 없습니다. 스트리밍으로 반환되며 `filterPattern`이 거르는 것은 **파일**입니다(디렉터리는 항상 반환되니 필요 없으면 `IsDir`로 걸러내세요). 숨김/시스템 항목은 절대 반환되지 않습니다. 재귀 나열에서는 `limit`을 설정할 값어치가 있습니다 — `EnumerateDirectoryAsync(@"C:\", recursive: true)`는 요청한 그대로 볼륨의 모든 항목을 돌려줍니다. |
 | `PluginSettingsService` | `GetSetting<T>(pluginId, key, defaultValue)` — 호스트의 설정 저장소에서 플러그인 자체의 영속화된 설정에 대한 읽기 전용 접근입니다. 세 단계를 순서대로 거칩니다. 사용자가 저장한 적이 있다면 그 영속화된 값, 아무것도 저장된 적이 없다면 해당 필드에 대한 `IConfigurable` 스키마 자체의 `DefaultValue`, 그마저도 없다면 마지막 수단으로 여러분이 전달한 `defaultValue` 인수입니다 — 이렇게 하면 스키마에 선언된 기본값이 단일한 정보원이 되어, 호출부에 하드코딩된 사본을 또 둘 필요가 없습니다. 값을 매번 다시 읽는 대신 캐시한다면, `SettingChanged(pluginId, key)` 이벤트를 구독하여 여러분의 플러그인에 대해 이 이벤트가 발생할 때 캐시를 폐기하세요 — 호스트는 설정 페이지에서 저장 직후에 이 이벤트를 발생시키며, 이는 무효화하기에 신뢰할 수 있는 유일한 시점입니다(매 키 입력마다, 또는 폴링 방식으로 확인하면 우연히 다음에 무언가가 트리거될 때까지, 혹은 영영 변경을 감지하지 못할 수 있습니다). |
 | `SearchRefreshService` | `RefreshIfMatches(queryMatches)` — 데이터가 비동기로 도착하는 `IInstantResultProvider`용입니다([`IInstantResultProvider`](./core-search-actions#iinstantresultprovider) 참고). 백그라운드 조회가 끝나고 결과를 캐시한 뒤, 검색의 현재 쿼리 텍스트에 대한 서술자와 함께 이를 호출하면, 호스트가 그 서술자에 일치하는 모든 활성 검색을 다시 실행하여 사용자가 다시 입력할 필요 없이 이제 캐시된 결과가 실제로 나타나게 합니다. |
 | `Logger` | `Log(message, level = LogLevel.Info)` — App의 로그 파일에 기록하며, **설정 → 서비스 상태 → App**에서 호스트 자체 로그 라인과 완전히 동일하게 보입니다. |
@@ -20,3 +20,19 @@
 
 `LogLevel`은 `Error` / `Warn` / `Info` / `Debug`로,
 [서비스 상태 로그 뷰어](../../user-guide/settings/service-status)의 레벨 필터와 일치합니다.
+
+## 셸 파일 작업
+
+`SwiftList.PluginSdk.Shell.FileOperations` — Windows 셸 자체의 `IFileOperation`을 얇게 감싼 것입니다.
+플러그인이 파일을 옮길 때 탐색기와 똑같은 진행 대화상자, 똑같은 "파일이 이미 있습니다" 확인, 똑같은
+실행 취소 항목이 나옵니다. 미묘하게 다르게 동작하는 `System.IO` 호출이 아니라요.
+
+| 헬퍼 | 용도 |
+|---|---|
+| `ShellPasteHelper` | `PasteAsync(sourcePaths, destinationFolder, move, onCompleted?)` — 임의 개수의 경로를 한 폴더로 복사(또는 이동)합니다. **하나의** 셸 작업으로 묶이므로 드라이브를 넘나드는 다중 선택도 파일마다가 아니라 대화상자 하나만 뜹니다. 던져 놓고 바로 반환합니다: 사용자가 열어 둔 채 둘 수 있는 네이티브 대화상자를 기다리며 막으면 호출자만 멈출 뿐이니까요. `onCompleted`는 작업이 끝났을 때 발생합니다 — 다 복사했든 사용자가 취소했든 상관없이. 대상 폴더를 보여 주는 화면에게 두 경우의 답은 "다시 가서 보라"로 같기 때문입니다. |
+| `ShellDeleteHelper` | `DeleteAsync(paths, permanent)` — 휴지통으로 보내거나 완전히 삭제합니다. 역시 한 번의 작업, 한 번의 확인으로 묶이며 던져 놓고 반환합니다. |
+| `VirtualFileExtractor` | `HasVirtualFiles(dataObject)` / `Extract(dataObject, targetFolder)` — 끌기가 실어 온, 아직 디스크에 없는 파일을 써냅니다: 브라우저에서 끌어온 이미지, 메일 클라이언트에서 끌어온 첨부, zip 미리 보기에서 끌어온 파일. 모두 경로가 아니라서 `IDataObject.GetData(DataFormats.FileDrop)`으로는 아무것도 얻지 못합니다. 실제로 오는 것은 이름을 나열한 디스크립터와, 인덱스로 하나씩 건네지는 바이트이고, 이 클래스가 그것을 풀어냅니다. 종류로 거르지 않는 것은 의도한 바입니다: 끌기 쪽이 건네려는 것을 거부하려면 확장자를 믿거나 바이트를 들여다봐야 하는데, 둘 다 이 헬퍼가 할 일이 아닙니다. `ResolveDestination(folder, name)`은 "덮어쓰지 않고 (2)를 붙이는" 같은 이름 규칙으로, 직접 파일을 쓰는 호출자를 위해 공개해 둔 것입니다. |
+
+두 비동기 헬퍼는 SDK 자체의 STA 작업 스레드(`ShellOperationStaWorker`, 호스트가 시작합니다)에서
+돌아갑니다 — 셸의 COM 인터페이스가 STA를 요구하므로, 공유하면 플러그인이 자기 아파트먼트를 띄울
+필요가 없습니다.

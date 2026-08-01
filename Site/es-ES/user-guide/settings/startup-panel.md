@@ -19,6 +19,10 @@ Cuatro subpestañas: **Archivos recientes**, **Última carpeta**, **Pestañas de
 - **Rango de tiempo (minutos)** — solo son elegibles los archivos modificados dentro de este número de minutos
   desde ahora, además del límite de recuento de arriba. Rango 1–43200 (30 días), por defecto 60.
 
+Solo archivos, no carpetas: la fecha de modificación de una carpeta cambia cada vez que algo entra o sale de
+ella, así que en cualquier directorio en el que se esté trabajando las carpetas quedaban entre lo más reciente y
+desplazaban justo aquello que esta lista existe para mostrar.
+
 La segunda línea de cada entrada lleva como prefijo un tiempo relativo — "hace X segundos/minutos/horas/días" —
 construido a partir de la marca de tiempo de última modificación de ese archivo, ya almacenada en el índice, así
 que no cuesta ningún acceso adicional a disco. Las horas y los días omiten la unidad menor cuando es cero (por
