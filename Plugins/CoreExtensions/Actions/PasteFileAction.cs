@@ -3,7 +3,6 @@ using SwiftList.PluginSdk;
 using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Services;
 using SwiftList.PluginSdk.Helpers;
-using SwiftList.Plugins.CoreExtensions.Shell;
 
 using SwiftList.Plugins.CoreExtensions.Shell.FileOperations;
 namespace SwiftList.Plugins.CoreExtensions.Actions;
@@ -16,10 +15,12 @@ public class PasteFileAction : ISearchResultAction
 
     public string Description => TranslationService.Get("Action_Paste_Desc");
 
-    // Safe to bind unconditionally: CanExecute requires an actual file-drop-list on the clipboard, so
-    // whenever it's plain text there instead (the common case for a search box), this stays
-    // unavailable and Ctrl+V falls through to its normal "paste text into the search box" meaning.
-    public string Hotkey => "Ctrl+V";
+    // No default hotkey, deliberately -- it used to be Ctrl+V. CanExecute does keep it out of the way
+    // of pasting text (it needs a real file-drop-list on the clipboard), but that only bounds WHEN it
+    // fires, not what it does when it does: writing files into whichever folder the selected result
+    // happens to sit in. Users reported that landing by accident. Bindable in Settings for anyone who
+    // wants it.
+    public string Hotkey => string.Empty;
 
     public ImageSource? Icon => VectorIconHelper.CreateVectorIcon(
         "M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z",
@@ -41,7 +42,7 @@ public class PasteFileAction : ISearchResultAction
     private static bool Exists(ISearchResult result)
     {
         if (result == null || string.IsNullOrEmpty(result.FullPath)) return false;
-        return SwiftList.PluginSdk.Helpers.PathExistenceCache.Exists(result.FullPath);
+        return PathExistenceCache.Exists(result.FullPath);
     }
 
     private static string? GetDestinationFolder(ISearchResult result) =>
