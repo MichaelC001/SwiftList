@@ -71,6 +71,16 @@ public static class DragReorder
         control.PreviewMouseMove += OnPreviewMouseMove;
         control.DragOver += OnDragOver;
         control.Drop += OnDrop;
+
+        // A list that goes away mid-drag takes the drag with it. Both matter for a window that is hidden
+        // rather than closed: DoDragDrop's modal loop can be unwound by something other than a drop, and
+        // whatever it was painting would otherwise still be on that window's adorner layer the next time
+        // it is shown.
+        control.Unloaded += (_, _) => EndDrag(control);
+        control.IsVisibleChanged += (_, visible) =>
+        {
+            if (visible.NewValue is false) EndDrag(control);
+        };
     }
 
     private static void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -99,6 +109,12 @@ public static class DragReorder
 
         _state[control] = (s.start, s.onHandle, item);
 
+        // Anything a previous drag left behind goes first. These adorners sit on the window's own layer,
+        // and the windows this runs in are hidden and reused rather than closed, so one that outlived
+        // its drag stays painted across every reopen -- a ghost row, showing whatever its source looked
+        // like when it was orphaned rather than what that row says now.
+        ClearAdorners(control);
+
         // Renders a floating, drop-shadowed snapshot of the whole row that follows the cursor (updated
         // in OnDragOver below) so the drag actually reads as "picking the row up," not just a bare
         // cursor change -- the original row dims in place to mark where it's being lifted from.
@@ -107,8 +123,10 @@ public static class DragReorder
         {
             var adorner = new DragAdorner(container, control, e.GetPosition(control));
             var indicator = new DropIndicatorAdorner(control);
-            layer.Add(indicator);
+            // The snapshot first, the line over it: later is nearer the front, and on a strip the
+            // snapshot is wide enough to cover the very line it is being aimed with.
             layer.Add(adorner);
+            layer.Add(indicator);
             _drag[control] = (layer, adorner, indicator, container);
         }
         container.Opacity = 0.35;
@@ -119,20 +137,34 @@ public static class DragReorder
         }
         finally
         {
-            container.Opacity = 1.0;
-            if (_drag.TryGetValue(control, out var d))
-            {
-                d.layer.Remove(d.adorner);
-                d.layer.Remove(d.indicator);
-                _drag.Remove(control);
-            }
-
             // Removed rather than reset to a neutral value: leaving a stale entry behind (even with
             // onHandle/item cleared) is exactly what let a stray MouseMove right after this DoDragDrop
             // call resume as if still mid-drag, occasionally making the whole row draggable again until
             // the next real mouse-down. Only a fresh PreviewMouseLeftButtonDown may repopulate this.
-            _state.Remove(control);
+            EndDrag(control);
         }
+    }
+
+    /// <summary>Takes down whatever a drag is currently painting, and undims the row it lifted.</summary>
+    /// <remarks>
+    /// Idempotent and safe to call for a control that is not dragging, which is what lets every way a
+    /// drag can end -- finishing, the list going away, the window being hidden -- run the same cleanup
+    /// rather than each having to know whether there was anything to clean.
+    /// </remarks>
+    private static void ClearAdorners(ItemsControl control)
+    {
+        if (!_drag.TryGetValue(control, out var d)) return;
+
+        d.layer.Remove(d.adorner);
+        d.layer.Remove(d.indicator);
+        d.container.Opacity = 1.0;
+        _drag.Remove(control);
+    }
+
+    private static void EndDrag(ItemsControl control)
+    {
+        ClearAdorners(control);
+        _state.Remove(control);
     }
 
     private static void OnDragOver(object sender, DragEventArgs e)
