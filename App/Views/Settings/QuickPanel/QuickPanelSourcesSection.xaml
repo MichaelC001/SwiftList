@@ -108,7 +108,6 @@
                                 <Button Content="&#xE74D;"
                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_RemoveSourceTooltip]}"
                                         Style="{StaticResource RuleIconButton}"
-                                        Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding DataContext.RemoveSourceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"/>
                             </StackPanel>
@@ -192,6 +191,17 @@
 
     <StackPanel>
         <DockPanel Margin="0,0,0,4">
+            <!-- The two host-provided sources are added on demand, beside the folder button, and
+                 deleted like any other row: a workspace that has no use for one should be able to get
+                 rid of it rather than only hide it. Each button goes quiet once its source is in. -->
+            <Button DockPanel.Dock="Right" Margin="6,0,0,0"
+                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FavoritesName]}"
+                    Style="{StaticResource SettingsButton}"
+                    Command="{Binding AddFavoritesCommand}"/>
+            <Button DockPanel.Dock="Right" Margin="6,0,0,0"
+                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SystemRecentName]}"
+                    Style="{StaticResource SettingsButton}"
+                    Command="{Binding AddSystemRecentCommand}"/>
             <Button DockPanel.Dock="Right"
                     Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AddFolder]}"
                     Style="{StaticResource PrimarySettingsButton}"

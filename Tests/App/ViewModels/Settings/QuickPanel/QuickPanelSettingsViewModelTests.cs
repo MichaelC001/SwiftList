@@ -75,19 +75,36 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.IsFalse(saved.GroupPreferences.ContainsKey(doomed.Id), "a deleted source must not keep accumulating");
     }
 
-    // Built-in sources can be hidden but not deleted: there is no way to add one back.
+    // Built-in sources are added on demand and deleted like any other row -- they used to be present
+    // always and merely hideable, which left no way to get rid of one.
     [TestMethod]
-    public void RemoveSource_BuiltInRow_IsIgnored()
+    public void BuiltInSources_AreAbsentUntilAdded_AndRemovableAfterwards()
     {
         var settings = BuildSettings(@"C:\a");
         var vm = new QuickPanelSettingsViewModel(settings);
         var tab = vm.Tabs.Single();
-        var builtIn = tab.Sources.First(s => !s.IsFolderSource);
 
-        tab.RemoveSourceCommand.Execute(builtIn);
+        Assert.IsEmpty(tab.Sources.Where(s => !s.IsFolderSource).ToList());
+        Assert.IsTrue(tab.AddFavoritesCommand.CanExecute(null));
 
-        CollectionAssert.Contains(tab.Sources.ToList(), builtIn);
+        tab.AddFavoritesCommand.Execute(null);
+        var favorites = tab.Sources.Single(s => !s.IsFolderSource);
+        Assert.AreEqual(QuickPanelSourceIds.Favorites, favorites.Id);
+        Assert.IsFalse(tab.AddFavoritesCommand.CanExecute(null), "already there, so the button has nothing to do");
+
+        vm.Save();
+        CollectionAssert.AreEqual(new[] { QuickPanelSourceIds.Favorites }, settings.QuickPanel.Tabs.Single().BuiltInSources);
+
+        tab.RemoveSourceCommand.Execute(favorites);
+        vm.Save();
+
+        Assert.IsEmpty(settings.QuickPanel.Tabs.Single().BuiltInSources);
+        Assert.IsTrue(tab.AddFavoritesCommand.CanExecute(null));
     }
+
+    [TestMethod]
+    public void CreateDefault_HasNoBuiltInSources()
+        => Assert.IsEmpty(QuickPanelTab.CreateDefault().BuiltInSources);
 
     [TestMethod]
     public void Save_FolderFields_RoundTrip()

@@ -84,6 +84,14 @@ public class QuickPanelTab
     public List<QuickPanelFolderSource> Folders { get; set; } = new();
 
     /// <summary>
+    /// Which host-provided sources this workspace includes, by id (see <see cref="QuickPanelSourceIds"/>).
+    /// Listed rather than always present: a workspace that has no use for the system's recent documents
+    /// should be able to remove that group outright, not only hide it, and a new workspace starts with
+    /// only what the user adds.
+    /// </summary>
+    public List<string> BuiltInSources { get; set; } = new();
+
+    /// <summary>
     /// Display order, most-preferred first, over every kind of source at once. An id that isn't listed
     /// (a folder just added, a plugin source that appeared) keeps its discovery-order position after
     /// everything listed -- same rule as <see cref="StartupPanelSettings.TabOrder"/>.
@@ -101,8 +109,9 @@ public class QuickPanelTab
 
     /// <summary>
     /// The tab a fresh install starts with: the three folders most people keep things in, as recent
-    /// files, plus their favorites. The system's own recent-documents list exists but starts hidden --
-    /// it is everything opened anywhere, which is a lot of noise for a panel this size.
+    /// files. Neither built-in source is included -- both are one button away, and a panel that opens
+    /// with someone's favorites and every document Windows has ever logged is guessing at what they
+    /// wanted rather than showing what they asked for.
     /// </summary>
     public static QuickPanelTab CreateDefault() => new()
     {
@@ -115,7 +124,6 @@ public class QuickPanelTab
             QuickPanelFolderSource.For(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")),
             QuickPanelFolderSource.For(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)),
         },
-        DisabledGroupIds = { QuickPanelSourceIds.SystemRecent },
     };
 
     /// <summary>Short, stable, and never shown -- only ever compared.</summary>
@@ -133,6 +141,7 @@ public class QuickPanelTab
         Name = Name,
         Enabled = Enabled,
         Processes = new List<string>(Processes),
+        BuiltInSources = new List<string>(BuiltInSources),
         Folders = Folders.Select(f => new QuickPanelFolderSource
         {
             Id = f.Id,

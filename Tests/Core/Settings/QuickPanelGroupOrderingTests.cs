@@ -73,8 +73,11 @@ public sealed class QuickPanelGroupOrderingTests
         CollectionAssert.AreEqual(new[] { "desktop", "downloads" }, resolved.ToArray());
     }
 
+    // Three folders and nothing else: both built-in sources are a button away, and opening with
+    // someone's favorites and every document Windows ever logged is guessing rather than showing what
+    // they asked for.
     [TestMethod]
-    public void CreateDefault_StartsWithThreeFolderSourcesAndHidesTheSystemRecentList()
+    public void CreateDefault_StartsWithThreeFolderSourcesAndNoBuiltIns()
     {
         var tab = QuickPanelTab.CreateDefault();
 
@@ -82,7 +85,29 @@ public sealed class QuickPanelGroupOrderingTests
         Assert.IsTrue(tab.Folders.All(f => f.Kind == QuickPanelSourceKind.RecentFiles));
         // Distinct ids, or two sources would share one set of display preferences.
         Assert.HasCount(3, tab.Folders.Select(f => f.Id).Distinct().ToList());
-        CollectionAssert.Contains(tab.DisabledGroupIds, QuickPanelSourceIds.SystemRecent);
+        Assert.IsEmpty(tab.BuiltInSources);
+        Assert.IsEmpty(tab.DisabledGroupIds);
         Assert.IsNotEmpty(tab.Id);
+    }
+
+    // The page edits clones, so anything the clone misses is an edit that silently reverts on Save.
+    [TestMethod]
+    public void Clone_CopiesEveryListWithoutSharingIt()
+    {
+        var tab = QuickPanelTab.CreateDefault();
+        tab.BuiltInSources.Add(QuickPanelSourceIds.Favorites);
+        tab.Processes.Add("chrome");
+        tab.GroupPreferences[tab.Folders[0].Id] = new QuickPanelGroupPreference { DisplayName = "素材" };
+
+        var clone = tab.Clone();
+        clone.BuiltInSources.Clear();
+        clone.Processes.Clear();
+        clone.Folders[0].Path = @"C:\elsewhere";
+        clone.GroupPreferences[tab.Folders[0].Id].DisplayName = "changed";
+
+        Assert.HasCount(1, tab.BuiltInSources);
+        Assert.HasCount(1, tab.Processes);
+        Assert.AreNotEqual(@"C:\elsewhere", tab.Folders[0].Path);
+        Assert.AreEqual("素材", tab.GroupPreferences[tab.Folders[0].Id].DisplayName);
     }
 }
