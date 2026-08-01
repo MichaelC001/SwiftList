@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Media;
 using SwiftList.App.ViewModels.QuickPanel;
 using SwiftList.Core;
 
@@ -83,6 +84,73 @@ public sealed class QuickPanelWindowTests
         }
 
         Assert.IsEmpty(errors.Messages, string.Join(Environment.NewLine, errors.Messages));
+    }
+
+    // Clicking blank space drops the selection; clicking a row or a header control does not. Driven
+    // through the two decisions the handler makes rather than through a synthesized click, which WPF
+    // gives no way to aim at a particular pixel of a laid-out tree.
+    [StaTestMethod]
+    public async Task ClickOnNothing_IsAnythingThatIsNotARowOrAControl()
+    {
+        var viewModel = BuildViewModel();
+        await viewModel.RefreshAsync();
+        var content = Laid(viewModel);
+
+        var list = Find<System.Windows.Controls.ListBox>(content)!;
+        var row = Find<System.Windows.Controls.ListBoxItem>(content)!;
+        var button = Find<System.Windows.Controls.Primitives.ButtonBase>(content)!;
+
+        Assert.IsTrue(SwiftList.App.Views.QuickPanel.QuickPanelWindow.IsClickOnNothing(list),
+            "the list's own background is the blank space this exists for");
+        Assert.IsFalse(SwiftList.App.Views.QuickPanel.QuickPanelWindow.IsClickOnNothing(row));
+        Assert.IsFalse(SwiftList.App.Views.QuickPanel.QuickPanelWindow.IsClickOnNothing(button),
+            "collapsing a group or switching its order is not a click on nothing");
+    }
+
+    // Every group, not just the one under the pointer: each renders its own list, so a selection left
+    // in another group would keep a row looking selected that a keystroke no longer acts on.
+    [StaTestMethod]
+    public async Task ClearSelection_EmptiesEveryGroupsList()
+    {
+        var viewModel = BuildViewModel();
+        await viewModel.RefreshAsync();
+        var content = Laid(viewModel);
+
+        var lists = new List<System.Windows.Controls.ListBox>();
+        Collect(content, lists);
+        Assert.IsNotEmpty(lists);
+        foreach (var list in lists)
+            list.SelectedIndex = 0;
+
+        SwiftList.App.Views.QuickPanel.QuickPanelWindow.ClearSelection(content);
+
+        Assert.IsTrue(lists.TrueForAll(list => list.SelectedItems.Count == 0));
+    }
+
+    private static FrameworkElement Laid(QuickPanelViewModel viewModel)
+    {
+        var content = BuildContent(viewModel);
+        content.Measure(new Size(330, 300));
+        content.Arrange(new Rect(0, 0, 330, 300));
+        content.UpdateLayout();
+        return content;
+    }
+
+    private static T? Find<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T match) return match;
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            if (Find<T>(VisualTreeHelper.GetChild(root, i)) is { } found) return found;
+        }
+        return null;
+    }
+
+    private static void Collect<T>(DependencyObject root, List<T> into) where T : DependencyObject
+    {
+        if (root is T match) into.Add(match);
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            Collect(VisualTreeHelper.GetChild(root, i), into);
     }
 
     private sealed class BindingErrorListener : TraceListener

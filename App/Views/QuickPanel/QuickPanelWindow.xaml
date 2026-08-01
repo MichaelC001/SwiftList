@@ -136,7 +136,11 @@
                 </ctrl:TabStripScrollView>
 
 
-                <Border Grid.Row="1" Background="{DynamicResource ContentBg}">
+                <!-- The whole content area listens for the click, not each group's list: the blank space
+                     that should drop the selection is as much the gap between two groups and the run
+                     below the last one as it is the end of a row of tiles. -->
+                <Border Grid.Row="1" Background="{DynamicResource ContentBg}"
+                        PreviewMouseLeftButtonDown="Content_PreviewMouseLeftButtonDown">
                     <Grid>
                         <!-- One block per source, each with its own header and its own list.
                              Deliberately not a CollectionView's grouping, which is simpler and is what

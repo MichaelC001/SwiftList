@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using SwiftList.App;
 using SwiftList.App.Services;
 using SwiftList.App.Services.ShellMenu.ActionFlyout;
@@ -210,6 +211,53 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     /// hold a selection.
     /// </remarks>
     private System.Windows.Controls.ListBox? _activeList;
+
+    /// <summary>Clicking anything that is not a row drops the selection, as a file manager's own blank
+    /// space does.</summary>
+    /// <remarks>
+    /// Previewed, because the click this exists for lands on a group's ListBox background and that
+    /// ListBox would otherwise be first to see it -- and left unhandled, so the row click, the rubber
+    /// band and the drag helper all still get their turn.
+    ///
+    /// Every group is cleared, not just the one under the pointer: each renders its own list, so a
+    /// selection left in another group would keep a row looking selected that a keystroke no longer
+    /// acts on.
+    /// </remarks>
+    private void Content_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source && IsClickOnNothing(source))
+            ClearSelection((DependencyObject)sender);
+    }
+
+    /// <summary>Whether what was hit is blank space rather than something that acts on its own.</summary>
+    /// <remarks>
+    /// A row, obviously. Also anything in a group header: collapsing a group or switching its order is
+    /// not a click on nothing, and taking the selection away with it would be a surprise.
+    /// </remarks>
+    internal static bool IsClickOnNothing(DependencyObject source)
+        => FindAncestor<System.Windows.Controls.ListBoxItem>(source) == null
+           && FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) == null;
+
+    private static T? FindAncestor<T>(DependencyObject from) where T : DependencyObject
+    {
+        for (var node = from; node != null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is T match) return match;
+        }
+        return null;
+    }
+
+    internal static void ClearSelection(DependencyObject root)
+    {
+        if (root is System.Windows.Controls.ListBox list)
+        {
+            list.UnselectAll();
+            return;
+        }
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            ClearSelection(VisualTreeHelper.GetChild(root, i));
+    }
 
     private void GroupList_Loaded(object sender, RoutedEventArgs e)
     {
