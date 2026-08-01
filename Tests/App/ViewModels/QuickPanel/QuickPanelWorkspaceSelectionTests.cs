@@ -53,7 +53,7 @@ public sealed class QuickPanelWorkspaceSelectionTests
         await vm.RefreshAsync();
 
         CollectionAssert.AreEqual(new[] { "w1" }, vm.Tabs.Select(t => t.Id).ToList());
-        Assert.IsFalse(vm.HasTabStrip, "a strip of one names the only thing there is");
+        Assert.IsTrue(vm.HasTabStrip, "one workspace still gets a strip -- it carries the name and the close button");
     }
 
     [TestMethod]

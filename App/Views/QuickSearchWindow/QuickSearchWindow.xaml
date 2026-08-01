@@ -101,7 +101,15 @@
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="Button">
-                                                        <ContentPresenter Margin="{TemplateBinding Padding}"/>
+                                                        <!-- Same fix as TabHeaderButtonStyle's, which
+                                                             this style is a copy of: without a Border
+                                                             carrying a Background the padding is not
+                                                             hit-testable, so the only target was the
+                                                             text's own glyphs. -->
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter/>
+                                                        </Border>
                                                     </ControlTemplate>
                                                 </Setter.Value>
                                             </Setter>

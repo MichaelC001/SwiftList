@@ -132,7 +132,6 @@ public sealed class QuickPanelViewModelTests
         await vm.RefreshAsync();
 
         CollectionAssert.AreEqual(new[] { "w1" }, vm.Tabs.Select(t => t.Id).ToList());
-        Assert.IsFalse(vm.HasTabStrip);
         Assert.IsTrue(vm.HasContent);
     }
 
@@ -235,5 +234,6 @@ public sealed class QuickPanelViewModelTests
         Assert.IsEmpty(vm.Tabs);
         Assert.IsEmpty(vm.Groups);
         Assert.IsFalse(vm.HasContent);
+        Assert.IsFalse(vm.HasTabStrip, "no workspaces at all is the one case with no strip");
     }
 }

@@ -27,8 +27,9 @@
          user-configurable and an unnamed one takes a translated name, so the row can overflow a panel
          this narrow and needs its left/right arrows.
 
-         Gone entirely with a single workspace: a strip of one names the only thing there is and offers
-         nowhere to go, and this panel is a quarter of the window it docks to. -->
+         Shown for even one workspace: the tab is also where that workspace's name and its close button
+         are, so hiding it until a second one exists left the first unnamed and unclosable. It shares a
+         row with the filter box, so it costs no height either way. -->
     <ctrl:TabStripScrollView Visibility="{Binding HasTabStrip, Converter={StaticResource BoolToVis}}">
         <!-- Dragging a tab reorders the workspaces, and the tab itself is the handle: there is nowhere
              on a strip to put a grip, and a tab is already the thing you would reach for. IsHorizontal
@@ -43,7 +44,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="0,0,16,0">
+                    <StackPanel Margin="0,0,10,0">
                         <StackPanel Orientation="Horizontal">
                             <Button Content="{Binding Label}" Command="{Binding SelectCommand}"
                                     helpers:DragReorder.IsHandle="True">
@@ -52,9 +53,13 @@
                                         <!-- Two points down from the settings window's own tabs, which is
                                              where that style is sized for. This panel is a quarter of the
                                              window it docks to, and a 14pt strip stood taller than the
-                                             group headings under it. -->
+                                             group headings under it.
+                                             Padding on all four sides, not just under: these are the
+                                             smallest tabs in the app, and the padding is the target now
+                                             that the style's template actually hit-tests it. The gap
+                                             between tabs absorbs the width, so nothing moves. -->
                                         <Setter Property="FontSize" Value="12"/>
-                                        <Setter Property="Padding" Value="0,0,0,8"/>
+                                        <Setter Property="Padding" Value="6,3,6,8"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                 <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>

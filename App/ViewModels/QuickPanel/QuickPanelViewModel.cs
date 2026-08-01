@@ -50,19 +50,14 @@ public partial class QuickPanelViewModel : ViewModelBase
     /// <summary>One entry per visible source of the workspace on screen, each in its own order.</summary>
     public ObservableCollection<QuickPanelGroupViewModel> Groups { get; } = new();
 
-    /// <summary>The strip only earns its space once there is more than one workspace to reach.</summary>
-    public bool HasTabStrip => Tabs.Count > 1;
-
-    /// <summary>Whether the workspace on screen has any group that takes files dropped onto it.</summary>
+    /// <summary>Whether there is a strip to draw at all, which there is for even one workspace.</summary>
     /// <remarks>
-    /// The panel dismisses itself when it loses the foreground, and dragging a file in from Explorer
-    /// begins by clicking Explorer -- so a droppable panel would vanish before the drag it exists for
-    /// ever started. While this is true the manager leaves it up, and the hotkey or Escape closes it.
-    ///
-    /// Not narrowed to "while a drag is running", which would be the better rule: the deactivation
-    /// happens when the other window is clicked, which is before any drag exists to detect.
+    /// It used to take two, on the argument that a strip of one names the only thing there is. That was
+    /// wrong in practice: the tab is also where the workspace's name is, and where its close button is,
+    /// and a panel that showed neither until a second workspace existed left the first one unnamed and
+    /// unclosable. It shares a row with the filter box, so it costs no height either way.
     /// </remarks>
-    public bool AcceptsDrops => Groups.Any(group => group.AcceptsDrops);
+    public bool HasTabStrip => Tabs.Count > 0;
 
     /// <summary>Whether there is anything worth opening the panel for.</summary>
     /// <remarks>
@@ -179,8 +174,6 @@ public partial class QuickPanelViewModel : ViewModelBase
             IsEmpty = Groups.Count == 0;
 
         OnPropertyChanged(nameof(HasContent));
-        // Switching workspace can change the answer: one tab may take drops where the next does not.
-        OnPropertyChanged(nameof(AcceptsDrops));
 
         RewatchIfWatching();
     }

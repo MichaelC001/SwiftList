@@ -78,7 +78,15 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <ContentPresenter Margin="{TemplateBinding Padding}"/>
+                    <!-- The Border is what makes the padding clickable. Without it the template was a
+                         bare ContentPresenter, and an element with no Background is not hit-testable at
+                         all: the target was the text's own glyphs and nothing else, so the padding that
+                         looks like part of the tab did nothing. Transparent hit-tests and costs nothing
+                         to draw. Padding moves onto the Border from the presenter's Margin, which is the
+                         same geometry said the right way round. -->
+                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter/>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

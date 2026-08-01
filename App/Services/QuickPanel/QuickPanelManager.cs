@@ -184,14 +184,15 @@ public sealed partial class QuickPanelManager : IDisposable
             // shortcut on it looking dead.
             if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
 
-            // Nor while the workspace on screen has a group that takes dropped files. Dragging one in
-            // from Explorer begins by clicking Explorer, which is this very event -- so a panel that
-            // dismissed itself here would be gone before the drag it exists for could start. It closes
-            // on the hotkey or Escape instead, for as long as that is true.
-            if (_viewModel is { AcceptsDrops: true }) return;
-
-            // Nor when this summon was asked to stay, by the same hotkey the quick window uses for it.
-            // The flag lives on the window, so it is gone with the window and the next open is normal.
+            // Nor when this summon was asked to stay, by the pin or the same hotkey the quick window
+            // uses for it. The flag lives on the window, so it is gone with the window and the next open
+            // is normal.
+            //
+            // This is also how a drag from Explorer is made possible at all -- that drag begins by
+            // clicking Explorer, which is this very event, so the panel has to have been pinned first.
+            // It briefly stayed up on its own whenever the workspace had a droppable group, which was a
+            // rule the user could neither see nor turn off, on a panel whose whole habit is to get out
+            // of the way. The pin says the same thing, deliberately and visibly.
             if (_window is { IsStayOpen: true }) return;
 
             Hide();

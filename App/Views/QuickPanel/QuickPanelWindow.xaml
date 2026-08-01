@@ -82,9 +82,24 @@
                     </Border.Style>
                     <Grid x:Name="DragArea" Height="14" Background="Transparent"
                           MouseLeftButtonDown="DragArea_MouseLeftButtonDown">
-                        <Border Width="36" Height="3" CornerRadius="1.5"
-                                Background="{DynamicResource SeparatorBrush}"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- The full window's own grip, same construction and same proportion: 30% of
+                             the width, expressed as star columns rather than a binding with a
+                             multiplying converter, because proportional layout is what star sizing
+                             already is: it tracks the window with no converter, no code and no
+                             measure pass of its own. This panel is sized to whatever it docks to, so a
+                             fixed 36px read as a different affordance at every host size.
+
+                             WindowChromeText rather than SeparatorBrush, again matching: every theme
+                             defines it, which a drag affordance has to be able to rely on. -->
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="35*"/>
+                                <ColumnDefinition Width="30*"/>
+                                <ColumnDefinition Width="35*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Height="6" CornerRadius="3"
+                                    Background="{DynamicResource WindowChromeText}" Opacity="0.45"/>
+                        </Grid>
 
                     </Grid>
                 </Border>
