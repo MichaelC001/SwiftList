@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:services="clr-namespace:SwiftList.App.Services"
              xmlns:local="clr-namespace:SwiftList.App.Views.Settings.QuickPanel"
+             xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="760">
     <!-- Workspaces on the left, the selected one on the right. Two panes rather than a dropdown above
@@ -111,21 +112,47 @@
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.CanContentScroll="False"
                                  HorizontalContentAlignment="Stretch"
-                                 BorderThickness="0" Background="Transparent">
+                                 BorderThickness="0" Background="Transparent"
+                                 helpers:DragReorder.IsEnabled="True">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,8,0"
+
+                                        <!-- Drag handle: the same six-dot grip every other reorderable
+                                             list in Settings uses, and the only place a drag may start
+                                             from (see DragReorder.IsHandle) so a press on the name or
+                                             the row background does not pick the row up by accident. -->
+                                        <Grid Width="14" Height="22" Margin="0,0,6,0" Background="Transparent"
+                                              Cursor="SizeAll" helpers:DragReorder.IsHandle="True">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                            <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                            <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                            <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                            <Ellipse Grid.Row="2" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                            <Ellipse Grid.Row="2" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                        </Grid>
+
+                                        <CheckBox Grid.Column="1" IsChecked="{Binding Enabled, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,8,0"
                                                   ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_WorkspaceEnabledTooltip]}"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding EffectiveName}" VerticalAlignment="Center"
+                                        <TextBlock Grid.Column="2" Text="{Binding EffectiveName}" VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis"
                                                    Foreground="{DynamicResource TextPrimary2}"/>
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                             <Button Content="&#xE70E;" Style="{StaticResource RuleIconButton}" Width="22"
                                                     ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveUpTooltip]}"
                                                     Command="{Binding MoveUpSelfCommand}" CommandParameter="{Binding}"/>
