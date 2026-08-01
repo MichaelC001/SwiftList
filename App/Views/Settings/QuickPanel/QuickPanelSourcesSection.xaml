@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:services="clr-namespace:SwiftList.App.Services"
+             xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
              xmlns:core="clr-namespace:SwiftList.Core;assembly=SwiftList.Core"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="520">
@@ -34,15 +35,40 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="210"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0"
+                            <!-- Drag handle: the mouse-drag shortcut for the same reorder the two arrow
+                                 buttons do (see DragReorder on the list itself), same six-dot grip every
+                                 other reorderable list in Settings uses, and the only place a drag may
+                                 start from: a press on the name box or the row background must not
+                                 pick the row up by accident. -->
+                            <Grid Width="14" Height="22" Margin="0,0,6,0" Background="Transparent"
+                                  Cursor="SizeAll" helpers:DragReorder.IsHandle="True">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                <Ellipse Grid.Row="2" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                                <Ellipse Grid.Row="2" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource TextSecondary2}" Margin="1"/>
+                            </Grid>
+
+                            <CheckBox Grid.Column="1" IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0"
                                       ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceVisibleTooltip]}"/>
 
-                            <Grid Grid.Column="1">
+                            <Grid Grid.Column="2">
                                 <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource RuleTextBox}"
                                          ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceNameTooltip]}"/>
@@ -66,13 +92,13 @@
                                 </TextBlock>
                             </Grid>
 
-                            <TextBlock Grid.Column="2" Text="{Binding Path}" Margin="10,0,8,0"
+                            <TextBlock Grid.Column="3" Text="{Binding Path}" Margin="10,0,8,0"
                                        VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding Path}"
                                        Foreground="{DynamicResource TextSecondary}"
 />
 
-                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Content="&#xE70E;"
                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveUpTooltip]}"
                                         Style="{StaticResource RuleIconButton}"
@@ -113,8 +139,9 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Shown only when the row is opened. -->
-                        <Grid Margin="34,8,0,6">
+                        <!-- Shown only when the row is opened. Indented past the grip and the checkbox
+                             above it, so the block reads as belonging to the row rather than to the list. -->
+                        <Grid Margin="54,8,0,6">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -142,17 +169,34 @@
                                  declared items whose Content was a translation binding left the box
                                  blank (the selection matched on identity, not on the value) and would
                                  have had to be rebuilt on a language switch anyway. -->
-                            <ComboBox Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Left" MinWidth="220"
-                                      Style="{StaticResource SettingsComboBox}"
-                                      ItemsSource="{Binding KindOptions}"
-                                      DisplayMemberPath="Label"
-                                      SelectedValuePath="Value"
-                                      SelectedValue="{Binding Kind, Mode=TwoWay}"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
+                                <ComboBox HorizontalAlignment="Left" MinWidth="220"
+                                          Style="{StaticResource SettingsComboBox}"
+                                          ItemsSource="{Binding KindOptions}"
+                                          DisplayMemberPath="Label"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding Kind, Mode=TwoWay}"/>
+                                <!-- Beside what the group shows, because it is the other half of the same
+                                     question. The panel's own header toggle still overrides it, for the
+                                     session it is pressed in; this is what the group opens as. Shares the
+                                     panel's own wording by sharing its key. -->
+                                <CheckBox Margin="14,0,0,0" VerticalAlignment="Center"
+                                          IsChecked="{Binding ShowAsList, Mode=TwoWay}"
+                                          Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ViewList]}"/>
+                            </StackPanel>
 
                             <TextBlock Grid.Row="1" Style="{StaticResource SourceFieldLabel}"
                                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourcePath]}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" Style="{StaticResource RuleTextBox}"
-                                     Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- The same "..." browse button the plugin config's own folder field uses,
+                                 and the same shape: the box keeps the width and the button takes what it
+                                 needs off the right. -->
+                            <DockPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,6">
+                                <Button DockPanel.Dock="Right" Content="..." Style="{StaticResource SettingsButton}"
+                                        MinWidth="0" Padding="4,0" Width="28" Height="26" Margin="4,0,0,0"
+                                        Command="{Binding BrowseCommand}"/>
+                                <TextBox Style="{StaticResource RuleTextBox}"
+                                         Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DockPanel>
 
                             <TextBlock Grid.Row="2" Style="{StaticResource SourceFieldLabel}"
                                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPattern]}"/>
@@ -197,6 +241,8 @@
 
         <!-- No scroll viewer of its own: the page already scrolls, and bounding this one meant an
              expanded row was clipped into a strip you had to scroll inside a scroll. -->
-        <ItemsControl x:Name="ListQuickPanelSources" ItemsSource="{Binding Sources}" ItemTemplate="{StaticResource SourceRowTemplate}"/>
+        <ItemsControl x:Name="ListQuickPanelSources" ItemsSource="{Binding Sources}"
+                      ItemTemplate="{StaticResource SourceRowTemplate}"
+                      helpers:DragReorder.IsEnabled="True"/>
     </StackPanel>
 </UserControl>

@@ -63,6 +63,21 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
         set => SetProperty(ref _isVisible, value);
     }
 
+    private bool _showAsList;
+
+    /// <summary>
+    /// Whether this group opens as the detail list rather than as thumbnails. Stored inverted, as the
+    /// preference's <see cref="QuickPanelGroupPreference.ThumbnailView"/>: tiles are what a group starts
+    /// as, so the box that is worth checking is the one that turns them off. A folder of documents wants
+    /// names and dates and a folder of images wants tiles, and which is which is a property of the
+    /// folder -- the panel's own toggle overrides this for the session it is pressed in.
+    /// </summary>
+    public bool ShowAsList
+    {
+        get => _showAsList;
+        set => SetProperty(ref _showAsList, value);
+    }
+
     private bool _isExpanded;
 
     /// <summary>Whether this row's advanced block is open. Purely a settings-page state, never stored.</summary>
@@ -91,6 +106,27 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
             if (SetProperty(ref _path, value))
                 OnPropertyChanged(nameof(EffectiveName));
         }
+    }
+
+    /// <summary>Picks this source's folder, starting from wherever it currently points.</summary>
+    /// <remarks>
+    /// The box stays editable beside it: a path can be typed or pasted faster than it can be clicked to,
+    /// and a network share nobody has mapped is reachable only that way. This is the shortcut, not the
+    /// only way in.
+    /// </remarks>
+    public System.Windows.Input.ICommand BrowseCommand => _browse ??= new Helpers.RelayCommand(Browse);
+
+    private System.Windows.Input.ICommand? _browse;
+
+    private void Browse()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog();
+        // Spelled out: this type's own Path property shadows System.IO.Path inside it.
+        if (!string.IsNullOrWhiteSpace(Path) && System.IO.Directory.Exists(Path))
+            dialog.InitialDirectory = Path;
+
+        if (dialog.ShowDialog() == true)
+            Path = dialog.FolderName;
     }
 
     /// <summary>

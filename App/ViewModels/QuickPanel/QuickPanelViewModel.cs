@@ -203,6 +203,8 @@ public class QuickPanelViewModel : ViewModelBase
             // sort yet. Once the panel persists what the user does to a group, the stored value becomes
             // the override and this becomes its fallback.
             QuickPanelGroupPreference.DefaultSortFor(source.Kind),
+            // The settings page owns this one: the header's own toggle overrides it for the session it
+            // is pressed in, and this is what the group opens as.
             preference?.ThumbnailView ?? true,
             preference?.Expanded ?? true);
     }

@@ -57,6 +57,45 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.IsFalse(saved.GroupPreferences.ContainsKey(tab.Sources[1].Id), "an untouched row needs no entry");
     }
 
+    // Stored inverted, as the preference's ThumbnailView: tiles are what a group starts as, so the box
+    // on screen is the one that turns them off.
+    [TestMethod]
+    public void Save_ShowAsList_RoundTripsAsTheInverseOfThumbnailView()
+    {
+        var settings = BuildSettings(@"C:\a", @"C:\b");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        var listed = vm.Tabs.Single().Sources[0];
+        listed.ShowAsList = true;
+
+        vm.Save();
+
+        var saved = settings.QuickPanel.Tabs.Single();
+        Assert.IsFalse(saved.GroupPreferences[listed.Id].ThumbnailView);
+        Assert.IsFalse(saved.GroupPreferences.ContainsKey(vm.Tabs.Single().Sources[1].Id),
+            "a row left on thumbnails has overridden nothing and needs no entry");
+
+        // And back: reopening the page shows the box the way it was left.
+        Assert.IsTrue(new QuickPanelSettingsViewModel(settings).Tabs.Single().Sources[0].ShowAsList);
+    }
+
+    // The name is not what makes a preference worth storing any more, so unchecking the box on a row
+    // that was only ever renamed must not undo the rename.
+    [TestMethod]
+    public void Save_ShowAsList_AndACustomName_BothLandOnTheSameEntry()
+    {
+        var settings = BuildSettings(@"C:\a");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        var row = vm.Tabs.Single().Sources[0];
+        row.DisplayName = "素材";
+        row.ShowAsList = true;
+
+        vm.Save();
+
+        var preference = settings.QuickPanel.Tabs.Single().GroupPreferences[row.Id];
+        Assert.AreEqual("素材", preference.DisplayName);
+        Assert.IsFalse(preference.ThumbnailView);
+    }
+
     [TestMethod]
     public void Save_RemovedFolder_LeavesNothingBehind()
     {

@@ -108,18 +108,20 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         _model.GroupOrder = Sources.Select(r => r.Id).ToList();
         _model.DisabledGroupIds = Sources.Where(r => !r.IsVisible).Select(r => r.Id).ToList();
 
-        // Only what the user actually overrode. The rest of a preference (sort, view, expanded) is the
-        // panel's own to write, so an entry that already exists is patched rather than replaced.
+        // Only what the user actually overrode: a row left at its defaults gets no entry at all. What is
+        // left of a preference (sort, expanded) is the panel's own to write, so an entry that already
+        // exists is patched rather than replaced.
         foreach (var row in Sources)
         {
             var custom = row.DisplayName.Trim();
             if (!_model.GroupPreferences.TryGetValue(row.Id, out var preference))
             {
-                if (custom.Length == 0)
+                if (custom.Length == 0 && !row.ShowAsList)
                     continue;
                 _model.GroupPreferences[row.Id] = preference = new QuickPanelGroupPreference();
             }
             preference.DisplayName = custom;
+            preference.ThumbnailView = !row.ShowAsList;
         }
 
         // A source deleted here leaves nothing behind to accumulate in the settings file.
@@ -172,7 +174,10 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         var row = QuickPanelSourceRowViewModel.ForFolder(model.Folders.First(f => f.Id == id));
         row.IsVisible = !model.DisabledGroupIds.Contains(id, StringComparer.OrdinalIgnoreCase);
         if (model.GroupPreferences.TryGetValue(id, out var preference))
+        {
             row.DisplayName = preference.DisplayName;
+            row.ShowAsList = !preference.ThumbnailView;
+        }
         return row;
     }
 }
