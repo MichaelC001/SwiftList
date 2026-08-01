@@ -68,9 +68,13 @@
                  empty card under the list. The page scrolls when the content outgrows it instead. -->
             <Border Style="{StaticResource SettingsCard}">
                 <Grid>
+                    <!-- Both columns are proportional, so widening the window widens the workspace
+                         list too instead of leaving it pinned at a width picked for the default size.
+                         MinWidth keeps a row's buttons reachable when the window is small; MaxWidth
+                         stops a wide window handing a list of short names half the card. -->
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" MinWidth="190" MaxWidth="340"/>
+                        <ColumnDefinition Width="2.5*"/>
                     </Grid.ColumnDefinitions>
 
                     <DockPanel Grid.Column="0" Margin="0,0,16,0">
