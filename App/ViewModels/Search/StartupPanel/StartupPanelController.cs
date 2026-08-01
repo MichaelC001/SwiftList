@@ -44,6 +44,36 @@ public class StartupPanelController : ViewModelBase
     {
         _searchService = searchService;
         _applyResults = applyResults;
+
+        // Dragging a tab reorders this collection in place and touches nothing else, so the strip is
+        // where a new order first exists. Everything this controller does to Tabs it does to _activeTabs
+        // first, which is what the no-op check below recognises: only a drag can leave the two holding
+        // the same tabs in a different order.
+        Tabs.CollectionChanged += (_, _) => SyncStripOrder();
+    }
+
+    /// <summary>Follows a dragged strip: reorders the controller's own list and stores the new order.</summary>
+    private void SyncStripOrder()
+    {
+        // Mid-drag the strip is one tab short (a remove and an insert), and at activation it is empty.
+        // Neither is an order.
+        if (Tabs.Count == 0 || Tabs.Count != _activeTabs.Count) return;
+
+        var byViewModel = _activeTabs.ToDictionary(tab => tab.ViewModel);
+        if (!Tabs.All(byViewModel.ContainsKey)) return;
+
+        var reordered = Tabs.Select(vm => byViewModel[vm]).ToList();
+        // Every other path here mutates _activeTabs first, so it already agrees and there is nothing to
+        // store. Without this, streaming a tab in would write the order once per tab.
+        if (reordered.SequenceEqual(_activeTabs)) return;
+
+        _activeTabs.Clear();
+        _activeTabs.AddRange(reordered);
+
+        var settings = UserSettings.Load();
+        settings.StartupPanel.TabOrder = StartupPanelTabReorder.Apply(
+            Tabs.Select(tab => tab.Id), settings.StartupPanel.TabOrder);
+        settings.Save();
     }
 
     public ObservableCollection<StartupPanelTabViewModel> Tabs { get; } = new();
@@ -109,7 +139,7 @@ public class StartupPanelController : ViewModelBase
 
             if (tab == null)
             {
-                var tabVm = new StartupPanelTabViewModel(source.Label, () => CloseTab(source), () => SelectTab(source));
+                var tabVm = new StartupPanelTabViewModel(source.Label, () => CloseTab(source), () => SelectTab(source), source.Id);
                 tab = new ActiveTab { ViewModel = tabVm, Source = source, Rank = rank, Items = new List<AppSearchResult>() };
 
                 // Inserted at its configured position, not appended. Tabs now appear in the order their

@@ -10,6 +10,15 @@ namespace SwiftList.App.ViewModels.Search.StartupPanel;
 public class StartupPanelTabViewModel : ViewModelBase
 {
     public string Label { get; }
+
+    /// <summary>The source's own stable id, which is what StartupPanel.TabOrder is written in.</summary>
+    /// <remarks>
+    /// Carried on the tab rather than looked up from the controller's parallel list: dragging reorders
+    /// the tab view models in place, so the strip is the only thing that knows the new order and it has
+    /// to be able to name what it holds.
+    /// </remarks>
+    public string Id { get; }
+
     public ICommand CloseCommand { get; }
     public ICommand SelectCommand { get; }
 
@@ -43,9 +52,10 @@ public class StartupPanelTabViewModel : ViewModelBase
     public string ScaledCloseButtonMarginThickness => $"8,0,0,{Math.Round(BaseCloseButtonBottomMargin * UiMetrics.Scale)}";
     public string ScaledUnderlineMarginThickness => $"0,{-ScaledUnderlineHeight},0,0";
 
-    public StartupPanelTabViewModel(string label, Action onClose, Action onSelect)
+    public StartupPanelTabViewModel(string label, Action onClose, Action onSelect, string id = "")
     {
         Label = label;
+        Id = id;
         CloseCommand = new RelayCommand(onClose);
         SelectCommand = new RelayCommand(onSelect);
     }

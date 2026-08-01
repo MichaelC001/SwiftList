@@ -67,8 +67,14 @@
 
             <!-- ═══════════ 3. Startup Panel Tab Strip ═══════════ -->
             <ctrl:TabStripScrollView x:Name="StartupPanelTabStripHost" Grid.Row="2" Visibility="{Binding StartupPanelVisibility}" Margin="12,8,12,0">
+            <!-- Dragging a tab reorders the strip and stores that order (StartupPanel.TabOrder), the same
+                 order the Settings page's own list edits. The tab is the handle: a strip has nowhere to
+                 put a grip, and a tab is already what you would reach for. IsHorizontal so the drop line
+                 stands between two tabs rather than lying across them. -->
             <ItemsControl x:Name="StartupPanelTabStrip"
-                          ItemsSource="{Binding StartupPanelTabs}">
+                          ItemsSource="{Binding StartupPanelTabs}"
+                          helpers:DragReorder.IsEnabled="True"
+                          helpers:DragReorder.IsHorizontal="True">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"/>
@@ -83,7 +89,8 @@
                         <StackPanel Margin="0,0,20,0">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="{Binding Label}" Command="{Binding SelectCommand}"
-                                        FontSize="{Binding ScaledFontSize}" Padding="{Binding ScaledBottomPaddingThickness}">
+                                        FontSize="{Binding ScaledFontSize}" Padding="{Binding ScaledBottomPaddingThickness}"
+                                        helpers:DragReorder.IsHandle="True">
                                     <Button.Style>
                                         <Style TargetType="Button">
                                             <Setter Property="Background" Value="Transparent"/>
