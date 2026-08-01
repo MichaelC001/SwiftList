@@ -53,7 +53,7 @@ interface IStartupPanelTabProvider : IPluginComponent
 
 ### `IQuickPanelSourceProvider`
 
-[クイックパネル](../../user-guide/settings/quick-panel)にソースを提供します——前面のウィンドウに重ねてドッキングする、あのフローティングパネルです。1つのソースはそこで1つのグループになり、独自の見出しを持ちます。項目はホスト自身の結果行で描画されるため、アイコン、開く操作、アクションメニューはすべて無償で付いてきます。CoreExtensions には2つ同梱されています:Windows の最近使った項目とお気に入り。
+[クイックパネル](../../user-guide/settings/quick-panel)にソースを提供します——前面のウィンドウに重ねてドッキングする、あのフローティングパネルです。1つのソースはそこで1つのグループになり、独自の見出しを持ちます。項目はホスト自身の結果行で描画されるため、アイコン、開く操作、アクションメニューはすべて無償で付いてきます。CoreExtensions には3つ同梱されています:Windows の最近使った項目、履歴、お気に入り。
 
 ```csharp
 interface IQuickPanelSourceProvider : IPluginComponent

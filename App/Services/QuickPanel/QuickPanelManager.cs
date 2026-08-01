@@ -147,11 +147,23 @@ public sealed partial class QuickPanelManager : IDisposable
         // one costs about 60ms, which lands inside the load this already awaits.
         _window = new QuickPanelWindow(_viewModel);
 
+        // The way back out of a preview the user clicked into. That click suspended this panel's own
+        // dismissal (see Deactivated below), and this panel's Deactivated will not fire again -- so the
+        // click that finally leaves for another application arrives here instead.
+        void OnPreviewFocusLost()
+        {
+            if (_window is { IsStayOpen: true }) return;
+            Hide();
+        }
+
+        QuickLookManager.Instance.PreviewFocusLost += OnPreviewFocusLost;
+
         // Closing is the only way out, so this is the one place the reference is dropped -- whether the
         // close came from Hide, from Escape, or from anything else that ever gets to close a window.
         _window.Closed += (_, _) =>
         {
             _window = null;
+            QuickLookManager.Instance.PreviewFocusLost -= OnPreviewFocusLost;
 
             // The folder watchers only ever run while the panel is up: they exist to keep what is on
             // screen true, and there is no screen now.
@@ -194,6 +206,12 @@ public sealed partial class QuickPanelManager : IDisposable
             // rule the user could neither see nor turn off, on a panel whose whole habit is to get out
             // of the way. The pin says the same thing, deliberately and visibly.
             if (_window is { IsStayOpen: true }) return;
+
+            // Nor when the foreground went to the preview this panel opened. Scrolling a document or
+            // playing a video in there needs real focus, so clicking into it deactivates this window --
+            // and it is a window the panel put on screen, reached from a row in the panel. Closing here
+            // would take it down with the panel on the click that reached for it.
+            if (QuickLookManager.Instance.IsPreviewForeground()) return;
 
             Hide();
         };

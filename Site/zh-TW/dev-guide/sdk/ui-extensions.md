@@ -52,7 +52,7 @@ interface IStartupPanelTabProvider : IPluginComponent
 
 ### `IQuickPanelSourceProvider`
 
-給[快速面板](../../user-guide/settings/quick-panel)貢獻一個來源——那個停靠在前景視窗上的浮動面板。一個來源在那裡就是一個分組，有自己的標題，項目由宿主用它自己的結果列渲染，所以圖示、開啟、動作選單都是白送的。CoreExtensions 自帶兩個：Windows 歷史記錄和收藏夾。
+給[快速面板](../../user-guide/settings/quick-panel)貢獻一個來源——那個停靠在前景視窗上的浮動面板。一個來源在那裡就是一個分組，有自己的標題，項目由宿主用它自己的結果列渲染，所以圖示、開啟、動作選單都是白送的。CoreExtensions 自帶三個：Windows 歷史記錄、歷史記錄和收藏夾。
 
 ```csharp
 interface IQuickPanelSourceProvider : IPluginComponent

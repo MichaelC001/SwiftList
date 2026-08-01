@@ -11,8 +11,16 @@ namespace SwiftList.App.Views.QuickPanel;
 // The panel itself: one workspace's sources, docked to the bottom-right of whatever window is in
 // front. Lifecycle, the hotkey and the docking maths all live in QuickPanelManager, and what is shown
 // comes from QuickPanelViewModel; this file is only the window's own input handling.
-public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions.IPluginSearchWindow
+public partial class QuickPanelWindow : Window,
+    SwiftList.PluginSdk.Abstractions.IPluginSearchWindow,
+    Services.AppWindow.IHasVisibleContentInset
 {
+    // Must match QuickPanelWindow.xaml's root Border Margin, which is the room its drop shadow needs.
+    // Without this the preview would dock against the transparent bounds and sit a shadow's width too
+    // far out -- which for a window parked in a corner is the difference between the right side fitting
+    // the preview and not.
+    public Thickness VisibleContentInset => new(8);
+
     // The four methods ActionFlyout needs from whoever hosts it. Deliberately IPluginSearchWindow and
     // not ISearchWindow: that larger interface is built around an in-window actions pane, which is what
     // ShellMenuPresenter drives and what this panel has no equivalent of. The flyout asks only for these.
@@ -59,7 +67,11 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         // Unsubscribed explicitly because the view model outlives this window by design: every summon
         // builds a new one, and a handler left behind would pile up one per open on an object that never
         // goes away.
-        Closed += (_, _) => viewModel.PropertyChanged -= OnViewModelChanged;
+        Closed += (_, _) =>
+        {
+            viewModel.PropertyChanged -= OnViewModelChanged;
+            ReleasePreview();
+        };
     }
 
     /// <summary>Takes the foreground and puts keyboard focus in the filter box.</summary>
@@ -116,6 +128,15 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
 
         if (e.Key != Key.Escape)
         {
+            // The preview, on the same key the search windows use for it -- read from the settings, so
+            // rebinding it there rebinds it here. Ahead of the action hotkeys for the same reason the pin
+            // is: the filter box has the keyboard after a summon, and this has to work from there.
+            if (Helpers.SearchInputHelper.IsQuickLookKey(e))
+            {
+                if (TogglePreview()) e.Handled = true;
+                return;
+            }
+
             if (TrySwitchWorkspace(e)) return;
 
             // Ahead of the action hotkeys and unguarded by focus: the same key the quick window uses for
@@ -212,6 +233,7 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         if (sender is not System.Windows.Controls.ListBox list) return;
 
         Views.Controls.Results.ResultsDragDropHelper.Register(list);
+        list.SelectionChanged += GroupList_SelectionChanged;
         _activeList ??= list;
     }
 

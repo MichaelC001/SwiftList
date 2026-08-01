@@ -58,9 +58,10 @@ nombre propio de la carpeta); y **Más opciones** abre el resto:
 
 Fuentes aportadas por plugins. Marca una para añadirla a este espacio de trabajo; a partir de ahí aparece en la
 lista **Fuentes** junto a las carpetas y se ordena, renombra y oculta exactamente igual que una. CoreExtensions trae
-dos: **Elementos recientes de Windows** (la propia lista de documentos recientes del shell, resuelta a los archivos
-a los que apunta, lo más nuevo primero) y **Favoritos** (tus [Favoritos](./favorites), en el orden en que los
-colocaste).
+tres: **Elementos recientes de Windows** (la propia lista de documentos recientes del shell, resuelta a los
+archivos a los que apunta, lo más nuevo primero), **Historial** (lo que has abierto desde el propio SwiftList, lo
+más reciente primero: otra lista distinta, y la única de las dos que incluye aplicaciones) y **Favoritos** (tus
+[Favoritos](./favorites), en el orden en que los colocaste).
 
 Añadir una es una decisión que se toma una vez, y por eso es una pestaña aparte de la lista donde se ordena y se
 renombra. Solo se listan las fuentes cuyo componente de plugin está habilitado en [Plugins](./plugins). Un id cuyo
@@ -103,6 +104,12 @@ merezcan un bloqueo global.
 - **Soltar archivos dentro** — arrastra archivos, carpetas o una imagen directamente desde una página web sobre un
   grupo que acepte archivos soltados. Se acepta cualquier cosa que el arrastre pueda ofrecer como archivo, no solo
   imágenes. El grupo se recarga solo cuando termina la copia.
+- **Vista previa** — la tecla de QuickLook (`Alt+P` por defecto, reasignable en la página de
+  [Atajos](./hotkeys-page) como cualquier otra) abre la ventana de vista previa del archivo
+  seleccionado, y a partir de ahí sigue a la selección. Se acopla a la derecha del panel, y solo
+  pasa a su izquierda cuando el borde de la pantalla no deja sitio ahí: justo lo que le ocurre a un panel
+  en la esquina inferior derecha de una ventana maximizada. Hacer clic dentro de la vista previa no cierra el panel; alejarse de ambos, sí. Se cierra
+  junto con el panel.
 - **Que no se cierre** — el panel se cierra al perder el foco. El botón de anclaje, o el atajo de "mantener la
   ventana abierta" (`Ctrl+T` por defecto, el mismo que usa la ventana rápida), lo suspende durante la invocación
   actual.

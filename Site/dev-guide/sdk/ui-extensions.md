@@ -71,7 +71,7 @@ concrete class type name (`GetType().Name`) as the stable key to persist the clo
 Contributes a source to the [Quick Panel](../../user-guide/settings/quick-panel) — the floating panel
 docked over whatever window is in front. A source becomes one group there, with its own heading, and
 the host renders the entries through its own result rows, so icons, opening, and the actions menu all
-come for free. CoreExtensions ships two: Windows Recent Items and Favorites.
+come for free. CoreExtensions ships three: Windows Recent Items, History and Favorites.
 
 ```csharp
 interface IQuickPanelSourceProvider : IPluginComponent

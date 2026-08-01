@@ -74,7 +74,7 @@ dos cosas son deliberadamente independientes; el host usa el nombre de tipo de l
 Aporta una fuente al [Panel Rápido](../../user-guide/settings/quick-panel) — el panel flotante acoplado sobre la
 ventana que esté en primer plano. Una fuente se convierte allí en un grupo, con su propio encabezado, y el host
 renderiza las entradas con sus propias filas de resultado, así que los iconos, la apertura y el menú de acciones
-vienen gratis. CoreExtensions trae dos: Elementos recientes de Windows y Favoritos.
+vienen gratis. CoreExtensions trae tres: Elementos recientes de Windows, Historial y Favoritos.
 
 ```csharp
 interface IQuickPanelSourceProvider : IPluginComponent

@@ -135,14 +135,10 @@ public partial class QuickPanelWindow
         => FindAncestor<System.Windows.Controls.ListBoxItem>(source) == null
            && FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) == null;
 
+    // Through TreeWalk rather than VisualTreeHelper directly: what a click starts on is often not a
+    // Visual at all -- see there.
     private static T? FindAncestor<T>(DependencyObject from) where T : DependencyObject
-    {
-        for (var node = from; node != null; node = VisualTreeHelper.GetParent(node))
-        {
-            if (node is T match) return match;
-        }
-        return null;
-    }
+        => Helpers.Visuals.TreeWalk.Ancestor<T>(from);
 
     /// <summary>Empties every group's list under the given root.</summary>
     /// <remarks>

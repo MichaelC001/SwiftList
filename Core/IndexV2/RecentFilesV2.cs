@@ -50,25 +50,42 @@ public static class RecentFilesV2
                 if (record.Removed || record.ParentFrn != currentFrn)
                     continue;
                 scanned++;
-                if (record.LastWrite >= cutoffUtc)
-                    candidates.Add(ToResult(record.Name, delta.GetFullPath(record), (record.Flags & (ushort)FileRecordFlags.Directory) != 0, drive, record.LastWrite));
+                var isDirectory = (record.Flags & (ushort)FileRecordFlags.Directory) != 0;
+                if (!isDirectory && record.LastWrite >= cutoffUtc)
+                    candidates.Add(ToResult(record.Name, delta.GetFullPath(record), false, drive, record.LastWrite));
             }
         }
     }
 
+    /// <summary>Files only: a directory is walked into, never offered as a result of its own.</summary>
+    /// <remarks>
+    /// Every caller of this asks for recent FILES -- the quick panel source kind of that name, and the
+    /// startup panel's tab of that name. A folder's own modified time changes whenever anything is added
+    /// to or removed from it, so including them did not merely add noise: they were among the newest
+    /// things in any active folder and took the top of the list, pushing out the files the list exists
+    /// to show.
+    ///
+    /// Filtered here rather than after collecting, so the caller's cap counts what it thinks it counts:
+    /// both GetRecentFiles extensions sort and then Take(limit), and a set half full of folders would
+    /// have left "at most 20" showing however many of those 20 happened to be files.
+    /// </remarks>
     private static void Emit(Snapshot snapshot, DeltaOverlay delta, int row, string drive, uint cutoffUtc, List<SearchResult> candidates)
     {
+        if (snapshot.IsDirectory(row))
+            return;
         var (_, _, lastWrite, _) = delta.MetadataOf(row);
         if (lastWrite < cutoffUtc)
             return;
-        candidates.Add(ToResult(delta.NameOf(row), delta.GetFullPath(row), snapshot.IsDirectory(row), drive, lastWrite));
+        candidates.Add(ToResult(delta.NameOf(row), delta.GetFullPath(row), false, drive, lastWrite));
     }
 
     private static void EmitOverride(DeltaOverlay delta, int row, DeltaOverlay.DeltaRecord record, string drive, uint cutoffUtc, List<SearchResult> candidates)
     {
+        if ((record.Flags & (ushort)FileRecordFlags.Directory) != 0)
+            return;
         if (record.LastWrite < cutoffUtc)
             return;
-        candidates.Add(ToResult(record.Name, delta.GetFullPath(row), (record.Flags & (ushort)FileRecordFlags.Directory) != 0, drive, record.LastWrite));
+        candidates.Add(ToResult(record.Name, delta.GetFullPath(row), false, drive, record.LastWrite));
     }
 
     // Size/Created/Accessed aren't tracked here -- Recent Files only ever needs Modified, for the

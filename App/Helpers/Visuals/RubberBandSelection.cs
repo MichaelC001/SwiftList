@@ -198,12 +198,14 @@ public static class RubberBandSelection
         }
     }
 
+    // Walked through TreeWalk: this starts at a mouse event's OriginalSource, which is a Run whenever the
+    // press landed on highlighted text, and VisualTreeHelper alone throws on one of those.
     private static bool IsWithinItem(DependencyObject? source, ListBox list)
     {
         while (source != null && source != list)
         {
             if (source is ListBoxItem) return true;
-            source = VisualTreeHelper.GetParent(source);
+            source = TreeWalk.Parent(source);
         }
         return false;
     }

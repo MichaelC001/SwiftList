@@ -68,8 +68,8 @@ interface IStartupPanelTabProvider : IPluginComponent
 
 [빠른 패널](../../user-guide/settings/quick-panel)에 소스를 제공합니다 — 앞에 있는 창 위에 도킹되는 그
 떠 있는 패널입니다. 소스 하나는 그곳에서 자체 머리글을 가진 그룹 하나가 되며, 항목은 호스트 자신의 결과
-행으로 렌더링되므로 아이콘, 열기, 동작 메뉴가 모두 공짜로 따라옵니다. CoreExtensions에는 두 개가
-들어 있습니다: Windows 최근 항목과 즐겨찾기.
+행으로 렌더링되므로 아이콘, 열기, 동작 메뉴가 모두 공짜로 따라옵니다. CoreExtensions에는 세 개가
+들어 있습니다: Windows 최근 항목, 기록, 즐겨찾기.
 
 ```csharp
 interface IQuickPanelSourceProvider : IPluginComponent

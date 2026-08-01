@@ -261,7 +261,7 @@ public static class DragReorder
                 return true;
             if (source is ButtonBase or TextBoxBase)
                 return false;
-            source = VisualTreeHelper.GetParent(source);
+            source = TreeWalk.Parent(source);
         }
         return false;
     }
@@ -269,13 +269,16 @@ public static class DragReorder
     // Walks up from whatever was actually clicked/dropped on to the realized item container
     // ItemContainerGenerator knows about -- VirtualizingStackPanel means only currently-visible
     // containers exist at all, which is exactly what a live mouse event can ever land on anyway.
+    //
+    // Through TreeWalk, like the walk above: both start at an OriginalSource, and an item whose label
+    // carries highlighted text hands one of these a Run, which is not a Visual at all.
     private static FrameworkElement? FindContainer(DependencyObject? source, ItemsControl control)
     {
         while (source != null && source != control)
         {
             if (source is FrameworkElement fe && control.ItemContainerGenerator.IndexFromContainer(fe) >= 0)
                 return fe;
-            source = VisualTreeHelper.GetParent(source);
+            source = TreeWalk.Parent(source);
         }
         return null;
     }

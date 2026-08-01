@@ -57,8 +57,10 @@ heading (leave it empty for the folder's own name); and **More options** opens t
 
 Sources provided by plugins. Tick one to add it to this workspace; it then appears in the **Sources**
 list beside the folders and is ordered, renamed and hidden exactly like one. CoreExtensions ships
-two: **Windows Recent Items** (the shell's own recent-documents list, resolved to the files it points
-at, newest first) and **Favorites** (your [Favorites](./favorites), in the order you arranged them).
+three: **Windows Recent Items** (the shell's own recent-documents list, resolved to the files it
+points at, newest first), **History** (what you opened through SwiftList itself, most recent first —
+a different list, and the only one of the two that includes applications) and **Favorites** (your
+[Favorites](./favorites), in the order you arranged them).
 
 Adding one is a decision made once, which is why it is a separate tab from the list where ordering
 and renaming happen. Only sources whose plugin component is enabled under [Plugins](./plugins) are
@@ -99,6 +101,12 @@ a global block.
 - **Dropping files in** — drag files, folders, or an image straight off a web page onto a group that
   accepts drops. Anything a drag can offer as a file is taken, not just images. The group reloads
   itself once the copy finishes.
+- **Preview** — the QuickLook key (`Alt+P` by default, rebindable on the [Hotkeys](./hotkeys-page) page
+  like any other) opens the preview window for the selected file, and it follows the selection from
+  then on. It docks to the right of the panel, or to its left when the screen edge leaves no room there
+  — which is what a panel in the bottom-right corner of a maximized window gets. Clicking into the
+  preview does not dismiss the
+  panel; clicking away from both does. It closes with the panel.
 - **Keeping it open** — the panel closes when it loses focus. The pin button, or the "keep window
   open" hotkey (`Ctrl+T` by default, the same one the quick window uses), suspends that for the
   current summon.

@@ -77,6 +77,62 @@ public sealed class RecentFilesV2Tests
         });
     }
 
+    // Recent FILES: a folder's own modified time changes whenever anything is added to or removed from
+    // it, so folders were among the newest things in any active directory and took the top of the list
+    // -- pushing out what the list exists to show. They are still walked into, which is what "sub" being
+    // absent while "nested.txt" is present proves.
+    [TestMethod]
+    public void CollectFromDirectory_ExcludesDirectoriesButStillDescendsIntoThem()
+    {
+        using var fixture = BuildSampleDrive();
+        fixture.Index.Read((snapshot, delta) =>
+        {
+            var candidates = new List<SearchResult>();
+            RecentFilesV2.CollectFromDirectory(snapshot, delta, @"c:\projects\", "C", cutoffUtc: 0, candidates);
+
+            var names = candidates.Select(c => c.Name).ToList();
+            CollectionAssert.DoesNotContain(names, "sub");
+            CollectionAssert.Contains(names, "nested.txt");
+            Assert.IsFalse(candidates.Any(c => c.IsDir));
+            return 0;
+        });
+    }
+
+    [TestMethod]
+    public void CollectFromDirectory_ExcludesADirectoryAddedSinceTheSnapshot()
+    {
+        using var fixture = BuildSampleDrive();
+        fixture.Index.Mutate((snapshot, delta) =>
+        {
+            delta.Upsert(200, 2, "fresh-folder", FileRecordFlags.Directory, 1, 0, 3000, 0);
+            delta.Upsert(201, 2, "fresh.txt", FileRecordFlags.None, 1, 0, 3000, 0);
+
+            var candidates = new List<SearchResult>();
+            RecentFilesV2.CollectFromDirectory(snapshot, delta, @"c:\projects\", "C", cutoffUtc: 500, candidates);
+
+            var names = candidates.Select(c => c.Name).ToList();
+            CollectionAssert.DoesNotContain(names, "fresh-folder");
+            CollectionAssert.Contains(names, "fresh.txt");
+        });
+    }
+
+    // The same rule where the entry comes from an override of a row the snapshot already had -- a folder
+    // touched since the index was written is exactly the case that used to float to the top.
+    [TestMethod]
+    public void CollectFromDirectory_ExcludesADirectoryTouchedSinceTheSnapshot()
+    {
+        using var fixture = BuildSampleDrive();
+        fixture.Index.Mutate((snapshot, delta) =>
+        {
+            delta.Upsert(5, 2, "sub", FileRecordFlags.Directory, 1, 0, 9000, 0);
+
+            var candidates = new List<SearchResult>();
+            RecentFilesV2.CollectFromDirectory(snapshot, delta, @"c:\projects\", "C", cutoffUtc: 500, candidates);
+
+            CollectionAssert.DoesNotContain(candidates.Select(c => c.Name).ToList(), "sub");
+        });
+    }
+
     [TestMethod]
     public void CollectFromDirectory_UnresolvableDirectory_ReturnsEmpty()
     {
