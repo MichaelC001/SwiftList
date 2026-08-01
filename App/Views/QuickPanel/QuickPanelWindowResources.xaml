@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:services="clr-namespace:SwiftList.App.Services"
                     xmlns:local="clr-namespace:SwiftList.App.Views.QuickPanel"
+                    xmlns:conv="clr-namespace:SwiftList.App.Converters"
                     xmlns:app="clr-namespace:SwiftList.App">
     <!-- Split out of QuickPanelWindow.xaml purely to keep that file under the repo's per-file line
          limit; these are the panel's own row, tile and group-header styles, and nothing else uses them.
@@ -107,7 +108,12 @@
                    RenderOptions.BitmapScalingMode="HighQuality"/>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Name}" FontSize="12"
+                <!-- Lit through the same attached behaviour every other result list uses: it asks the
+                     row for the mask, so exactly the characters the fzf match aligned to light up. -->
+                <TextBlock FontSize="12"
+                           conv:TextHighlighter.Text="{Binding Name}"
+                           conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
+                           conv:TextHighlighter.HighlightBrush="{DynamicResource AccentBlue}"
                            Foreground="{DynamicResource TextPrimary}"
                            TextTrimming="CharacterEllipsis"/>
                 <TextBlock Text="{Binding DateModified, Converter={StaticResource ModifiedTime}}"
@@ -191,7 +197,10 @@
             <Image Source="{Binding Icon}" Width="48" Height="48"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
-            <TextBlock Text="{Binding Name}" FontSize="11" Margin="0,6,0,0"
+            <TextBlock FontSize="11" Margin="0,6,0,0"
+                       conv:TextHighlighter.Text="{Binding Name}"
+                       conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
+                       conv:TextHighlighter.HighlightBrush="{DynamicResource AccentBlue}"
                        Foreground="{DynamicResource TextPrimary}"
                        TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
                        MaxHeight="30" TextAlignment="Center"/>

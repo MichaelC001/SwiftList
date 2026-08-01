@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using SwiftList.Core;
+using SwiftList.Core.SearchIndex;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
 
@@ -57,12 +58,15 @@ public class QuickPanelGroupViewModel : ViewModelBase
 
     private string _filter = string.Empty;
 
-    /// <summary>Narrows the group to the entries whose name contains the query.</summary>
+    /// <summary>Narrows the group to the entries whose name the query matches.</summary>
     /// <remarks>
-    /// Plain substring, case-insensitive, on the name alone. Not the search engine's own matching: this
-    /// filters a few dozen entries the user is already looking at, and a fuzzy match that reorders them
-    /// or turns up something whose path happened to match would make the list harder to follow rather
-    /// than easier. Each group keeps its own order under the filter, the same as without it.
+    /// The same matching every other box in this app does: <see cref="FuzzyMatcher.IsMatch"/>, which is
+    /// the index scan's own fzf rule reached through the seam built for callers that need identical
+    /// semantics without running a scan. So "rdm" finds readme.md here exactly as it does in the search
+    /// window, and a pinyin alias works because that matcher already consults the alias providers.
+    ///
+    /// What it does not do is reorder: each group keeps the order its source kind gives it, because that
+    /// order is a setting the user chose per source rather than something a query should override.
     /// </remarks>
     public void ApplyFilter(string? query)
     {
@@ -125,7 +129,7 @@ public class QuickPanelGroupViewModel : ViewModelBase
     {
         var matching = _filter.Length == 0
             ? _loaded
-            : _loaded.Where(pair => pair.Item.Name.Contains(_filter, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            : _loaded.Where(pair => FuzzyMatcher.IsMatch(_filter, pair.Item.Name)).ToList();
 
         // Ordered on the DateTime, not on the string the row shows: that string is formatted and
         // localised, so ordering by it would rank "3 days ago" against "10 minutes ago" alphabetically

@@ -52,7 +52,6 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -90,17 +89,25 @@
                     </Grid>
                 </Border>
 
-                <local:QuickPanelTabStrip Grid.Row="0" Margin="12,16,12,0"/>
+                <!-- Strip and filter box share the row: the box takes what it needs on the right and the
+                     strip has the rest, so a panel this short does not spend a second band of its height
+                     on a control that is one line tall. -->
+                <Grid Grid.Row="0" Margin="12,16,12,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <local:QuickPanelTabStrip Grid.Column="0" VerticalAlignment="Bottom"/>
+                    <local:QuickPanelSearchBox Grid.Column="1" Width="150" Margin="8,0,0,4"
+                                               VerticalAlignment="Bottom"/>
+                </Grid>
 
 
                 <!-- The whole content area listens for the click, not each group's list: the blank space
                      that should drop the selection is as much the gap between two groups and the run
                      below the last one as it is the end of a row of tiles. -->
-                <!-- Filters what the workspace already loaded, in its own row so it is there whether or
-                     not the strip above it is. -->
-                <local:QuickPanelSearchBox Grid.Row="1" Margin="12,4,12,6"/>
-
-                <Border Grid.Row="2" Background="{DynamicResource ContentBg}"
+                <Border Grid.Row="1" Background="{DynamicResource ContentBg}"
                         PreviewMouseLeftButtonDown="Content_PreviewMouseLeftButtonDown">
                     <Grid>
                         <!-- One block per source, each with its own header and its own list.

@@ -73,12 +73,39 @@ public sealed class QuickPanelFilterTests
         Assert.AreEqual(1, vm.Groups[0].Count);
     }
 
+    // The matcher splits a query on spaces into terms that must all match, so the box hands it a
+    // trimmed one rather than a stray trailing space that reads as an extra empty term.
     [TestMethod]
-    public async Task Filter_IsCaseInsensitiveAndIgnoresSurroundingSpace()
+    public async Task Filter_IgnoresSurroundingSpace()
     {
         var vm = await Loaded();
 
-        vm.SearchQuery = "  REPORT  ";
+        vm.SearchQuery = "  report  ";
+
+        CollectionAssert.AreEqual(new[] { "report.docx" }, vm.Groups[0].Items.Select(i => i.Name).ToList());
+    }
+
+    // fzf's own smart case, which is what every other box in this app does: a lower-case query ignores
+    // case, and typing a capital is how you ask for one.
+    [TestMethod]
+    public async Task Filter_LowerCaseQuery_IgnoresCase()
+    {
+        var vm = await Loaded();
+
+        vm.SearchQuery = "REPORT";
+        Assert.IsFalse(vm.Groups[0].HasMatches, "a capital in the query makes it case-sensitive");
+
+        vm.SearchQuery = "report";
+        CollectionAssert.AreEqual(new[] { "report.docx" }, vm.Groups[0].Items.Select(i => i.Name).ToList());
+    }
+
+    // The point of borrowing the index's own matcher rather than a substring test: a subsequence hits.
+    [TestMethod]
+    public async Task Filter_MatchesASubsequence()
+    {
+        var vm = await Loaded();
+
+        vm.SearchQuery = "rpt";
 
         CollectionAssert.AreEqual(new[] { "report.docx" }, vm.Groups[0].Items.Select(i => i.Name).ToList());
     }
