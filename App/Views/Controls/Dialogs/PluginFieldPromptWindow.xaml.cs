@@ -155,34 +155,12 @@ public partial class PluginFieldPromptWindow : Window
 
         var win = new PluginFieldPromptWindow(title, fieldViewModels);
 
-        // Same owner-resolution fallback chain as CustomMessageBox.ShowInternal: prefer the active
-        // window, then any visible window, then MainWindow, then just center on screen.
-        foreach (Window w in Application.Current!.Windows)
-        {
-            if (w.IsActive && w.IsVisible && w != win)
-            {
-                win.Owner = w;
-                break;
-            }
-        }
-        if (win.Owner == null)
-        {
-            foreach (Window w in Application.Current.Windows)
-            {
-                if (w.IsVisible && w != win)
-                {
-                    win.Owner = w;
-                    break;
-                }
-            }
-        }
-        if (win.Owner == null && Application.Current.MainWindow != null && Application.Current.MainWindow != win && Application.Current.MainWindow.IsVisible)
-        {
-            win.Owner = Application.Current.MainWindow;
-        }
+        win.Owner = OwnedDialog.ResolveOwner(win);
         win.WindowStartupLocation = win.Owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen;
 
-        win.ShowDialog();
+        // Not win.ShowDialog(): see OwnedDialog.ShowModal for what an owner closing underneath a modal
+        // dialog does to the rest of the app. _isSaved stays false, so this reads as a cancel.
+        OwnedDialog.ShowModal(win);
         if (!win._isSaved) return null;
 
         foreach (var vm in fieldViewModels)

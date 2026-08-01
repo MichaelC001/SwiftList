@@ -42,52 +42,18 @@ public static class CustomMessageBox
     {
         var win = new CustomMessageBoxWindow(messageBoxText, caption, button, icon);
 
-        // Set Owner to the specified window or attempt to find the active window
-        if (owner != null)
-        {
-            win.Owner = owner;
-        }
-        else if (Application.Current != null)
-        {
-            // Find active window or main window to act as owner
-            foreach (Window w in Application.Current.Windows)
-            {
-                if (w.IsActive && w.IsVisible && w != win)
-                {
-                    win.Owner = w;
-                    break;
-                }
-            }
+        // A caller-supplied owner is taken as given; otherwise the usual chain, declining to sit on
+        // another message box the way it always has.
+        win.Owner = owner ?? OwnedDialog.ResolveOwner(win, skip: w => w is CustomMessageBoxWindow);
 
-            if (win.Owner == null)
-            {
-                // Fallback to any visible window (excluding other messagebox windows)
-                foreach (Window w in Application.Current.Windows)
-                {
-                    if (w.IsVisible && w != win && w.GetType().Name != "CustomMessageBoxWindow")
-                    {
-                        win.Owner = w;
-                        break;
-                    }
-                }
-            }
+        win.WindowStartupLocation = win.Owner != null
+            ? WindowStartupLocation.CenterOwner
+            : WindowStartupLocation.CenterScreen;
 
-            if (win.Owner == null && Application.Current.MainWindow != null && Application.Current.MainWindow != win && Application.Current.MainWindow.IsVisible)
-            {
-                win.Owner = Application.Current.MainWindow;
-            }
-        }
-
-        if (win.Owner != null)
-        {
-            win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        }
-        else
-        {
-            win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        }
-
-        win.ShowDialog();
+        // Not win.ShowDialog(): an owner closing while this is up would otherwise take the dialog's
+        // window with it and leave the whole app frozen -- see OwnedDialog.ShowModal. Result stays
+        // None in that case, which is what every caller already reads a dismissed box as.
+        OwnedDialog.ShowModal(win);
         return win.Result;
     }
 }

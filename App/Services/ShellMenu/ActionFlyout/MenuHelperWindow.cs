@@ -1,9 +1,12 @@
 using System.Windows;
 
 using SwiftList.App.Services.Theme;
+using SwiftList.App.Views.Controls.Dialogs;
 namespace SwiftList.App.Services.ShellMenu.ActionFlyout;
 
-internal class MenuHelperWindow : Window
+// ITransientHostWindow: this exists to anchor a menu and dies with it, so no dialog may be owned to it
+// -- see the interface for what that costs when it happens.
+internal class MenuHelperWindow : Window, ITransientHostWindow
 {
     public MenuHelperWindow(double x, double y)
     {
