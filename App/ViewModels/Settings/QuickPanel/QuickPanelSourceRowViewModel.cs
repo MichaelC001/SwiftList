@@ -14,9 +14,9 @@ public sealed record QuickPanelSourceKindOption(QuickPanelSourceKind Value, stri
 /// </summary>
 public class QuickPanelSourceRowViewModel : ViewModelBase
 {
-    private readonly QuickPanelFolderSource? _folder;
+    private readonly QuickPanelFolderSource _folder;
 
-    private QuickPanelSourceRowViewModel(string id, string defaultName, QuickPanelFolderSource? folder)
+    private QuickPanelSourceRowViewModel(string id, string defaultName, QuickPanelFolderSource folder)
     {
         Id = id;
         DefaultName = defaultName;
@@ -34,13 +34,7 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
             _maxAgeMinutes = folder.MaxAgeMinutes,
         };
 
-    public static QuickPanelSourceRowViewModel ForBuiltIn(string id, string translationKey)
-        => new(id, TranslationManager.Instance[translationKey], null);
-
     public string Id { get; }
-
-    /// <summary>False for the built-in sources: no path to edit, no kind to choose, nothing to delete.</summary>
-    public bool IsFolderSource => _folder != null;
 
     /// <summary>What the group is called when the user has not renamed it.</summary>
     public string DefaultName { get; }

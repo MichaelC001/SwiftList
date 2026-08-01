@@ -27,12 +27,6 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
             Sources.Add(BuildRow(model, id));
 
         AddFolderCommand = new RelayCommand(AddFolder);
-        AddSystemRecentCommand = new RelayCommand(
-            () => AddBuiltIn(QuickPanelSourceIds.SystemRecent, "QuickPanel_SystemRecentName"),
-            () => !HasSource(QuickPanelSourceIds.SystemRecent));
-        AddFavoritesCommand = new RelayCommand(
-            () => AddBuiltIn(QuickPanelSourceIds.Favorites, "QuickPanel_FavoritesName"),
-            () => !HasSource(QuickPanelSourceIds.Favorites));
         RemoveSourceCommand = new RelayCommand<QuickPanelSourceRowViewModel>(RemoveSource);
         MoveUpCommand = new RelayCommand<QuickPanelSourceRowViewModel>(row => Move(row, -1));
         MoveDownCommand = new RelayCommand<QuickPanelSourceRowViewModel>(row => Move(row, +1));
@@ -91,8 +85,6 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
     public ObservableCollection<QuickPanelSourceRowViewModel> Sources { get; } = new();
 
     public ICommand AddFolderCommand { get; }
-    public ICommand AddSystemRecentCommand { get; }
-    public ICommand AddFavoritesCommand { get; }
 
     public ICommand RemoveSourceCommand { get; }
     public ICommand MoveUpCommand { get; }
@@ -112,10 +104,7 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
 
         // Rebuilt from the rows rather than patched: the list IS the order, and a folder removed here
         // has to leave Folders too.
-        _model.Folders = Sources.Where(r => r.IsFolderSource)
-            .Select(r => _model.Folders.First(f => f.Id == r.Id))
-            .ToList();
-        _model.BuiltInSources = Sources.Where(r => !r.IsFolderSource).Select(r => r.Id).ToList();
+        _model.Folders = Sources.Select(r => _model.Folders.First(f => f.Id == r.Id)).ToList();
         _model.GroupOrder = Sources.Select(r => r.Id).ToList();
         _model.DisabledGroupIds = Sources.Where(r => !r.IsVisible).Select(r => r.Id).ToList();
 
@@ -147,7 +136,7 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
 
         foreach (var path in dialog.FolderNames)
         {
-            if (Sources.Any(r => r.IsFolderSource && r.Path.Equals(path, StringComparison.OrdinalIgnoreCase)))
+            if (Sources.Any(r => r.Path.Equals(path, StringComparison.OrdinalIgnoreCase)))
                 continue;
             var folder = QuickPanelFolderSource.For(path);
             _model.Folders.Add(folder);
@@ -161,17 +150,6 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
             return;
         Sources.Remove(row);
         _model.Folders.RemoveAll(f => f.Id == row.Id);
-        _model.BuiltInSources.RemoveAll(id => id == row.Id);
-    }
-
-    // Adds one of the host's own sources, once. Already present means the button has nothing to do
-    // rather than a second identical group.
-    private void AddBuiltIn(string id, string translationKey)
-    {
-        if (Sources.Any(r => r.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
-            return;
-        _model.BuiltInSources.Add(id);
-        Sources.Add(QuickPanelSourceRowViewModel.ForBuiltIn(id, translationKey));
     }
 
     private void Move(QuickPanelSourceRowViewModel? row, int delta)
@@ -185,20 +163,13 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         Sources.Move(from, to);
     }
 
-    // Only what this workspace actually holds. The built-in sources used to be appended
-    // unconditionally and merely hidden when unwanted, which left no way to remove one.
-    private static IEnumerable<string> AvailableIds(QuickPanelTab model)
-        => model.Folders.Select(f => f.Id).Concat(model.BuiltInSources);
+    // Folders are the only kind of source this page knows about; anything else (favorites, the
+    // system's own recent list) will arrive as a plugin and register its own id here.
+    private static IEnumerable<string> AvailableIds(QuickPanelTab model) => model.Folders.Select(f => f.Id);
 
     private static QuickPanelSourceRowViewModel BuildRow(QuickPanelTab model, string id)
     {
-        var folder = model.Folders.FirstOrDefault(f => f.Id == id);
-        var row = folder != null
-            ? QuickPanelSourceRowViewModel.ForFolder(folder)
-            : QuickPanelSourceRowViewModel.ForBuiltIn(id, id == QuickPanelSourceIds.SystemRecent
-                ? "QuickPanel_SystemRecentName"
-                : "QuickPanel_FavoritesName");
-
+        var row = QuickPanelSourceRowViewModel.ForFolder(model.Folders.First(f => f.Id == id));
         row.IsVisible = !model.DisabledGroupIds.Contains(id, StringComparer.OrdinalIgnoreCase);
         if (model.GroupPreferences.TryGetValue(id, out var preference))
             row.DisplayName = preference.DisplayName;

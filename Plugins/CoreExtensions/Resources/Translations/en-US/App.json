@@ -54,8 +54,6 @@
   "QuickPanel_BlacklistTitle": "Quick panel only",
   "QuickPanel_BlacklistDesc": "Apps the panel stays out of, one process name per line. Added to the global hotkey blacklist rather than replacing it.",
   "QuickPanel_DefaultTabName": "(Default)",
-  "QuickPanel_SystemRecentName": "Windows recent files",
-  "QuickPanel_FavoritesName": "Favorites",
   "QuickPanel_Empty": "Nothing to show here yet",
   "QuickPanel_SortByName": "Sort by name",
   "QuickPanel_SortByModified": "Sort by date modified",

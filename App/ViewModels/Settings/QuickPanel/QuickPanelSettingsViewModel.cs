@@ -30,7 +30,7 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         SelectSubTabCommand = new RelayCommand<string>(tab => SelectedSubTab = tab ?? "Sources");
         AddTabCommand = new RelayCommand(AddTab);
         DuplicateTabCommand = new RelayCommand(DuplicateTab, () => SelectedTab != null);
-        RemoveTabCommand = new RelayCommand(RemoveTab, () => Tabs.Count > 1 && SelectedTab != null);
+        RemoveTabCommand = new RelayCommand(RemoveTab, () => SelectedTab != null);
         MoveTabUpCommand = new RelayCommand(() => MoveTab(-1), () => CanMoveTab(-1));
         MoveTabDownCommand = new RelayCommand(() => MoveTab(+1), () => CanMoveTab(+1));
 
@@ -46,11 +46,9 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         // them in place would make every change instantly live and survive Cancel. Save() puts the
         // working copies back, which is what makes this page stage like every other one.
         //
-        // A settings file edited by hand (or one from before this page existed) can have no tabs at all,
-        // and a panel with nowhere to put a source is not something the user can recover from here.
-        _models = panel.Tabs.Count > 0
-            ? panel.Tabs.Select(tab => tab.Clone()).ToList()
-            : new List<QuickPanelTab> { QuickPanelTab.CreateDefault() };
+        // No tabs is a state the user can reach by deleting the last one, so it is loaded as it is
+        // rather than quietly refilled with a default they would have to delete again.
+        _models = panel.Tabs.Select(tab => tab.Clone()).ToList();
         foreach (var model in _models)
             Tabs.Add(BindRow(new QuickPanelTabSettingsViewModel(model)));
 
@@ -200,16 +198,16 @@ public class QuickPanelSettingsViewModel : ViewModelBase
 
     private void RemoveTab() => RemoveTab(SelectedTab);
 
-    // The last workspace stays: a panel with nowhere to put a source is not a state the user can
-    // recover from on this page.
+    // The last workspace goes too: an empty list is a legitimate state (no panel content configured),
+    // and refusing to delete the final row to avoid it would be the page deciding for the user.
     private void RemoveTab(QuickPanelTabSettingsViewModel? tab)
     {
-        if (tab == null || Tabs.Count <= 1)
+        if (tab == null)
             return;
         var index = Tabs.IndexOf(tab);
         _models.RemoveAll(m => m.Id == tab.Id);
         Tabs.Remove(tab);
-        SelectedTab = Tabs[Math.Min(index, Tabs.Count - 1)];
+        SelectedTab = Tabs.Count > 0 ? Tabs[Math.Min(index, Tabs.Count - 1)] : null;
         OnPropertyChanged(nameof(HasMultipleTabs));
     }
 

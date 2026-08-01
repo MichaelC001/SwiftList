@@ -54,8 +54,6 @@
   "QuickPanel_BlacklistTitle": "クイックパネルのみ",
   "QuickPanel_BlacklistDesc": "パネルを開かないアプリを 1 行に 1 つのプロセス名で指定します。グローバルのホットキー ブラックリストを置き換えるのではなく、それに追加されます。",
   "QuickPanel_DefaultTabName": "(既定)",
-  "QuickPanel_SystemRecentName": "Windows の最近使った項目",
-  "QuickPanel_FavoritesName": "お気に入り",
   "QuickPanel_Empty": "表示できるものはまだありません",
   "QuickPanel_SortByName": "名前順に並べ替え",
   "QuickPanel_SortByModified": "更新日時順に並べ替え",

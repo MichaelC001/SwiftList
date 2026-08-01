@@ -53,28 +53,4 @@ public sealed class QuickPanelSourceLoaderTests
     public void Order_MaxItemsZero_KeepsEverything()
         => Assert.HasCount(3, QuickPanelSourceLoader.Order(Sample(), QuickPanelSourceKind.Launcher, maxItems: 0));
 
-    [TestMethod]
-    public void LoadFavorites_UsesTheConfiguredNameAndKeepsTheUsersOrder()
-    {
-        var settings = new UserSettings
-        {
-            Favorites =
-            {
-                new FavoriteItemSetting { Name = "Movies", Path = @"C:\Movies" },
-                new FavoriteItemSetting { Name = "", Path = @"C:\Movies\a.mp4" },
-                new FavoriteItemSetting { Name = "ignored", Path = "  " },
-            }
-        };
-
-        var favorites = QuickPanelSourceLoader.LoadFavorites(settings, maxItems: 0);
-
-        Assert.HasCount(2, favorites);
-        Assert.AreEqual("Movies", favorites[0].Name);
-        // An entry with no name of its own falls back to the file's own name.
-        Assert.AreEqual("a.mp4", favorites[1].Name);
-    }
-
-    [TestMethod]
-    public void SystemRecentPath_PointsAtWindowsOwnRecentFolder()
-        => Assert.EndsWith(@"Microsoft\Windows\Recent", QuickPanelSourceLoader.SystemRecentPath);
 }

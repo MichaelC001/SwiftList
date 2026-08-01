@@ -75,43 +75,12 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.IsFalse(saved.GroupPreferences.ContainsKey(doomed.Id), "a deleted source must not keep accumulating");
     }
 
-    // Built-in sources are added on demand and deleted like any other row -- they used to be present
-    // always and merely hideable, which left no way to get rid of one.
-    [TestMethod]
-    public void BuiltInSources_AreAbsentUntilAdded_AndRemovableAfterwards()
-    {
-        var settings = BuildSettings(@"C:\a");
-        var vm = new QuickPanelSettingsViewModel(settings);
-        var tab = vm.Tabs.Single();
-
-        Assert.IsEmpty(tab.Sources.Where(s => !s.IsFolderSource).ToList());
-        Assert.IsTrue(tab.AddFavoritesCommand.CanExecute(null));
-
-        tab.AddFavoritesCommand.Execute(null);
-        var favorites = tab.Sources.Single(s => !s.IsFolderSource);
-        Assert.AreEqual(QuickPanelSourceIds.Favorites, favorites.Id);
-        Assert.IsFalse(tab.AddFavoritesCommand.CanExecute(null), "already there, so the button has nothing to do");
-
-        vm.Save();
-        CollectionAssert.AreEqual(new[] { QuickPanelSourceIds.Favorites }, settings.QuickPanel.Tabs.Single().BuiltInSources);
-
-        tab.RemoveSourceCommand.Execute(favorites);
-        vm.Save();
-
-        Assert.IsEmpty(settings.QuickPanel.Tabs.Single().BuiltInSources);
-        Assert.IsTrue(tab.AddFavoritesCommand.CanExecute(null));
-    }
-
-    [TestMethod]
-    public void CreateDefault_HasNoBuiltInSources()
-        => Assert.IsEmpty(QuickPanelTab.CreateDefault().BuiltInSources);
-
     [TestMethod]
     public void Save_FolderFields_RoundTrip()
     {
         var settings = BuildSettings(@"C:\a");
         var vm = new QuickPanelSettingsViewModel(settings);
-        var row = vm.Tabs.Single().Sources.First(s => s.IsFolderSource);
+        var row = vm.Tabs.Single().Sources.First();
         row.Kind = QuickPanelSourceKind.Launcher;
         row.Recursive = true;
         row.FilterPattern = " *.exe;*.lnk ";
@@ -189,7 +158,7 @@ public sealed class QuickPanelSettingsViewModelTests
     {
         var settings = BuildSettings(@"C:\a");
         var vm = new QuickPanelSettingsViewModel(settings);
-        var row = vm.Tabs.Single().Sources.First(s => s.IsFolderSource);
+        var row = vm.Tabs.Single().Sources.First();
 
         var values = row.KindOptions.Select(o => o.Value).ToList();
 
@@ -220,8 +189,8 @@ public sealed class QuickPanelSettingsViewModelTests
         var tab = vm.Tabs.Single();
         tab.Name = "renamed";
         tab.Enabled = false;
-        tab.Sources.First(s => s.IsFolderSource).DisplayName = "素材";
-        tab.RemoveSourceCommand.Execute(tab.Sources.First(s => s.IsFolderSource));
+        tab.Sources.First().DisplayName = "素材";
+        tab.RemoveSourceCommand.Execute(tab.Sources.First());
         vm.AddTabCommand.Execute(null);
 
         var live = settings.QuickPanel.Tabs.Single();
@@ -239,14 +208,19 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.HasCount(1, settings.QuickPanel.Tabs[0].Folders);
     }
 
+    // Deleting the last workspace is allowed: an empty list is a legitimate state, and refusing it to
+    // avoid one would be the page deciding for the user.
     [TestMethod]
-    public void RemoveTab_LastRemainingTab_IsKept()
+    public void RemoveTab_LastRemainingTab_IsRemoved()
     {
         var settings = BuildSettings(@"C:\a");
         var vm = new QuickPanelSettingsViewModel(settings);
 
         vm.RemoveTabCommand.Execute(null);
+        vm.Save();
 
-        Assert.HasCount(1, vm.Tabs);
+        Assert.IsEmpty(vm.Tabs);
+        Assert.IsNull(vm.SelectedTab);
+        Assert.IsEmpty(settings.QuickPanel.Tabs);
     }
 }

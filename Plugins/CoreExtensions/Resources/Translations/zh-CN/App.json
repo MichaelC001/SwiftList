@@ -54,8 +54,6 @@
   "QuickPanel_BlacklistTitle": "仅快速面板",
   "QuickPanel_BlacklistDesc": "面板不在这些应用上打开,每行一个进程名。该名单是在全局快捷键黑名单之上追加,而不是取代它。",
   "QuickPanel_DefaultTabName": "(默认)",
-  "QuickPanel_SystemRecentName": "Windows 最近使用",
-  "QuickPanel_FavoritesName": "收藏",
   "QuickPanel_Empty": "这里还没有内容",
   "QuickPanel_SortByName": "按名称排序",
   "QuickPanel_SortByModified": "按修改时间排序",

@@ -54,8 +54,6 @@
   "QuickPanel_BlacklistTitle": "Solo el panel rápido",
   "QuickPanel_BlacklistDesc": "Aplicaciones sobre las que el panel no se abre, un nombre de proceso por línea. Se añade a la lista negra global de atajos en lugar de sustituirla.",
   "QuickPanel_DefaultTabName": "(Predeterminado)",
-  "QuickPanel_SystemRecentName": "Archivos recientes de Windows",
-  "QuickPanel_FavoritesName": "Favoritos",
   "QuickPanel_Empty": "Aquí todavía no hay nada",
   "QuickPanel_SortByName": "Ordenar por nombre",
   "QuickPanel_SortByModified": "Ordenar por fecha de modificación",

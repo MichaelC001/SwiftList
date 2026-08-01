@@ -6,6 +6,7 @@
              xmlns:services="clr-namespace:SwiftList.App.Services"
              xmlns:local="clr-namespace:SwiftList.App.Views.Settings.QuickPanel"
              xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
+             xmlns:conv="clr-namespace:SwiftList.App.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="760">
     <!-- Workspaces on the left, the selected one on the right. Two panes rather than a dropdown above
@@ -17,6 +18,8 @@
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SearchWindow.xaml"/>
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <conv:NullToVisibilityConverter x:Key="NullToVis"/>
 
             <!-- Themed rather than the stock ListBoxItem, whose selection is a flat system-blue block
                  that ignores the app's palette entirely. Same rounded/accent-bar shape the plugin list
@@ -172,7 +175,10 @@
                     <!-- Deliberately NOT DataContext="{Binding SelectedTab}": the sub-tab state below
                          lives on this page's own view model, so the pane keeps it and reaches the
                          selected workspace through SelectedTab. -->
-                    <DockPanel Grid.Column="1">
+                    <!-- Gone entirely when no workspace is selected, which is what deleting the last
+                         one leaves: a name box and a source list belonging to nothing is worse than an
+                         empty pane. Same treatment the plugin array editor gives its detail panel. -->
+                    <DockPanel Grid.Column="1" Visibility="{Binding SelectedTab, Converter={StaticResource NullToVis}}">
                         <StackPanel DockPanel.Dock="Top">
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_WorkspaceName]}"
                                        Margin="0,0,0,4"/>

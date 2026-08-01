@@ -10,10 +10,6 @@ namespace SwiftList.Core.Services.QuickPanel;
 /// </summary>
 public static class QuickPanelSourceLoader
 {
-    /// <summary>Where Windows keeps its own recent-documents shortcuts.</summary>
-    public static string SystemRecentPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Windows", "Recent");
-
     public static async Task<List<SearchResult>> LoadAsync(QuickPanelFolderSource source, CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(source.Path))
@@ -33,34 +29,6 @@ public static class QuickPanelSourceLoader
         await IndexedDirectoryEnumerator.EnumerateAsync(source.Path, source.Recursive, source.FilterPattern,
             result => results.Add(result), limit: 0, token).ConfigureAwait(false);
         return Order(results, source.Kind, source.MaxItems);
-    }
-
-    /// <summary>
-    /// Windows' own recent-documents list: the shortcuts in that folder, newest first. Left as the
-    /// shortcuts they are rather than resolved to their targets -- opening one does the same thing, and
-    /// a resolve is a disk read per entry for a list that exists to be cheap.
-    /// </summary>
-    public static Task<List<SearchResult>> LoadSystemRecentAsync(int maxItems, CancellationToken token = default)
-        => LoadAsync(new QuickPanelFolderSource
-        {
-            Path = SystemRecentPath,
-            Kind = QuickPanelSourceKind.AllByModified,
-            FilterPattern = "*.lnk",
-            MaxItems = maxItems,
-        }, token);
-
-    /// <summary>The user's favorites, in the order they arranged them. No index involved: it is a list they wrote.</summary>
-    public static List<SearchResult> LoadFavorites(UserSettings settings, int maxItems)
-    {
-        var favorites = settings.Favorites
-            .Where(f => !string.IsNullOrWhiteSpace(f.Path))
-            .Select(f => new SearchResult
-            {
-                Name = string.IsNullOrWhiteSpace(f.Name) ? Path.GetFileName(f.Path.TrimEnd(Path.DirectorySeparatorChar)) : f.Name,
-                Path = f.Path,
-                IsDir = Directory.Exists(f.Path),
-            });
-        return (maxItems > 0 ? favorites.Take(maxItems) : favorites).ToList();
     }
 
     /// <summary>

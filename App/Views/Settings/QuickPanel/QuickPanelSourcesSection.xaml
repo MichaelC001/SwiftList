@@ -70,7 +70,7 @@
                                        VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding Path}"
                                        Foreground="{DynamicResource TextSecondary}"
-                                       Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"/>
+/>
 
                             <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Content="&#xE70E;"
@@ -90,7 +90,7 @@
                                 <Button Command="{Binding ToggleOptionsCommand}"
                                         Style="{StaticResource RuleIconButton}"
                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceOptionsTooltip]}"
-                                        Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
+>
                                     <Button.Content>
                                         <TextBlock Text="&#xE712;">
                                             <TextBlock.Style>
@@ -113,19 +113,15 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Only a folder source has any of this, and only when asked for. -->
+                        <!-- Shown only when the row is opened. -->
                         <Grid Margin="34,8,0,6">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding IsExpanded}" Value="True"/>
-                                                <Condition Binding="{Binding IsFolderSource}" Value="True"/>
-                                            </MultiDataTrigger.Conditions>
+                                        <DataTrigger Binding="{Binding IsExpanded}" Value="True">
                                             <Setter Property="Visibility" Value="Visible"/>
-                                        </MultiDataTrigger>
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
@@ -191,17 +187,6 @@
 
     <StackPanel>
         <DockPanel Margin="0,0,0,4">
-            <!-- The two host-provided sources are added on demand, beside the folder button, and
-                 deleted like any other row: a workspace that has no use for one should be able to get
-                 rid of it rather than only hide it. Each button goes quiet once its source is in. -->
-            <Button DockPanel.Dock="Right" Margin="6,0,0,0"
-                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FavoritesName]}"
-                    Style="{StaticResource SettingsButton}"
-                    Command="{Binding AddFavoritesCommand}"/>
-            <Button DockPanel.Dock="Right" Margin="6,0,0,0"
-                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SystemRecentName]}"
-                    Style="{StaticResource SettingsButton}"
-                    Command="{Binding AddSystemRecentCommand}"/>
             <Button DockPanel.Dock="Right"
                     Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AddFolder]}"
                     Style="{StaticResource PrimarySettingsButton}"

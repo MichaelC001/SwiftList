@@ -54,8 +54,6 @@
   "QuickPanel_BlacklistTitle": "僅快速面板",
   "QuickPanel_BlacklistDesc": "面板不會在這些應用程式上開啟,每行一個處理程序名稱。此清單是在全域快速鍵黑名單之上追加,而非取代。",
   "QuickPanel_DefaultTabName": "(預設)",
-  "QuickPanel_SystemRecentName": "Windows 最近使用",
-  "QuickPanel_FavoritesName": "我的最愛",
   "QuickPanel_Empty": "這裡還沒有內容",
   "QuickPanel_SortByName": "按名稱排序",
   "QuickPanel_SortByModified": "按修改時間排序",

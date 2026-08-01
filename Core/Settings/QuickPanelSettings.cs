@@ -22,18 +22,6 @@ public enum QuickPanelSourceKind
 }
 
 /// <summary>
-/// Group ids for the sources the host provides itself. A folder source is identified by its own
-/// <see cref="QuickPanelFolderSource.Id"/> instead, and a future plugin source would use its component
-/// id -- all three kinds share one id space, which is what lets order, visibility and per-group display
-/// preferences be stored one way for all of them.
-/// </summary>
-public static class QuickPanelSourceIds
-{
-    public const string SystemRecent = "__builtin::SystemRecent";
-    public const string Favorites = "__builtin::Favorites";
-}
-
-/// <summary>
 /// Backs the quick panel: the floating panel docked over whatever window is in front. Each tab is a
 /// workspace -- its own sources, its own order, its own display preferences -- and the panel shows one
 /// tab at a time.
@@ -84,17 +72,10 @@ public class QuickPanelTab
     public List<QuickPanelFolderSource> Folders { get; set; } = new();
 
     /// <summary>
-    /// Which host-provided sources this workspace includes, by id (see <see cref="QuickPanelSourceIds"/>).
-    /// Listed rather than always present: a workspace that has no use for the system's recent documents
-    /// should be able to remove that group outright, not only hide it, and a new workspace starts with
-    /// only what the user adds.
-    /// </summary>
-    public List<string> BuiltInSources { get; set; } = new();
-
-    /// <summary>
     /// Display order, most-preferred first, over every kind of source at once. An id that isn't listed
     /// (a folder just added, a plugin source that appeared) keeps its discovery-order position after
-    /// everything listed -- same rule as <see cref="StartupPanelSettings.TabOrder"/>.
+    /// everything listed -- same rule as <see cref="StartupPanelSettings.TabOrder"/>. Plugin-provided
+    /// sources will share this id space when they arrive; folder sources use their own Id today.
     /// </summary>
     public List<string> GroupOrder { get; set; } = new();
 
@@ -141,7 +122,6 @@ public class QuickPanelTab
         Name = Name,
         Enabled = Enabled,
         Processes = new List<string>(Processes),
-        BuiltInSources = new List<string>(BuiltInSources),
         Folders = Folders.Select(f => new QuickPanelFolderSource
         {
             Id = f.Id,
