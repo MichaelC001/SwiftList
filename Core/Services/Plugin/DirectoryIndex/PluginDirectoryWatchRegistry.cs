@@ -60,6 +60,26 @@ internal sealed class PluginDirectoryWatchRegistry
 {
     private readonly ConcurrentDictionary<string, List<MonitoredDir>> _registrations = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, List<FileSystemWatcher>> _watchers = new(StringComparer.OrdinalIgnoreCase);
+    // Every "this changed" from either a watcher below or an index goes through here, so a burst becomes
+    // one notification and it lands after the index has caught up rather than before.
+    private readonly PluginDirectoryChangeNotifier _notifier;
+
+    public PluginDirectoryWatchRegistry() => _notifier = new PluginDirectoryChangeNotifier(AllRegistrations);
+
+    /// <summary>Every (plugin, directory) pair currently registered -- what the notifier matches a changed source against.</summary>
+    public IReadOnlyList<(string PluginId, string Path)> AllRegistrations()
+    {
+        var all = new List<(string, string)>();
+        foreach (var (pluginId, dirs) in _registrations)
+        {
+            lock (dirs)
+            {
+                foreach (var dir in dirs)
+                    all.Add((pluginId, dir.Path));
+            }
+        }
+        return all;
+    }
 
     public void RegisterDirectory(string pluginId, string directoryPath, bool recursive, string filterPattern)
     {
@@ -81,6 +101,8 @@ internal sealed class PluginDirectoryWatchRegistry
 
                 // Set up FileSystemWatcher for monitoring changes and alerting the plugin via SDK event
                 CreateWatcher(pluginId, fullPath, recursive, filterPattern);
+                // Only worth listening to the indexes once somebody has a directory in them.
+                _notifier.EnsureIndexSubscriptions();
             }
         }
     }
@@ -100,6 +122,8 @@ internal sealed class PluginDirectoryWatchRegistry
                 }
             }
             Logger.Log($"[IndexManager] Unregistered all directories for plugin '{pluginId}'.");
+            if (_registrations.IsEmpty)
+                _notifier.StopIndexSubscriptions();
         }
     }
 
@@ -139,8 +163,11 @@ internal sealed class PluginDirectoryWatchRegistry
                 watcher.Filters.Add(pattern);
             }
 
-            FileSystemEventHandler handler = (s, e) => PluginSdk.Services.DirectoryIndexerService.NotifyDirectoryChanged(pluginId);
-            RenamedEventHandler renamedHandler = (s, e) => PluginSdk.Services.DirectoryIndexerService.NotifyDirectoryChanged(pluginId);
+            // Reported, not notified: a single file write raises several events on its own, and a bulk
+            // copy raises thousands -- each of which used to invalidate the plugin's item cache and buy
+            // a full re-listing of every directory it registered.
+            FileSystemEventHandler handler = (s, e) => _notifier.Report(pluginId);
+            RenamedEventHandler renamedHandler = (s, e) => _notifier.Report(pluginId);
 
             watcher.Created += handler;
             watcher.Deleted += handler;
@@ -201,7 +228,7 @@ internal sealed class PluginDirectoryWatchRegistry
             {
                 Logger.Log($"[IndexManager] Directory '{fullPath}' resolved back online. Re-creating FileSystemWatcher.");
                 CreateWatcher(pluginId, fullPath, recursive, filterPattern);
-                PluginSdk.Services.DirectoryIndexerService.NotifyDirectoryChanged(pluginId); // Force load newly connected drive contents
+                _notifier.Report(pluginId); // Force load newly connected drive contents
                 return;
             }
         }
