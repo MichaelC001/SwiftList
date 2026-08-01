@@ -74,6 +74,7 @@ public sealed class PipeResponseBinarySerializerTests
                     State = "ready",
                     Files = 5000,
                     Dirs = 200,
+                    Revision = 1234567890123,
                     CachePath = @"c:\cache\c.idx"
                 }
             }
@@ -89,6 +90,10 @@ public sealed class PipeResponseBinarySerializerTests
         Assert.AreEqual("LocalNtfs", drive.Kind);
         Assert.AreEqual(5000, drive.Files);
         Assert.AreEqual(@"c:\cache\c.idx", drive.CachePath);
+        // Written between Dirs and CachePath, so a wrong size or a missed read would corrupt the path
+        // that follows rather than only this field. It is also the whole point of the status for a
+        // change subscriber: a drive whose revision moved is a drive whose index moved.
+        Assert.AreEqual(1234567890123L, drive.Revision);
     }
 
     [TestMethod]

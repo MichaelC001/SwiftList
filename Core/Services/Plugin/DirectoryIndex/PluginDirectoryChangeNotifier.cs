@@ -20,9 +20,10 @@ namespace SwiftList.Core.Services.Plugin.DirectoryIndex;
 /// (buffer overflow, share disconnected), which today is only noticed on its next reconnect.
 /// </para>
 /// <para>
-/// The watcher half stays because it is the only signal for a directory no index covers, and the only
-/// one that sees a pure content edit at all: the index-side signal is derived from a source's entry
-/// counts, which a modified file does not change.
+/// The watcher half stays because it is the only signal for a directory no index covers -- a drive
+/// indexing is off for, an unconfigured share, a path that does not exist yet. Everywhere else the
+/// index sees every kind of change, edits to a file's contents included: those refresh its size and
+/// timestamps (see UsnIndexerExtensions' metadata pass) and bump the drive's revision like any other.
 /// </para>
 /// </summary>
 internal sealed class PluginDirectoryChangeNotifier : IDisposable
@@ -35,7 +36,7 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
 
     private readonly KeyedDebouncer<string> _debouncer = new(QuietPeriodMs, StringComparer.OrdinalIgnoreCase);
     private readonly Func<IReadOnlyList<(string PluginId, string Path)>> _registrations;
-    private readonly Dictionary<string, (int Files, int Dirs)> _lastLocalCounts = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _lastLocalRevisions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private CancellationTokenSource? _localStatusCts;
     private bool _subscribedToNetwork;
@@ -84,7 +85,7 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
             _localStatusCts?.Cancel();
             _localStatusCts?.Dispose();
             _localStatusCts = null;
-            _lastLocalCounts.Clear();
+            _lastLocalRevisions.Clear();
         }
     }
 
@@ -94,10 +95,11 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
             ReportSource(status.Drive);
     }
 
-    // The elevated service publishes a status update after every applied USN batch (see
-    // UsnIndexerExtensions.ApplyUsnRecords), which is the only signal this process gets that a local
-    // drive's index moved. Which drive moved is read from its entry counts changing -- the status
-    // carries no change list, and asking for one would mean a second, far chattier subscription.
+    // The elevated service publishes a status update after every applied change batch (see
+    // UsnIndexerExtensions.ApplyUsnRecords/ApplyFolderChange), which is the only signal this process
+    // gets that a local drive's index moved. Which drive moved is read from its revision, bumped by
+    // exactly those two -- the status carries no change list, and asking for one would mean a second,
+    // far chattier subscription for something no caller here needs.
     private async Task WatchLocalIndexAsync(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
@@ -137,14 +139,13 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
         {
             if (string.IsNullOrEmpty(drive.Drive))
                 continue;
-            var counts = (drive.Files, drive.Dirs);
             lock (_gate)
             {
                 // First sight of a drive is not a change: it is this subscription starting up, and
                 // re-listing every plugin's directories for that would be a refresh nobody asked for.
-                var known = _lastLocalCounts.TryGetValue(drive.Drive, out var previous);
-                _lastLocalCounts[drive.Drive] = counts;
-                if (!known || previous == counts)
+                var known = _lastLocalRevisions.TryGetValue(drive.Drive, out var previous);
+                _lastLocalRevisions[drive.Drive] = drive.Revision;
+                if (!known || previous == drive.Revision)
                     continue;
             }
             ReportSource(drive.Drive);

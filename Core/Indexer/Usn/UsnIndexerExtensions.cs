@@ -95,6 +95,7 @@ public static class UsnIndexerExtensions
         {
             indexer.UpdateTotalsFromRuntime();
             indexer.UpdateDriveCounts(drive);
+            indexer.BumpDriveRevision(drive);
         }
         SearchCoordinator.ClearCaches();
 
@@ -201,6 +202,7 @@ public static class UsnIndexerExtensions
         {
             indexer.UpdateTotalsFromRuntime();
             indexer.UpdateDriveCounts(drive);
+            indexer.BumpDriveRevision(drive);
             isRebuilding = MarkMissedIfRebuilding(indexer, drive);
         }
         SearchCoordinator.ClearCaches();

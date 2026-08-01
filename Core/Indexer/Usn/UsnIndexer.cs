@@ -30,6 +30,11 @@ public class UsnIndexer : IDisposable
         public int Files { get; set; }
         public int Dirs { get; set; }
         public string CachePath { get; set; } = string.Empty;
+        // Bumped once per applied change batch on this drive, so a subscriber can tell "this drive's
+        // index just moved" from "this status arrived for some other reason". Files/Dirs cannot answer
+        // that: editing a file in place changes its size and timestamps in the index without changing
+        // either count. Monotonic per process, meaningless across restarts -- only differences matter.
+        public long Revision { get; set; }
     }
 
     internal readonly object _lockObj = new();
@@ -201,6 +206,15 @@ public class UsnIndexer : IDisposable
     // monitor (still alive throughout, by design -- see DriveMonitorFactory) would otherwise overwrite the
     // in-progress scan's own reported progress with the stale old index's total and flip the row back to
     // "ready" early -- the exact up/down flicker this guard exists to prevent.
+    // Records that this drive's index just took a batch of changes -- every kind of change, including
+    // ones that leave the entry counts untouched. Caller holds LockObj.
+    internal void BumpDriveRevision(string drive)
+    {
+        var item = Status.Drives.FirstOrDefault(d => d.Drive.Equals(drive, StringComparison.OrdinalIgnoreCase));
+        if (item != null)
+            item.Revision++;
+    }
+
     internal void UpdateDriveCounts(string drive, bool markReady = false)
     {
         var item = Status.Drives.FirstOrDefault(d => d.Drive.Equals(drive, StringComparison.OrdinalIgnoreCase));
@@ -250,7 +264,8 @@ public class UsnIndexer : IDisposable
                     State = d.State,
                     Files = d.Files,
                     Dirs = d.Dirs,
-                    CachePath = d.CachePath
+                    CachePath = d.CachePath,
+                    Revision = d.Revision
                 }).ToList()
             };
         }
