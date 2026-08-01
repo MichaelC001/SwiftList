@@ -98,7 +98,26 @@ public sealed class QuickPanelManager : IDisposable
         }
     }
 
+    private bool _showing;
+
     private async void Show(IntPtr host, string? process)
+    {
+        // Show awaits a real load, and the hotkey that got here can be pressed again while it does --
+        // at which point Toggle still sees a window that is not visible yet and starts a second one.
+        // Two loads racing into the same collections is not a state worth reasoning about.
+        if (_showing) return;
+        _showing = true;
+        try
+        {
+            await ShowCoreAsync(host, process);
+        }
+        finally
+        {
+            _showing = false;
+        }
+    }
+
+    private async Task ShowCoreAsync(IntPtr host, string? process)
     {
         _viewModel ??= new QuickPanelViewModel();
 
@@ -177,7 +196,13 @@ public sealed class QuickPanelManager : IDisposable
         // empty in front of the user on the way out. Everything it shows is loaded fresh on the next
         // open anyway, so holding the last workspace's groups behind a hidden window buys nothing and
         // costs a frame of the wrong content if anything renders before that load lands.
-        _viewModel?.Clear();
+        //
+        // Only if it is still gone. Window.Hide() pumps, so a hotkey press queued behind it can run an
+        // entire Show -- awaits included -- before this line is reached, and clearing then empties a
+        // panel that is on screen and freshly loaded. That is the "no tabs, nothing to show" state that
+        // turned up over a window the user had just clicked back into.
+        if (_window is { IsVisible: false })
+            _viewModel?.Clear();
     }
 
     /// <summary>Docks the panel inside the host window's bottom-right corner.</summary>
