@@ -6,6 +6,7 @@
   "Plugin_ShellGroup": "快捷選單",
   "StartupPanel_TabHistory": "瀏覽紀錄",
   "StartupPanel_TabFavorites": "我的最愛",
+  "QuickPanel_SourceWindowsRecent": "Windows 歷史記錄",
   "Filter_SizeHeader": "檔案大小",
   "Filter_SizeHuge": "超大檔案 (> 100MB)",
   "Filter_SizeMedium": "中等檔案 (1MB - 100MB)",
@@ -181,6 +182,7 @@
   "Plugins_TypeThumbnailProvider": "縮圖提供者",
   "Plugins_TypeQueryTokenProvider": "查詢修飾詞",
   "Plugins_TypeStartupPanelTabProvider": "起始面板分頁",
+  "Plugins_TypeQuickPanelSourceProvider": "快速面板來源",
   "Plugins_TypeDesc_ISearchResultAction": "搜尋結果動作：對選取的檔案或目錄執行複製、開啟、命令列執行等操作。",
   "Plugins_TypeDesc_IInstantResultProvider": "即時結果提供器：在搜尋框中即時計算並呈現計算結果、快捷設定或暫時性操作。",
   "Plugins_TypeDesc_ISearchableItemProvider": "搜尋來源提供器：為應用程式的主搜尋索引提供待搜尋的檔案、設定項目或程式資料。",
@@ -195,6 +197,7 @@
   "Plugins_TypeDesc_IResultColumnProvider": "結果欄位提供器：為搜尋結果清單新增自訂的資料顯示欄位（如檔案大小、自訂資訊）。",
   "Plugins_TypeDesc_ISidebarFilterProvider": "側邊欄篩選器提供器：在搜尋主視窗的側邊欄新增分類或篩選條件面板。",
   "Plugins_TypeDesc_IStartupPanelTabProvider": "起始面板分頁提供器：在沒有輸入關鍵字時的起始視窗中顯示瀏覽紀錄或捷徑資料夾分頁。",
+  "Plugins_TypeDesc_IQuickPanelSourceProvider": "向快速面板提供一個來源,顯示為其中一個分組",
   "Plugins_TypeDesc_IFileDialogAdapter": "檔案對話方塊配接器：為系統的開啟/儲存檔案對話方塊提供底層的接管與強化功能。",
   "Plugins_TypeDesc_IAliasProvider": "別名提供器：為搜尋項目產生別名（如拼音首字母或自訂別名）以加快非 ASCII 文字的搜尋。",
   "Plugins_TypeDesc_IDynamicActionProvider": "動態動作提供器：在搜尋結果右鍵選單中動態載入第三方選單或操作項目。"

@@ -4,6 +4,7 @@
   "Plugin_ShellGroup": "Menú Contextual",
   "StartupPanel_TabHistory": "Historial",
   "StartupPanel_TabFavorites": "Favoritos",
+  "QuickPanel_SourceWindowsRecent": "Elementos recientes de Windows",
   "Filter_SizeHeader": "Tamaño de Archivo",
   "Filter_SizeHuge": "Enorme (> 100 MB)",
   "Filter_SizeMedium": "Mediano (1 MB - 100 MB)",
@@ -181,6 +182,7 @@
   "Plugins_TypeThumbnailProvider": "Proveedor de Miniaturas",
   "Plugins_TypeQueryTokenProvider": "Modificador de Consulta",
   "Plugins_TypeStartupPanelTabProvider": "Pestañas del Panel de Inicio",
+  "Plugins_TypeQuickPanelSourceProvider": "Fuentes del Panel Rápido",
   "Plugins_TypeDesc_ISearchResultAction": "Acción de resultado de búsqueda: realiza operaciones de copia, apertura, ejecución de línea de comandos, etc. sobre los archivos o carpetas seleccionados.",
   "Plugins_TypeDesc_IInstantResultProvider": "Proveedor de resultados instantáneos: calcula y presenta resultados o configuraciones del cuadro de búsqueda en tiempo real.",
   "Plugins_TypeDesc_ISearchableItemProvider": "Proveedor de elementos buscables: proporciona archivos, configuraciones o datos de programas buscables para el índice de búsqueda principal.",
@@ -195,6 +197,7 @@
   "Plugins_TypeDesc_IResultColumnProvider": "Proveedor de columnas de resultado: añade columnas de información adicional (por ejemplo, tamaño de archivo) a la lista de resultados de búsqueda.",
   "Plugins_TypeDesc_ISidebarFilterProvider": "Proveedor de filtros de barra lateral: inyecta paneles de filtro (categorías, condiciones) en la barra lateral.",
   "Plugins_TypeDesc_IStartupPanelTabProvider": "Proveedor de pestañas del panel de inicio: rellena entradas recientes o listas de carpetas cuando la consulta de búsqueda está vacía.",
+  "Plugins_TypeDesc_IQuickPanelSourceProvider": "Aporta una fuente al Panel Rápido, mostrada como uno de sus grupos",
   "Plugins_TypeDesc_IFileDialogAdapter": "Adaptador de cuadro de diálogo de archivos: intercepta y mejora los cuadros de diálogo para abrir/guardar archivos.",
   "Plugins_TypeDesc_IAliasProvider": "Proveedor de alias: genera automáticamente alias por pinyin/personalizados para optimizar la búsqueda en texto no ASCII.",
   "Plugins_TypeDesc_IDynamicActionProvider": "Proveedor de acciones dinámicas: inyecta menús dinámicos del shell de Windows o acciones personalizadas en el menú contextual."

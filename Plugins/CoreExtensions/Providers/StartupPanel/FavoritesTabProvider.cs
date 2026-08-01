@@ -1,4 +1,4 @@
-using SwiftList.PluginSdk.Abstractions;
+﻿using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
 
@@ -20,7 +20,7 @@ public class FavoritesTabProvider : IStartupPanelTabProvider
             if (cancellationToken.IsCancellationRequested) yield break;
             if (string.IsNullOrWhiteSpace(favorite.Path)) continue;
 
-            yield return new StartupPanelResultItem(favorite.Path, favorite.Name);
+            yield return new PanelResultItem(favorite.Path, favorite.Name);
         }
 
         await Task.CompletedTask;

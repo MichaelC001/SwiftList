@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
@@ -31,7 +31,7 @@ public class HistoryTabProvider : IStartupPanelTabProvider
             if (!isApplication && !File.Exists(entry.Path) && !Directory.Exists(entry.Path)) continue;
 
             yielded++;
-            yield return new StartupPanelResultItem(entry.Path, isApplication: isApplication);
+            yield return new PanelResultItem(entry.Path, isApplication: isApplication);
         }
 
         await Task.CompletedTask;

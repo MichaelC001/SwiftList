@@ -1,14 +1,14 @@
-using SwiftList.Plugins.CoreExtensions.Providers.StartupPanel;
+﻿using SwiftList.Plugins.CoreExtensions.Providers;
 
-namespace SwiftList.Plugins.CoreExtensions.Tests.Providers.StartupPanel;
+namespace SwiftList.Plugins.CoreExtensions.Tests.Providers;
 
 [TestClass]
-public sealed class StartupPanelResultItemTests
+public sealed class PanelResultItemTests
 {
     [TestMethod]
     public void Constructor_RegularFilePath_DerivesNameFromFileName()
     {
-        var item = new StartupPanelResultItem(@"C:\Projects\readme.txt");
+        var item = new PanelResultItem(@"C:\Projects\readme.txt");
 
         Assert.AreEqual("readme.txt", item.Name);
         Assert.AreEqual(@"C:\Projects\readme.txt", item.FullPath);
@@ -18,7 +18,7 @@ public sealed class StartupPanelResultItemTests
     [TestMethod]
     public void Constructor_ExplicitDisplayName_OverridesDerivedName()
     {
-        var item = new StartupPanelResultItem(@"C:\Projects\readme.txt", displayName: "My Readme");
+        var item = new PanelResultItem(@"C:\Projects\readme.txt", displayName: "My Readme");
 
         Assert.AreEqual("My Readme", item.Name);
     }
@@ -26,7 +26,7 @@ public sealed class StartupPanelResultItemTests
     [TestMethod]
     public void Constructor_ApplicationLnkPath_StripsLnkExtension()
     {
-        var item = new StartupPanelResultItem(@"C:\Start Menu\MyApp.lnk", isApplication: true);
+        var item = new PanelResultItem(@"C:\Start Menu\MyApp.lnk", isApplication: true);
 
         Assert.AreEqual("MyApp", item.Name);
         Assert.IsTrue(item.IsApplication);
@@ -35,7 +35,7 @@ public sealed class StartupPanelResultItemTests
     [TestMethod]
     public void Constructor_NonLnkApplicationPath_KeepsFullFileName()
     {
-        var item = new StartupPanelResultItem(@"C:\WindowsApps\App\App.exe", isApplication: true);
+        var item = new PanelResultItem(@"C:\WindowsApps\App\App.exe", isApplication: true);
 
         Assert.AreEqual("App.exe", item.Name);
     }
@@ -45,7 +45,7 @@ public sealed class StartupPanelResultItemTests
     {
         using var dir = new TempDirectory();
 
-        var item = new StartupPanelResultItem(dir.Path);
+        var item = new PanelResultItem(dir.Path);
 
         Assert.IsTrue(item.IsDir);
         Assert.AreEqual(dir.Path, item.ContextDirectory);
@@ -54,7 +54,7 @@ public sealed class StartupPanelResultItemTests
     [TestMethod]
     public void Constructor_FilePath_ContextDirectoryIsParent()
     {
-        var item = new StartupPanelResultItem(@"C:\Projects\readme.txt");
+        var item = new PanelResultItem(@"C:\Projects\readme.txt");
 
         Assert.AreEqual(@"C:\Projects", item.ContextDirectory);
     }
@@ -66,7 +66,7 @@ public sealed class StartupPanelResultItemTests
         // (or a real exe path) is never itself "browsable" the way a folder result is.
         using var dir = new TempDirectory();
 
-        var item = new StartupPanelResultItem(dir.Path, isApplication: true);
+        var item = new PanelResultItem(dir.Path, isApplication: true);
 
         Assert.IsFalse(item.IsDir);
     }

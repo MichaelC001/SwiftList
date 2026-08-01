@@ -280,7 +280,9 @@ internal sealed class PluginTabSource : ITabSource
                     break;
                 }
 
-                yield return MapToUiResult(current, index);
+                // Shared with the quick panel, which shows the same plugins' entries: see
+                // PluginResultMapper for why the mapping lives outside this class.
+                yield return PluginResultMapper.ToUiResult(current, index);
                 index++;
             }
         }
@@ -288,35 +290,5 @@ internal sealed class PluginTabSource : ITabSource
         {
             await items.DisposeAsync().ConfigureAwait(true);
         }
-    }
-
-    private static AppSearchResult MapToUiResult(PluginSdk.Abstractions.ISearchResult item, int index)
-    {
-        // A web-address favorite isn't a real filesystem path -- Path.GetDirectoryName mangles it (e.g.
-        // "https://www.google.com" becomes "https:"), and there's no shell icon to look up for it either.
-        var isWebUrl = FavoriteUrlHelper.IsWebUrl(item.FullPath);
-        // FormatWslPath renders "\\wsl$\Ubuntu\..." as "WSL-Ubuntu:/..." -- the same format regular search
-        // already shows for WSL results (see SearchResultHelper.GetParentDisplayText), so a WSL favorite/
-        // history entry doesn't display differently just because it came through this tab instead.
-        var parentDir = isWebUrl ? item.FullPath : SearchResultHelper.FormatWslPath(Path.GetDirectoryName(item.FullPath) ?? string.Empty);
-        var fullPath = item.FullPath;
-        return new AppSearchResult
-        {
-            Name = item.Name,
-            FullPath = fullPath,
-            ParentDir = parentDir,
-            ContextDirectory = item.ContextDirectory,
-            IsDir = item.IsDir,
-            Drive = string.IsNullOrEmpty(fullPath) ? string.Empty : (Path.GetPathRoot(fullPath) ?? string.Empty).TrimEnd('\\'),
-            ResultKind = item.IsApplication ? "Application" : "File",
-            Index = index,
-            IconOverride = isWebUrl ? FavoriteUrlHelper.Icon : null,
-            // "Application" results execute as an instant-result (PluginActionExecutor.TryExecute), not
-            // through the "File" fallback path (FileExecutor.OpenFileOrFolder called by the search
-            // window's own input handler) -- wire it up explicitly so it still actually launches instead
-            // of silently no-op'ing into the default Copy-empty-string instant-result action.
-            InstantResultOnExecute = item.IsApplication ? () => FileExecutor.OpenFileOrFolder(fullPath) : null,
-            InstantResultActionArgument = item.IsApplication ? fullPath : string.Empty
-        };
     }
 }

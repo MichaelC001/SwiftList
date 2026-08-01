@@ -2,11 +2,12 @@ using System.IO;
 using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Helpers;
 
-namespace SwiftList.Plugins.CoreExtensions.Providers.StartupPanel;
+namespace SwiftList.Plugins.CoreExtensions.Providers;
 
-// Minimal ISearchResult implementation shared by the startup-panel tab providers below -- these just
-// need to hand the host a path (plus an optional user-given display name for favorites).
-internal sealed class StartupPanelResultItem : ISearchResult
+// Minimal ISearchResult implementation shared by the panel providers -- the startup panel's tabs and the
+// quick panel's sources both just need to hand the host a path (plus an optional user-given display name
+// for favorites, and a timestamp where the source has one).
+internal sealed class PanelResultItem : ISearchResult
 {
     public string Name { get; }
     public string FullPath { get; }
@@ -14,13 +15,21 @@ internal sealed class StartupPanelResultItem : ISearchResult
     public bool IsDir { get; }
     public bool IsApplication { get; }
 
-    public StartupPanelResultItem(string path, string? displayName = null, bool isApplication = false)
+    /// <summary>
+    /// Only ever the modified time, and only where the source knows one. The quick panel orders a group
+    /// newest-first by it; the default value means "not known", which sorts last there and so leaves
+    /// those entries in the order the provider returned them.
+    /// </summary>
+    public FileMetadata Metadata { get; }
+
+    public PanelResultItem(string path, string? displayName = null, bool isApplication = false, DateTime modified = default)
     {
         FullPath = path;
         IsApplication = isApplication;
         IsDir = !isApplication && Directory.Exists(path);
         Name = string.IsNullOrWhiteSpace(displayName) ? DeriveName(path, isApplication) : displayName!;
         ContextDirectory = IsDir ? path : (Path.GetDirectoryName(path) ?? path);
+        Metadata = new FileMetadata(0, default, modified, default);
     }
 
     private static string DeriveName(string path, bool isApplication)

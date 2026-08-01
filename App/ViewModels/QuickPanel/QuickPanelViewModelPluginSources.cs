@@ -38,8 +38,20 @@ public partial class QuickPanelViewModel
             return null;
         }
 
-        var items = entries.OfType<AppSearchResult>().ToList();
-        if (items.Count == 0) return null;
+        if (entries.Count == 0) return null;
+
+        // Mapped rather than cast: a provider lives in a plugin assembly that cannot see AppSearchResult
+        // at all, so what arrives is always some ISearchResult of its own making. The same mapping the
+        // startup panel's plugin tabs go through.
+        //
+        // A provider that fills in Metadata gets sorted by it; one that does not keeps the order it
+        // returned, since a descending sort over values that are all "unknown" is stable and leaves them
+        // as they came. So "newest first" costs a provider nothing it has not already worked out.
+        var items = entries
+            .Select((entry, index) => (
+                Item: Helpers.PluginResultMapper.ToUiResult(entry, index),
+                Modified: entry.Metadata.Modified is var modified && modified != DateTime.MinValue ? modified : (DateTime?)null))
+            .ToList();
 
         workspace.GroupPreferences.TryGetValue(componentId, out var preference);
 
@@ -47,7 +59,7 @@ public partial class QuickPanelViewModel
             componentId,
             string.IsNullOrWhiteSpace(preference?.DisplayName) ? provider.Name : preference!.DisplayName.Trim(),
             string.Empty,
-            items.Select(item => (Item: item, Modified: (DateTime?)null)).ToList(),
+            items,
             QuickPanelSortMode.ModifiedDescending,
             preference?.ThumbnailView ?? true,
             preference?.Expanded ?? true);
