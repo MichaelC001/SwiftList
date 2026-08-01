@@ -176,14 +176,6 @@
                 </Grid>
             </Border>
 
-            <Border Style="{StaticResource SettingsCard}" Margin="0,15,0,0">
-                <StackPanel>
-                    <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_BlacklistDesc]}"
-                               Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                    <TextBox x:Name="RowQuickPanelBlacklist" Style="{StaticResource RuleBulkTextBox}" MinHeight="70"
-                             Text="{Binding BlacklistText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
-            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

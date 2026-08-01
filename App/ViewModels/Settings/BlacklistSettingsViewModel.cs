@@ -16,6 +16,7 @@ public class BlacklistSettingsViewModel : ViewModelBase
         _userSettings = userSettings;
         foreach (var proc in _userSettings.BlacklistedProcesses.Where(x => !string.IsNullOrWhiteSpace(x)))
             BlacklistedProcesses.Add(new BlacklistProcessItem(proc));
+        _quickPanelBlacklistText = string.Join(Environment.NewLine, _userSettings.QuickPanel.BlacklistedProcesses);
 
         RefreshBulkText();
 
@@ -50,12 +51,33 @@ public class BlacklistSettingsViewModel : ViewModelBase
         set => SetProperty(ref _blacklistText, value);
     }
 
+    private string _quickPanelBlacklistText = string.Empty;
+
+    /// <summary>
+    /// The quick panel's own additions to the list above, one process name per line. It lives on this
+    /// page rather than the panel's because this is where a user goes to say "not in this app" -- and
+    /// the two are read together anyway: the panel refuses to open over anything on either list.
+    /// </summary>
+    public string QuickPanelBlacklistText
+    {
+        get => _quickPanelBlacklistText;
+        set => SetProperty(ref _quickPanelBlacklistText, value);
+    }
+
     public void Save()
     {
         ApplyBulkText();
         _userSettings.BlacklistedProcesses = NormalizeItems();
+        _userSettings.QuickPanel.BlacklistedProcesses = ParseLines(QuickPanelBlacklistText);
         RefreshBulkText();
     }
+
+    private static List<string> ParseLines(string? text) => (text ?? string.Empty)
+        .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+        .Select(line => line.Trim().Trim('"'))
+        .Where(line => line.Length > 0)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
 
     private bool CanAddProcess() => !string.IsNullOrWhiteSpace(NewProcessName);
 

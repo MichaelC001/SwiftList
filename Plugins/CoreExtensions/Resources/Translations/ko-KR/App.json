@@ -51,6 +51,7 @@
   "QuickPanel_MaxItems": "최대",
   "QuickPanel_MaxAge": "변경된 지 몇 분 이내",
   "QuickPanel_ProcessesDesc": "이 작업 공간에 해당하는 앱을 한 줄에 하나씩 프로세스 이름으로 적습니다(chrome 또는 chrome.exe). 해당 앱 위에서 패널을 열면 이 작업 공간으로 전환됩니다.",
+  "QuickPanel_BlacklistTitle": "빠른 패널만",
   "QuickPanel_BlacklistDesc": "패널을 열지 않을 앱을 한 줄에 하나씩 프로세스 이름으로 적습니다. 전역 단축키 차단 목록을 대체하지 않고 그 위에 추가됩니다.",
   "QuickPanel_DefaultTabName": "(기본)",
   "QuickPanel_SystemRecentName": "Windows 최근 항목",

@@ -51,6 +51,7 @@
   "QuickPanel_MaxItems": "最多",
   "QuickPanel_MaxAge": "修改于多少分钟内",
   "QuickPanel_ProcessesDesc": "该工作区对应的应用,每行一个进程名(chrome 或 chrome.exe)。在这些应用上呼出面板时会自动切到该工作区。",
+  "QuickPanel_BlacklistTitle": "仅快速面板",
   "QuickPanel_BlacklistDesc": "面板不在这些应用上打开,每行一个进程名。该名单是在全局快捷键黑名单之上追加,而不是取代它。",
   "QuickPanel_DefaultTabName": "(默认)",
   "QuickPanel_SystemRecentName": "Windows 最近使用",

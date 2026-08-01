@@ -143,7 +143,7 @@ public sealed class QuickPanelSettingsViewModelTests
         vm.AddTabCommand.Execute(null);
         vm.DuplicateTabCommand.Execute(null);
 
-        Assert.IsTrue(vm.Tabs.Count >= 3);
+        Assert.IsGreaterThanOrEqualTo(3, vm.Tabs.Count);
         foreach (var tab in vm.Tabs)
         {
             Assert.IsNotNull(tab.MoveUpSelfCommand, tab.EffectiveName);

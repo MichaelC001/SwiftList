@@ -51,6 +51,7 @@
   "QuickPanel_MaxItems": "At most",
   "QuickPanel_MaxAge": "Changed within (minutes)",
   "QuickPanel_ProcessesDesc": "Apps this workspace belongs to, one process name per line (chrome or chrome.exe). Summon the panel over one of them and it opens on this workspace.",
+  "QuickPanel_BlacklistTitle": "Quick panel only",
   "QuickPanel_BlacklistDesc": "Apps the panel stays out of, one process name per line. Added to the global hotkey blacklist rather than replacing it.",
   "QuickPanel_DefaultTabName": "(Default)",
   "QuickPanel_SystemRecentName": "Windows recent files",

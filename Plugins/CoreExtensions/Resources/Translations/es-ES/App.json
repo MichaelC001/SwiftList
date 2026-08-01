@@ -51,6 +51,7 @@
   "QuickPanel_MaxItems": "Como máximo",
   "QuickPanel_MaxAge": "Modificados hace (minutos)",
   "QuickPanel_ProcessesDesc": "Aplicaciones a las que pertenece este espacio de trabajo, un nombre de proceso por línea (chrome o chrome.exe). Al abrir el panel sobre una de ellas, se abrirá en este espacio de trabajo.",
+  "QuickPanel_BlacklistTitle": "Solo el panel rápido",
   "QuickPanel_BlacklistDesc": "Aplicaciones sobre las que el panel no se abre, un nombre de proceso por línea. Se añade a la lista negra global de atajos en lugar de sustituirla.",
   "QuickPanel_DefaultTabName": "(Predeterminado)",
   "QuickPanel_SystemRecentName": "Archivos recientes de Windows",

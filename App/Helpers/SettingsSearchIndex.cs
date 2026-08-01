@@ -150,6 +150,9 @@ public static class SettingsSearchIndex
         new("Hotkeys_StartupPanelPreviousTab", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Global", "TabGlobal/RowStartupPanelPreviousTab", "Hotkeys_Tab_Global"),
         new("Hotkeys_Tab_PluginActions", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "PluginActions", "TabPluginActions"),
         new("Settings_Blacklist", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Blacklist", "TabBlacklist"),
+        // The quick panel's own blacklist is edited here, beside the global one it adds to, so it is
+        // found under Hotkeys rather than on the panel's page.
+        new("QuickPanel_BlacklistTitle", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Blacklist", "TabBlacklist/RowQuickPanelBlacklist", "Settings_Blacklist"),
 
         // Plugins (component-level results come from the live Plugins model, see SettingsWindow.xaml.cs)
         new("Settings_Plugins", "Plugins"),
@@ -191,7 +194,6 @@ public static class SettingsSearchIndex
         // Lives in QuickPanelSourcesSection, inside the page: the anchor is found by name anywhere in
         // the page's tree, so the section split is invisible here.
         new("QuickPanel_ProcessesDesc", "QuickPanel", TargetElementName: "RowQuickPanelProcesses"),
-        new("QuickPanel_BlacklistDesc", "QuickPanel", TargetElementName: "RowQuickPanelBlacklist"),
 
         // About
         new("Settings_About", "About"),

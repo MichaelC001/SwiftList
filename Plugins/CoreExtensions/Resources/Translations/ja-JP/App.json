@@ -51,6 +51,7 @@
   "QuickPanel_MaxItems": "最大",
   "QuickPanel_MaxAge": "変更が何分以内",
   "QuickPanel_ProcessesDesc": "このワークスペースに対応するアプリを 1 行に 1 つのプロセス名で指定します(chrome または chrome.exe)。該当するアプリ上でパネルを呼び出すと、このワークスペースが開きます。",
+  "QuickPanel_BlacklistTitle": "クイックパネルのみ",
   "QuickPanel_BlacklistDesc": "パネルを開かないアプリを 1 行に 1 つのプロセス名で指定します。グローバルのホットキー ブラックリストを置き換えるのではなく、それに追加されます。",
   "QuickPanel_DefaultTabName": "(既定)",
   "QuickPanel_SystemRecentName": "Windows の最近使った項目",
