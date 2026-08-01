@@ -124,30 +124,12 @@ internal sealed class QuickSearchWindowLayoutManager
             resultsHeight += results[i].ScaledItemHeight;
         }
 
-        // Same idea as UpdateActionsLayout reducing its own row budget by actionsHeaderHeight: the
-        // startup panel's tab strip (Grid.Row="2") sits stacked above this list, so a full 9-row list
-        // plus the tab strip would otherwise grow the window taller than a full list with no tab strip
-        // at all. The tab strip's own footprint is essentially never a whole multiple of the row height,
-        // so capping at this ceiling can leave a fractional-row remainder that a virtualized, item-based
-        // ListBox can't render (whole rows only) -- it'd show up as unrendered blank space below the last
-        // full row. LstResults switches to pixel-based scrolling (ScrollViewer.CanContentScroll="False",
-        // same as LstActions already does) ONLY for this one cap, so it clips the boundary row instead;
-        // every other pass (the overwhelmingly common case while actively typing, since the tab strip only
-        // shows for an empty query) keeps the WPF-default item-based virtualization, which only realizes
-        // the ~9 actually-visible rows instead of the full ~50-row result set.
-        var isClippingToNonRowMultiple = false;
-        if (_window.StartupPanelTabStripHost.Visibility == Visibility.Visible)
-        {
-            var tabStripMargin = _window.StartupPanelTabStripHost.Margin;
-            var tabStripFootprint = _window.StartupPanelTabStripHost.ActualHeight + tabStripMargin.Top + tabStripMargin.Bottom;
-            var maxAvailableHeight = 9 * UiMetrics.ScaledNormalRowHeight - tabStripFootprint;
-            if (resultsHeight > maxAvailableHeight)
-            {
-                resultsHeight = Math.Max(0.0, maxAvailableHeight);
-                isClippingToNonRowMultiple = true;
-            }
-        }
-        ScrollViewer.SetCanContentScroll(_window.LstResults, !isClippingToNonRowMultiple);
+        // Item-based virtualization throughout, which realizes only the ~9 visible rows rather than the
+        // full ~50-row result set. It was switched to pixel-based scrolling for one case: the startup
+        // panel's tab strip sat stacked above this list, and the height left over after it was rarely a
+        // whole multiple of the row height, so the boundary row had to be clipped rather than dropped.
+        // Nothing sits above the list any more.
+        ScrollViewer.SetCanContentScroll(_window.LstResults, true);
 
         // Shortcut hints (Ctrl+1..9) depend on which rows are visible, not on the panel's own height, so
         // they need refreshing on every call regardless of what's below -- but the SizeToContent toggle is

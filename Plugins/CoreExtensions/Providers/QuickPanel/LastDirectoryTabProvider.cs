@@ -21,7 +21,7 @@ public class LastDirectoryTabProvider : IQuickPanelTabProvider
     // A folder can hold far more than a tab should ever put on screen at once.
     private const int MaxItems = 100;
 
-    public string Name => TranslationService.Get("StartupPanel_TabLastDirectory");
+    public string Name => TranslationService.Get("QuickPanel_TabLastDirectory");
 
     public async Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default)
     {

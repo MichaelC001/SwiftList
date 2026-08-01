@@ -3,12 +3,11 @@ using SwiftList.App.Helpers;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
 
-/// <summary>One workspace, shown as one entry in the panel's tab strip.</summary>
+/// <summary>One entry in the panel's tab strip, whichever kind of tab is behind it.</summary>
 /// <remarks>
-/// Not <see cref="Search.StartupPanel.StartupPanelTabViewModel"/>, which the strip was built against
-/// while that panel stood in as a data source. Same word, two concepts: a startup panel tab is one
-/// content source, a quick panel tab is a whole workspace of them. The startup panel's version also
-/// carries a close button and the quick window's scale factors, neither of which mean anything here.
+/// The strip is deliberately blind to that kind: a workspace of folders and a plugin's own list both
+/// arrive here as a name, a way to select it and a way to close it. What closing MEANS differs, and is
+/// answered by the tab source rather than here (see IQuickPanelTabSource).
 /// </remarks>
 public class QuickPanelTabViewModel : ViewModelBase
 {

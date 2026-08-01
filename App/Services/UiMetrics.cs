@@ -94,7 +94,7 @@ public static class UiMetrics
 
     /// <summary>
     /// Fires whenever Scale actually changes value -- lets an already-open window (whose bound rows
-    /// were built from a snapshot of the old scale, e.g. AppSearchResult/StartupPanelTabViewModel's own
+    /// were built from a snapshot of the old scale, e.g. AppSearchResult's own
     /// Scaled* properties) refresh those bindings live instead of only picking up the new scale the
     /// next time it happens to rebuild its content (e.g. the next search, or the next time the window
     /// is shown).

@@ -15,7 +15,7 @@ namespace SwiftList.App.ViewModels.Search;
 public static class SearchResultTypePriority
 {
     // No ISearchableItemProvider sits behind the fileResults candidate loop in BuildQuickResults --
-    // mirrors the "__builtin::..." synthetic-id convention StartupPanelSettings.TabOrder already uses
+    // mirrors the "__builtin::..." synthetic-id convention QuickPanelSettings.TabOrder already uses
     // for its own non-plugin entries.
     public const string FilesTypeId = "__builtin::Files";
 
@@ -25,7 +25,7 @@ public static class SearchResultTypePriority
     // Position in the user's saved order (most-preferred first); an id that isn't listed yet falls back
     // to int.MaxValue, which -- since the caller's sort is stable -- lands it after every listed type
     // while preserving its original relative order against any OTHER unlisted type, matching the same
-    // fallback convention QuickNavigationProviderOrder/StartupPanel.TabOrder already use.
+    // fallback convention QuickNavigationProviderOrder/QuickPanel.TabOrder already use.
     public static int Rank(string typeId, List<string> order)
     {
         var idx = order.IndexOf(typeId);

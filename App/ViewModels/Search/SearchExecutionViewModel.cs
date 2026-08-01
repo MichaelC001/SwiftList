@@ -5,7 +5,6 @@ using SwiftList.App.ViewModels.Search.Dispatch;
 
 using SwiftList.Core.Services.Search;
 
-using SwiftList.App.ViewModels.Search.StartupPanel;
 using SwiftList.App.ViewModels.Search.Mapping;
 namespace SwiftList.App.ViewModels.Search;
 
@@ -13,7 +12,6 @@ public class SearchExecutionViewModel : ViewModelBase, IDisposable
 {
     private readonly QuickSearchViewModel _mainVm;
     private readonly SearchExecutionEngine _engine;
-    private readonly StartupPanelController _startupPanel;
     private readonly SearchDispatchController _dispatcher;
 
     private string _searchQuery = null!;
@@ -34,12 +32,8 @@ public class SearchExecutionViewModel : ViewModelBase, IDisposable
         _engine = new SearchExecutionEngine(searchService);
         Results = new ObservableRangeCollection<AppSearchResult>();
 
-        _startupPanel = new StartupPanelController(searchService, ReplaceResults);
-        _startupPanel.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(StartupPanelController.Visibility)) OnPropertyChanged(nameof(StartupPanelVisibility)); };
-
         _dispatcher = new SearchDispatchController(
             _engine,
-            _startupPanel,
             _mainVm,
             getSearchScope: () => SearchScope,
             getIsInlineSearchContext: () => IsInlineSearchContext,
@@ -96,19 +90,7 @@ public class SearchExecutionViewModel : ViewModelBase, IDisposable
     public bool IsActionsMode
     {
         get => _isActionsMode;
-        set
-        {
-            // The startup panel's tab strip and the actions list are both stacked above/around the
-            // same results panel, but they read as two different modes -- browsing quick-access
-            // tabs/history vs. looking at one specific result's actions. Leaving the tab strip visible
-            // while actions are showing reads as if the tabs still apply to whatever's now on screen,
-            // when they don't. StartupPanelVisibility already factors this in below, so flipping
-            // IsActionsMode needs to re-notify it too.
-            if (SetProperty(ref _isActionsMode, value))
-            {
-                OnPropertyChanged(nameof(StartupPanelVisibility));
-            }
-        }
+        set => SetProperty(ref _isActionsMode, value);
     }
 
     public string SearchQuery
@@ -166,17 +148,8 @@ public class SearchExecutionViewModel : ViewModelBase, IDisposable
         set => SetProperty(ref _resultsSeparatorVisibility, value);
     }
 
-    // Startup Panel: shown above the results in the quick popup only, see StartupPanelController.
-    // Hidden while actions mode is showing (see IsActionsMode's own setter, which re-notifies this)
-    // even if the underlying panel itself would otherwise want to show -- the tab strip reads as
-    // belonging to the results list beneath it, not to a specific result's actions list.
-    public ObservableCollection<StartupPanelTabViewModel> StartupPanelTabs => _startupPanel.Tabs;
-    public Visibility StartupPanelVisibility => IsActionsMode ? Visibility.Collapsed : _startupPanel.Visibility;
-    public void SelectNextStartupPanelTab() => _startupPanel.SelectNextTab();
-    public void SelectPreviousStartupPanelTab() => _startupPanel.SelectPreviousTab();
-
     // SearchQuery's setter only re-runs PerformSearch when the value changes, so re-showing the window
-    // while the box stays empty wouldn't otherwise notice a new file, or a tab re-enabled in Settings.
+    // while the box stays empty wouldn't otherwise notice anything that changed in the meantime.
     public void RefreshEmptyState()
     {
         if (string.IsNullOrWhiteSpace(_searchQuery))
@@ -194,7 +167,6 @@ public class SearchExecutionViewModel : ViewModelBase, IDisposable
     {
         SearchableItemMapper.ProviderLoaded -= OnSearchableItemProviderLoaded;
         _providerLoadedRefreshTimer.Stop();
-        _startupPanel.Deactivate();
         _engine.Dispose();
     }
 }

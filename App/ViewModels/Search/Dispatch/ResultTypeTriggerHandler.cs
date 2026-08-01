@@ -1,7 +1,6 @@
 using System.Windows;
 using SwiftList.Core;
 
-using SwiftList.App.ViewModels.Search.StartupPanel;
 using SwiftList.App.ViewModels.Search.Mapping;
 namespace SwiftList.App.ViewModels.Search.Dispatch;
 
@@ -10,7 +9,6 @@ namespace SwiftList.App.ViewModels.Search.Dispatch;
 // purely to keep SearchDispatchController.cs under the repo's per-file line limit.
 internal sealed class ResultTypeTriggerHandler
 {
-    private readonly StartupPanelController _startupPanel;
     private readonly Func<bool> _getIsInlineSearchContext;
     private readonly Action<bool> _setIsSearching;
     private readonly Action<Visibility> _setResultsPanelVisibility;
@@ -18,14 +16,12 @@ internal sealed class ResultTypeTriggerHandler
     private readonly Action<IEnumerable<AppSearchResult>> _replaceResults;
 
     public ResultTypeTriggerHandler(
-        StartupPanelController startupPanel,
         Func<bool> getIsInlineSearchContext,
         Action<bool> setIsSearching,
         Action<Visibility> setResultsPanelVisibility,
         Action<Visibility> setResultsSeparatorVisibility,
         Action<IEnumerable<AppSearchResult>> replaceResults)
     {
-        _startupPanel = startupPanel;
         _getIsInlineSearchContext = getIsInlineSearchContext;
         _setIsSearching = setIsSearching;
         _setResultsPanelVisibility = setResultsPanelVisibility;
@@ -64,7 +60,6 @@ internal sealed class ResultTypeTriggerHandler
     public void ShowPrompt(string typeId)
     {
         _setIsSearching(false);
-        _startupPanel.Deactivate();
         var typeName = SearchResultTypePriority.GetDisplayName(typeId) ?? string.Empty;
         _replaceResults(new[] { SearchResultMapper.CreateResultTypeTriggerPromptResult(typeName) });
         _setResultsPanelVisibility(Visibility.Visible);

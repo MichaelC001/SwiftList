@@ -208,8 +208,8 @@ public partial class App : Application
             // on language change (labels/breadcrumbs are translated at build time) and on
             // PluginManager.ComponentsRefreshed: unlike the Plugins-section entries (which include every
             // component regardless of IsEnabled, only ever toggling a flag PluginLoaderHelper doesn't
-            // even expose here), PluginManager.StartupPanelTabProviders -- which the StartupPanel-section
-            // entries are built from -- IS enabled-filtered, so disabling a startup-panel-tab-providing
+            // even expose here), PluginManager.QuickPanelTabProviders -- which the QuickPanel-section
+            // entries are built from -- IS enabled-filtered, so disabling a quick-panel-tab-providing
             // component genuinely changes this feed's membership, not just some unexposed flag on it.
             List<PluginSdk.Services.SettingsSearchEntryInfo>? cachedSettingsSearchEntries = null;
             TranslationManager.Instance.PropertyChanged += (_, _) => cachedSettingsSearchEntries = null;
@@ -221,7 +221,7 @@ public partial class App : Application
 
                 // No live SettingsWindow is guaranteed to exist here (Settings may never have been
                 // opened yet), so this passes vm: null -- BuildAllEntries then builds the Plugins/
-                // Hotkeys-actions/StartupPanel-tabs sections straight from PluginManager.Instance/
+                // Hotkeys-actions sections straight from PluginManager.Instance/
                 // UserSettings instead of a live window's collections, and conservatively excludes any
                 // conditionally-visible static entry (e.g. the WSL tab) it can't evaluate without one.
                 var entries = SettingsWindowSearchExtensions.BuildAllEntries(vm: null);

@@ -18,14 +18,14 @@ namespace SwiftList.Plugins.CoreExtensions.Providers.QuickPanel;
 /// are ever resolved. It buys the real name, the real folder and, in a panel that shows thumbnail tiles
 /// by default, the file's own thumbnail instead of a shortcut icon for every entry alike.
 /// </remarks>
-public class WindowsRecentSourceProvider : IQuickPanelTabProvider
+public class WindowsRecentTabProvider : IQuickPanelTabProvider
 {
     // Enough to fill a panel that is a quarter of a window, and few enough that resolving every one of
     // them is not something the user waits on. Fixed rather than configurable for the same reason the
     // startup panel's History tab is: there is no settings page of its own to put the number on.
     private const int MaxItems = 30;
 
-    public string Name => TranslationService.Get("QuickPanel_SourceWindowsRecent");
+    public string Name => TranslationService.Get("QuickPanel_TabWindowsRecent");
 
     public Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default)
         // Off the calling thread: this reads a directory and then resolves shortcuts through COM, and the
@@ -52,7 +52,7 @@ public class WindowsRecentSourceProvider : IQuickPanelTabProvider
         }
         catch (Exception ex)
         {
-            Logger.Log($"[WindowsRecentSourceProvider] Cannot read {recentFolder}: {ex.Message}", LogLevel.Warn);
+            Logger.Log($"[WindowsRecentTabProvider] Cannot read {recentFolder}: {ex.Message}", LogLevel.Warn);
             return entries;
         }
 
@@ -75,7 +75,7 @@ public class WindowsRecentSourceProvider : IQuickPanelTabProvider
             }
             catch (Exception ex)
             {
-                Logger.Log($"[WindowsRecentSourceProvider] Cannot resolve {shortcut.Name}: {ex.Message}", LogLevel.Warn);
+                Logger.Log($"[WindowsRecentTabProvider] Cannot resolve {shortcut.Name}: {ex.Message}", LogLevel.Warn);
                 continue;
             }
 

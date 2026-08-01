@@ -21,7 +21,7 @@ public class RecentFilesTabProvider : IQuickPanelTabProvider
     internal const string CountKey = "RecentFilesCount";
     internal const string MaxAgeKey = "RecentFilesMaxAgeMinutes";
 
-    public string Name => TranslationService.Get("StartupPanel_TabRecentFiles");
+    public string Name => TranslationService.Get("QuickPanel_TabRecentFiles");
 
     public async Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default)
     {

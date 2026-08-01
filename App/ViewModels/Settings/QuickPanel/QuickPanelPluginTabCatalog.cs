@@ -17,8 +17,12 @@ internal static class QuickPanelPluginTabCatalog
             .Select(provider =>
             {
                 var id = QuickPanelPluginTabs.ComponentId(provider);
-                var open = !settings.ClosedPluginTabIds.Contains(id, StringComparer.OrdinalIgnoreCase);
-                return new QuickPanelPluginTabOption(id, provider.Name, open);
+                return new QuickPanelPluginTabOption(
+                    id,
+                    // The provider, not its Name: asking it again is what makes a language switch land.
+                    () => provider.Name,
+                    !settings.ClosedPluginTabIds.Contains(id, StringComparer.OrdinalIgnoreCase),
+                    settings.ListViewPluginTabIds.Contains(id, StringComparer.OrdinalIgnoreCase));
             })
             .ToList();
 }

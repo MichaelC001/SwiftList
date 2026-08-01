@@ -14,11 +14,11 @@ namespace SwiftList.Plugins.CoreExtensions.Providers.QuickPanel;
 /// Capped at 20, like the startup panel's History tab and for the same reason: there is no settings page
 /// of its own to put the number on.
 /// </remarks>
-public class HistorySourceProvider : IQuickPanelTabProvider
+public class HistoryTabProvider : IQuickPanelTabProvider
 {
     private const int MaxItems = 20;
 
-    public string Name => TranslationService.Get("StartupPanel_TabHistory");
+    public string Name => TranslationService.Get("QuickPanel_TabHistory");
 
     public Task<IReadOnlyList<ISearchResult>> GetEntriesAsync(CancellationToken cancellationToken = default)
         // Off the calling thread: every entry is checked against the disk, and a history holding paths on

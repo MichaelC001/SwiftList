@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Windows.Data;
-using SwiftList.App.ViewModels.Search.StartupPanel;
 
 namespace SwiftList.App.Views.QuickPanel;
 
@@ -24,7 +23,7 @@ public sealed class ModifiedTimeConverter : IValueConverter
         // glance but never "which day was that"; the absolute alone is the reverse. The absolute half is
         // formatted by the current culture rather than a fixed pattern, so a machine set to a language
         // that writes the date the other way round gets its own order.
-        var relative = RecentFilesTabSource.FormatRelativeTime(modified);
+        var relative = RelativeTime.Describe(modified);
         var absolute = modified.ToString("g", CultureInfo.CurrentCulture);
         return string.IsNullOrEmpty(relative) ? absolute : $"{absolute} ({relative})";
     }

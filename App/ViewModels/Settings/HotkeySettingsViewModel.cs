@@ -35,8 +35,6 @@ public class HotkeySettingsViewModel : ViewModelBase
         _keywordHistoryPreviousHotkey = hotkeys.KeywordHistoryPreviousHotkey;
         _keywordHistoryNextHotkey = hotkeys.KeywordHistoryNextHotkey;
         _keywordHistoryDeleteHotkey = hotkeys.KeywordHistoryDeleteHotkey;
-        _startupPanelNextTabHotkey = hotkeys.StartupPanelNextTabHotkey;
-        _startupPanelPreviousTabHotkey = hotkeys.StartupPanelPreviousTabHotkey;
         _openFullWindowHotkey = hotkeys.OpenFullWindowHotkey;
         _stayOpenHotkey = hotkeys.StayOpenHotkey;
         _quickPanelHotkey = hotkeys.QuickPanelHotkey;
@@ -222,20 +220,6 @@ public class HotkeySettingsViewModel : ViewModelBase
         set => SetProperty(ref _keywordHistoryDeleteHotkey, value);
     }
 
-    private string _startupPanelNextTabHotkey;
-    public string StartupPanelNextTabHotkey
-    {
-        get => _startupPanelNextTabHotkey;
-        set => SetProperty(ref _startupPanelNextTabHotkey, value);
-    }
-
-    private string _startupPanelPreviousTabHotkey;
-    public string StartupPanelPreviousTabHotkey
-    {
-        get => _startupPanelPreviousTabHotkey;
-        set => SetProperty(ref _startupPanelPreviousTabHotkey, value);
-    }
-
     private string _openFullWindowHotkey;
     public string OpenFullWindowHotkey
     {
@@ -279,8 +263,6 @@ public class HotkeySettingsViewModel : ViewModelBase
         hotkeys.KeywordHistoryPreviousHotkey = KeywordHistoryPreviousHotkey;
         hotkeys.KeywordHistoryNextHotkey = KeywordHistoryNextHotkey;
         hotkeys.KeywordHistoryDeleteHotkey = KeywordHistoryDeleteHotkey;
-        hotkeys.StartupPanelNextTabHotkey = StartupPanelNextTabHotkey;
-        hotkeys.StartupPanelPreviousTabHotkey = StartupPanelPreviousTabHotkey;
         hotkeys.OpenFullWindowHotkey = OpenFullWindowHotkey;
         hotkeys.StayOpenHotkey = StayOpenHotkey;
         hotkeys.QuickPanelHotkey = QuickPanelHotkey;

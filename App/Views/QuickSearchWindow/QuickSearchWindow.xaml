@@ -40,8 +40,6 @@
                 <RowDefinition Height="Auto"/>
                 <!-- Separator -->
                 <RowDefinition Height="Auto"/>
-                <!-- Startup panel tab strip (empty search box only) -->
-                <RowDefinition Height="Auto"/>
                 <!-- Results panel (grows with content) -->
                 <RowDefinition Height="Auto"/>
                 <!-- Status bar -->
@@ -59,126 +57,21 @@
                        Fill="{DynamicResource SeparatorBrush}"
                        Visibility="{Binding ResultsSeparatorVisibility}"/>
 
-            <!-- Recessed content tier behind the startup panel/results rows, matching SearchWindow's own
+            <!-- Recessed content tier behind the results rows, matching SearchWindow's own
                  "Main Results Grid" (Background=ContentBg, a shade back from the outer CardBackground
                  chrome/search bar) so every window's results area reads the same instead of being flat
                  CardBackground everywhere with no depth. -->
             <Border Grid.Row="2" Grid.RowSpan="2" Background="{DynamicResource ContentBg}"/>
 
-            <!-- ═══════════ 3. Startup Panel Tab Strip ═══════════ -->
-            <ctrl:TabStripScrollView x:Name="StartupPanelTabStripHost" Grid.Row="2" Visibility="{Binding StartupPanelVisibility}" Margin="12,8,12,0">
-            <!-- Dragging a tab reorders the strip and stores that order (StartupPanel.TabOrder), the same
-                 order the Settings page's own list edits. The tab is the handle: a strip has nowhere to
-                 put a grip, and a tab is already what you would reach for. IsHorizontal so the drop line
-                 stands between two tabs rather than lying across them. -->
-            <ItemsControl x:Name="StartupPanelTabStrip"
-                          ItemsSource="{Binding StartupPanelTabs}"
-                          helpers:DragReorder.IsEnabled="True"
-                          helpers:DragReorder.IsHorizontal="True">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <!-- Styled like the Settings window's own tab headers (Button+underline pair,
-                             see Resources/Styles/Windows/SettingsWindow.xaml's TabHeaderButtonStyle and
-                             TabUnderlineStyle) for visual consistency; clicking the label switches to
-                             this tab (IsSelected drives the accent-blue/underline "active" look). -->
-                        <StackPanel Margin="0,0,20,0">
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="{Binding Label}" Command="{Binding SelectCommand}"
-                                        FontSize="{Binding ScaledFontSize}" Padding="{Binding ScaledBottomPaddingThickness}"
-                                        helpers:DragReorder.IsHandle="True">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="BorderThickness" Value="0"/>
-                                            <Setter Property="Cursor" Value="Hand"/>
-                                            <Setter Property="Focusable" Value="False"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <!-- Same fix as TabHeaderButtonStyle's, which
-                                                             this style is a copy of: without a Border
-                                                             carrying a Background the padding is not
-                                                             hit-testable, so the only target was the
-                                                             text's own glyphs. -->
-                                                        <Border Background="{TemplateBinding Background}"
-                                                                Padding="{TemplateBinding Padding}">
-                                                            <ContentPresenter/>
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
-                                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                                <Button Content="&#xE711;" Command="{Binding CloseCommand}" Margin="{Binding ScaledCloseButtonMarginThickness}"
-                                        Width="{Binding ScaledCloseButtonSize}" Height="{Binding ScaledCloseButtonSize}"
-                                        FontSize="{Binding ScaledCloseIconFontSize}"
-                                        ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[StartupPanel_CloseTabTooltip]}">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="BorderThickness" Value="0"/>
-                                            <Setter Property="Cursor" Value="Hand"/>
-                                            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource TextSecondary2}"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="Bd" CornerRadius="3" Background="{TemplateBinding Background}">
-                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlHoverBackground}"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                            </StackPanel>
-                            <Border Height="{Binding ScaledUnderlineHeight}" Background="{DynamicResource AccentBlue}" Margin="{Binding ScaledUnderlineMarginThickness}">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                            </Border>
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            </ctrl:TabStripScrollView>
-
             <!-- ═══════════ 4. Results Panel ═══════════ -->
-            <results:ResultsControl x:Name="ResultsPanelControl" Grid.Row="3"
+            <results:ResultsControl x:Name="ResultsPanelControl" Grid.Row="2"
                                   ItemsSource="{Binding Results}"
                                   SelectedItem="{Binding SelectedResult, Mode=TwoWay}"
                                   ViewMode="List"
                                   Visibility="{Binding ResultsPanelVisibility}"/>
 
             <!-- ═══════════ 5. Status bar (shown when loading or ready) ═══════════ -->
-            <local:StatusBarControl x:Name="StatusBarControl" Grid.Row="4"
+            <local:StatusBarControl x:Name="StatusBarControl" Grid.Row="3"
                                     Visibility="{Binding StatusBarVisibility}"/>
         </Grid>
             </Border>

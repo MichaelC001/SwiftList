@@ -51,6 +51,9 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
         : Name.Trim();
 
+    /// <summary>Re-reads the fallback name after a language switch, for a tab that has no name of its own.</summary>
+    public void NotifyLanguageChanged() => OnPropertyChanged(nameof(EffectiveName));
+
     private bool _enabled;
 
     /// <summary>Off keeps the workspace configured but gives it no tab in the panel.</summary>

@@ -161,18 +161,11 @@ internal static class PluginLoader
                     Logger.Log($"[PluginManager] Loaded query token provider: '{type.Name}' from {fileName}");
                 }
 
-                if (typeof(PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider).IsAssignableFrom(type))
-                {
-                    var provider = (PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider)Activator.CreateInstance(type)!;
-                    registry.AddStartupPanelTabProvider(provider);
-                    Logger.Log($"[PluginManager] Loaded startup panel tab provider: '{type.Name}' from {fileName}");
-                }
-
                 if (typeof(PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider).IsAssignableFrom(type))
                 {
                     var provider = (PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider)Activator.CreateInstance(type)!;
                     registry.AddQuickPanelTabProvider(provider);
-                    Logger.Log($"[PluginManager] Loaded quick panel source provider: '{type.Name}' from {fileName}");
+                    Logger.Log($"[PluginManager] Loaded quick panel tab provider: '{type.Name}' from {fileName}");
                 }
             }
         }

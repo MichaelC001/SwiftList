@@ -6,7 +6,6 @@ using SwiftList.App.ViewModels.Service;
 
 using SwiftList.Core.Services.Search;
 
-using SwiftList.App.ViewModels.Search.StartupPanel;
 namespace SwiftList.App.ViewModels.Search;
 
 public class QuickSearchViewModel : ViewModelBase, IDisposable
@@ -141,10 +140,6 @@ public class QuickSearchViewModel : ViewModelBase, IDisposable
         set => Search.ResultsSeparatorVisibility = value;
     }
 
-    public ObservableCollection<StartupPanelTabViewModel> StartupPanelTabs => Search.StartupPanelTabs;
-
-    public Visibility StartupPanelVisibility => Search.StartupPanelVisibility;
-
     public Visibility StatusBarVisibility => Monitor.StatusBarVisibility;
 
     public Visibility LoadingPanelVisibility => Monitor.LoadingPanelVisibility;
@@ -237,15 +232,10 @@ public class QuickSearchViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(ClockVisibility));
         UpdateClockText();
 
-        // Startup panel tabs and result rows both persist as long-lived objects across searches, unlike
-        // a freshly-typed search's own AppSearchResult rows, which get built AFTER a scale change and so
-        // pick it up on their own -- without this, an already-bound row/tab's Scaled* properties stay
-        // frozen at whatever they read when first created, so nothing on screen visibly resizes until
-        // the next search happens to rebuild it.
-        foreach (var tab in Search.StartupPanelTabs)
-        {
-            tab.RefreshScale();
-        }
+        // Result rows persist as long-lived objects across searches, unlike a freshly-typed search's own
+        // AppSearchResult rows, which get built AFTER a scale change and so pick it up on their own --
+        // without this, an already-bound row's Scaled* properties stay frozen at whatever they read when
+        // it was created, so nothing on screen visibly resizes until the next search rebuilds it.
         foreach (var result in Search.Results)
         {
             result.RefreshScale();

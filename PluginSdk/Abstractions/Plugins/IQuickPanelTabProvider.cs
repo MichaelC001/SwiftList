@@ -13,9 +13,9 @@ namespace SwiftList.PluginSdk.Abstractions.Plugins;
 /// whichever set of folders the user happens to be looking at. So it sits beside the workspaces in the
 /// strip, reachable by the same number keys, rather than inside one of them.
 ///
-/// Deliberately not the streaming shape <see cref="IStartupPanelTabProvider"/> uses: this panel orders
-/// and caps a tab's entries as a set (newest first, or by name, at most so many), so it cannot show half
-/// of one without re-sorting on every arrival. That costs nothing in latency -- every tab loads on its
+/// Deliberately not a streaming shape: this panel orders and caps a tab's entries as a set (newest
+/// first, or by name, at most so many), so it cannot show half of one without re-sorting on every
+/// arrival. That costs nothing in latency -- every tab loads on its
 /// own task and the panel opens on the first one to arrive, so a provider that has to go and look delays
 /// only its own tab. Honour the token all the same: it is cancelled when the panel closes.
 ///

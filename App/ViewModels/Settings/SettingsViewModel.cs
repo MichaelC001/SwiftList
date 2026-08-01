@@ -10,7 +10,6 @@ using SwiftList.App.Services.Plugin;
 using SwiftList.Core.Wire;
 using SwiftList.App.ViewModels.Settings.LocalDrive;
 using SwiftList.App.ViewModels.Settings.NetworkDrive;
-using SwiftList.App.ViewModels.Settings.StartupPanel;
 using SwiftList.App.ViewModels.Settings.General;
 namespace SwiftList.App.ViewModels.Settings;
 
@@ -38,7 +37,6 @@ public class SettingsViewModel : ViewModelBase
         Hotkeys = new HotkeySettingsViewModel(_userSettings, Blacklist);
         History = new HistorySettingsViewModel(_userSettings);
         Favorites = new FavoritesSettingsViewModel(_userSettings);
-        StartupPanel = new StartupPanelSettingsViewModel(_userSettings);
         QuickPanel = new QuickPanel.QuickPanelSettingsViewModel(_userSettings);
         RefreshCommand = new RelayCommand(Refresh);
         ApplyCommand = new RelayCommand(Apply, () => CanApply);
@@ -48,7 +46,14 @@ public class SettingsViewModel : ViewModelBase
         RefreshLists();
     }
 
-    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e) => ApplyUiState();
+    // The Quick Panel page is nudged from here rather than subscribing itself: its labels are built in
+    // code (the kind dropdown's options, a plugin tab's name) instead of bound through the XAML
+    // translation markup that repaints itself, so nothing else would tell them the language moved.
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        ApplyUiState();
+        QuickPanel.NotifyLanguageChanged();
+    }
 
     public ServiceSettingsViewModel Service { get; }
     public ServiceLogViewModel Log { get; }
@@ -73,11 +78,10 @@ public class SettingsViewModel : ViewModelBase
     public BlacklistSettingsViewModel Blacklist { get; }
     public HistorySettingsViewModel History { get; }
     public FavoritesSettingsViewModel Favorites { get; }
-    public StartupPanelSettingsViewModel StartupPanel { get; }
 
     /// <summary>
-    /// The floating panel's own page. Its "tabs" are workspaces, unrelated to the Startup Panel's tab
-    /// strip above -- see QuickPanelSettingsViewModel.
+    /// The floating panel's own page. Its "tabs" are workspaces, which is not what a tab means in the
+    /// panel's own strip -- see QuickPanelSettingsViewModel.
     /// </summary>
     public QuickPanel.QuickPanelSettingsViewModel QuickPanel { get; }
     public ICommand RefreshCommand { get; }
@@ -158,12 +162,10 @@ public class SettingsViewModel : ViewModelBase
         Blacklist.Save();
         History.Save();
         Favorites.Save();
-        StartupPanel.Save();
         QuickPanel.Save();
         _userSettings.Save();
         App.HookClient?.SendMessage(new IpcMessage { Id = IpcMessageId.ReloadSettings });
         PluginManager.Instance.RefreshDisabledComponents();
-        StartupPanel.RefreshPluginTabs();
         NetworkDrive.ResetPendingEdits();
         var exclusionsChanged = SettingsChangeSnapshot.ExclusionsChanged(previousExclusions, SettingsChangeSnapshot.CaptureExclusions(_userSettings));
         var newDisabledAliases = _userSettings.DisabledPluginComponents

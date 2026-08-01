@@ -36,8 +36,7 @@ public class PluginManager : PluginRegistry
     private readonly List<IQuickNavigationProvider> _quickNavigationProviders = new();
     private readonly List<IThumbnailProvider> _thumbnailProviders = new();
     private readonly List<PluginSdk.Abstractions.Plugins.IQueryTokenProvider> _queryTokenProviders = new();
-    private readonly List<PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider> _startupPanelTabProviders = new();
-    private readonly List<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> _quickPanelSourceProviders = new();
+    private readonly List<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> _quickPanelTabProviders = new();
     private uint _nextRuntimeActionId = 0x80000000;
 
     // pluginId -> (field Key -> schema DefaultValue), built once after all plugins are loaded, so
@@ -98,8 +97,7 @@ public class PluginManager : PluginRegistry
     void PluginRegistry.AddQuickNavigationProvider(IQuickNavigationProvider p) => _quickNavigationProviders.Add(p);
     void PluginRegistry.AddThumbnailProvider(IThumbnailProvider p) => _thumbnailProviders.Add(p);
     void PluginRegistry.AddQueryTokenProvider(PluginSdk.Abstractions.Plugins.IQueryTokenProvider p) => _queryTokenProviders.Add(p);
-    void PluginRegistry.AddStartupPanelTabProvider(PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider p) => _startupPanelTabProviders.Add(p);
-    void PluginRegistry.AddQuickPanelTabProvider(PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider p) => _quickPanelSourceProviders.Add(p);
+    void PluginRegistry.AddQuickPanelTabProvider(PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider p) => _quickPanelTabProviders.Add(p);
 
     // ── Public API ────────────────────────────────────────────────────────
 
@@ -141,7 +139,7 @@ public class PluginManager : PluginRegistry
     }
 
     // Raised so callers that cache anything derived from IsEnabled-filtered collections (e.g.
-    // StartupPanelTabProviders, which RefreshDisabledComponents can change the membership of) know to
+    // QuickPanelTabProviders, which RefreshDisabledComponents can change the membership of) know to
     // invalidate -- see App.xaml.cs's SettingsSearchService.GetEntriesFunc cache.
     public event Action? ComponentsRefreshed;
 
@@ -282,11 +280,8 @@ public class PluginManager : PluginRegistry
     public IEnumerable<PluginSdk.Abstractions.Plugins.IQueryTokenProvider> QueryTokenProviders
         => _queryTokenProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.QueryTokenProvider, p.GetType().Name));
 
-    public IEnumerable<PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider> StartupPanelTabProviders
-        => _startupPanelTabProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.StartupPanelTabProvider, p.GetType().Name));
-
     public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> QuickPanelTabProviders
-        => _quickPanelSourceProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.QuickPanelTabProvider, p.GetType().Name));
+        => _quickPanelTabProviders.Where(p => _filter.IsEnabled(ComponentFilter.GetDllName(p), PluginComponentType.QuickPanelTabProvider, p.GetType().Name));
 
     // ── Unfiltered collections (settings UI ?show disabled as unchecked) ─
 
@@ -302,8 +297,7 @@ public class PluginManager : PluginRegistry
     public IEnumerable<PluginSdk.Abstractions.Plugins.ITranslationProvider> AllTranslationProviders => _translationProviders;
     public IEnumerable<PluginSdk.Abstractions.Plugins.IThemeProvider> AllThemeProviders => _themeProviders;
     public IEnumerable<PluginSdk.Abstractions.Plugins.IQueryTokenProvider> AllQueryTokenProviders => _queryTokenProviders;
-    public IEnumerable<PluginSdk.Abstractions.Plugins.IStartupPanelTabProvider> AllStartupPanelTabProviders => _startupPanelTabProviders;
-    public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> AllQuickPanelTabProviders => _quickPanelSourceProviders;
+    public IEnumerable<PluginSdk.Abstractions.Plugins.IQuickPanelTabProvider> AllQuickPanelTabProviders => _quickPanelTabProviders;
 
     // ── Search and execution ──────────────────────────────────────────────
 

@@ -6,12 +6,12 @@ namespace SwiftList.Plugins.CoreExtensions.Tests.Providers.QuickPanel;
 // The history itself and the disk are both handed to Build, so what is tested here is the part that
 // decides which entries survive and what the panel is told about them.
 [TestClass]
-public sealed class HistorySourceProviderTests
+public sealed class HistoryTabProviderTests
 {
     [TestMethod]
     public void Build_KeepsTheOrderTheHistoryCameIn_AndAppliesTheCap()
     {
-        var entries = HistorySourceProvider.Build(
+        var entries = HistoryTabProvider.Build(
             new[] { Entry(@"C:\newest"), Entry(@"C:\middle"), Entry(@"C:\oldest") },
             maxItems: 2,
             exists: _ => true);
@@ -24,7 +24,7 @@ public sealed class HistorySourceProviderTests
     [TestMethod]
     public void Build_SkipsWhatIsNoLongerOnDisk()
     {
-        var entries = HistorySourceProvider.Build(
+        var entries = HistoryTabProvider.Build(
             new[] { Entry(@"C:\gone"), Entry(@"C:\here") },
             maxItems: 10,
             exists: path => path == @"C:\here");
@@ -36,7 +36,7 @@ public sealed class HistorySourceProviderTests
     [TestMethod]
     public void Build_KeepsApplicationsWithoutCheckingTheDisk()
     {
-        var entries = HistorySourceProvider.Build(
+        var entries = HistoryTabProvider.Build(
             new[] { Entry(@"shell:AppsFolder\Something!App", HistoryEntryKind.Application) },
             maxItems: 10,
             exists: _ => false);
@@ -50,7 +50,7 @@ public sealed class HistorySourceProviderTests
     {
         var openedAt = new DateTimeOffset(2026, 7, 20, 9, 30, 0, TimeSpan.Zero);
 
-        var entries = HistorySourceProvider.Build(
+        var entries = HistoryTabProvider.Build(
             new[] { Entry(@"C:\report", time: openedAt.ToUnixTimeSeconds()) }, maxItems: 10, exists: _ => true);
 
         Assert.AreEqual(openedAt.LocalDateTime, entries.Single().Metadata.Modified);
@@ -60,7 +60,7 @@ public sealed class HistorySourceProviderTests
     [TestMethod]
     public void Build_AnEntryWithNoRecordedTime_HasNoModifiedTimeEither()
     {
-        var entries = HistorySourceProvider.Build(
+        var entries = HistoryTabProvider.Build(
             new[] { Entry(@"C:\report", time: 0) }, maxItems: 10, exists: _ => true);
 
         Assert.AreEqual(default, entries.Single().Metadata.Modified);
@@ -68,12 +68,12 @@ public sealed class HistorySourceProviderTests
 
     [TestMethod]
     public void Build_IgnoresBlankPaths()
-        => Assert.IsEmpty(HistorySourceProvider.Build(
+        => Assert.IsEmpty(HistoryTabProvider.Build(
             new[] { Entry("  ") }, maxItems: 10, exists: _ => true));
 
     [TestMethod]
     public void Build_EmptyHistory_IsEmpty()
-        => Assert.IsEmpty(HistorySourceProvider.Build(
+        => Assert.IsEmpty(HistoryTabProvider.Build(
             Array.Empty<HistoryEntry>(), maxItems: 10, exists: _ => true));
 
     private static HistoryEntry Entry(string path, HistoryEntryKind kind = HistoryEntryKind.File, long time = 1)

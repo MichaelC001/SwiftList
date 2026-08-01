@@ -160,9 +160,8 @@ public class QuickSearchWindowController
         _window.ViewModel.SearchQuery = initialQuery ?? string.Empty;
         _window.ViewModel.RefreshEmptyState();
         _window.ViewModel.RefreshLayoutSettings();
-        // UpdateLayout() first so the startup panel tab strip (whose Visibility/content the calls above
-        // may have just changed) actually measures/arranges before ApplyResultsLayoutImmediate reads its
-        // ActualHeight -- then apply the results height synchronously too, rather than leaving it to the
+        // UpdateLayout() first so everything the calls above may have just changed actually
+        // measures/arranges before ApplyResultsLayoutImmediate reads it -- then apply the results height synchronously too, rather than leaving it to the
         // normal Send-priority-deferred QueueResultsLayoutUpdate. Both run while the window is still
         // hidden, so the window's first visible frame (at Show() below) already lands at the correct size
         // instead of showing at whatever Height this persistent window was last left at (a different tab,

@@ -31,7 +31,7 @@ public class InlineSearchWindowInputHandler
 
         // Every bare key check below (including Escape) requires no modifiers -- otherwise it would
         // shadow a user-configurable combo hotkey sharing the same base key (e.g. CompleteFromSelectionHotkey
-        // defaults to Ctrl+Tab, StartupPanel's tab-cycle hotkeys default to Ctrl+Left/Right) before it
+        // defaults to Ctrl+Tab) before it
         // ever reaches that hotkey's own dispatch further down (or the calling window's).
         var noModifiers = Keyboard.Modifiers == ModifierKeys.None;
 

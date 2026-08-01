@@ -43,6 +43,13 @@ public class QuickPanelSettings
     public List<string> ClosedPluginTabIds { get; set; } = new();
 
     /// <summary>
+    /// Plugin tabs shown as a detail list rather than as thumbnail tiles, by component id. Listed rather
+    /// than a flag per tab for the same reason the closed ones are: a plugin tab has no settings object
+    /// of its own to carry one, and the id is what everything else about it is keyed by.
+    /// </summary>
+    public List<string> ListViewPluginTabIds { get; set; } = new();
+
+    /// <summary>
     /// The strip's order, left to right, over workspaces and plugin tabs at once. An id that isn't listed
     /// (a workspace just created, a plugin that just appeared) keeps its discovery-order position after
     /// everything listed -- the same rule <see cref="QuickPanelTab.GroupOrder"/> follows for groups.

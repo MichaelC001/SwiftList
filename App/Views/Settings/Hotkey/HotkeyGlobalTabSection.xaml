@@ -209,31 +209,5 @@
                   IsChecked="{Binding QuickNavTriggerOnMiddleClick, Mode=TwoWay}"
                   Margin="0,4"/>
 
-        <Border Style="{StaticResource SettingsGroupDivider}"/>
-
-        <!-- Group: Startup Panel -->
-        <TextBlock x:Name="RowGroupStartupPanel" Style="{StaticResource SettingsGroupTitle}"
-                   Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Hotkeys_GroupStartupPanel]}"/>
-
-        <Grid x:Name="RowStartupPanelNextTab" Margin="0,4,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" SharedSizeGroup="HotkeyLabel"/>
-                <ColumnDefinition Width="200"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Hotkeys_StartupPanelNextTab]}" Margin="0,0,16,0" VerticalAlignment="Center"/>
-            <ctrl:HotkeyRecorderControl Grid.Column="1" Width="200" Height="26"
-                Value="{Binding StartupPanelNextTabHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                RequireModifier="True" DefaultValue="Ctrl+Right"/>
-        </Grid>
-        <Grid x:Name="RowStartupPanelPreviousTab" Margin="0,8,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" SharedSizeGroup="HotkeyLabel"/>
-                <ColumnDefinition Width="200"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Hotkeys_StartupPanelPreviousTab]}" Margin="0,0,16,0" VerticalAlignment="Center"/>
-            <ctrl:HotkeyRecorderControl Grid.Column="1" Width="200" Height="26"
-                Value="{Binding StartupPanelPreviousTabHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                RequireModifier="True" DefaultValue="Ctrl+Left"/>
-        </Grid>
     </StackPanel>
 </UserControl>

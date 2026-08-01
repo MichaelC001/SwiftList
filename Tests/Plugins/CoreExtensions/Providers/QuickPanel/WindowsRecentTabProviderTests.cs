@@ -7,7 +7,7 @@ namespace SwiftList.Plugins.CoreExtensions.Tests.Providers.QuickPanel;
 // arguments: the real one goes to %AppData%\...\Recent and through COM, neither of which a test can set
 // up. What is tested is everything that decides which entries come back and in what order.
 [TestClass]
-public sealed class WindowsRecentSourceProviderTests
+public sealed class WindowsRecentTabProviderTests
 {
     [TestMethod]
     public void Build_OrdersByShortcutTimeAndAppliesTheCapToTheNewest()
@@ -20,7 +20,7 @@ public sealed class WindowsRecentSourceProviderTests
         var middle = Shortcut(recent, files, "middle", DateTime.Now.AddHours(-2));
         var newest = Shortcut(recent, files, "newest", DateTime.Now.AddHours(-1));
 
-        var entries = WindowsRecentSourceProvider.Build(recent.Path, maxItems: 2, ResolveInto(files));
+        var entries = WindowsRecentTabProvider.Build(recent.Path, maxItems: 2, ResolveInto(files));
 
         Assert.HasCount(2, entries);
         Assert.AreEqual(newest, entries[0].FullPath);
@@ -37,7 +37,7 @@ public sealed class WindowsRecentSourceProviderTests
         var opened = DateTime.Now.AddMinutes(-5);
         Shortcut(recent, files, "report", opened);
 
-        var entries = WindowsRecentSourceProvider.Build(recent.Path, maxItems: 10, ResolveInto(files));
+        var entries = WindowsRecentTabProvider.Build(recent.Path, maxItems: 10, ResolveInto(files));
 
         // The panel orders a group by this, and a document read but never edited has a file time from
         // long before it was last opened.
@@ -58,7 +58,7 @@ public sealed class WindowsRecentSourceProviderTests
 
         // "deleted" resolves to a path that was never created: the shell leaves those shortcuts behind
         // for weeks after the file goes.
-        var entries = WindowsRecentSourceProvider.Build(recent.Path, maxItems: 10, shortcut =>
+        var entries = WindowsRecentTabProvider.Build(recent.Path, maxItems: 10, shortcut =>
             Path.GetFileName(shortcut) == "unresolvable.lnk" ? null : ResolveInto(files)(shortcut));
 
         Assert.HasCount(1, entries);
@@ -76,7 +76,7 @@ public sealed class WindowsRecentSourceProviderTests
         Write(recent, "opened-once.lnk", DateTime.Now.AddHours(-2));
         Write(recent, "opened-again.lnk", DateTime.Now);
 
-        var entries = WindowsRecentSourceProvider.Build(recent.Path, maxItems: 10, _ => target);
+        var entries = WindowsRecentTabProvider.Build(recent.Path, maxItems: 10, _ => target);
 
         Assert.HasCount(1, entries);
     }
@@ -86,7 +86,7 @@ public sealed class WindowsRecentSourceProviderTests
     {
         using var files = new TempDirectory();
 
-        Assert.IsEmpty(WindowsRecentSourceProvider.Build(
+        Assert.IsEmpty(WindowsRecentTabProvider.Build(
             Path.Combine(Path.GetTempPath(), "swiftlist-no-such-folder"), maxItems: 10, ResolveInto(files)));
     }
 
@@ -97,7 +97,7 @@ public sealed class WindowsRecentSourceProviderTests
         using var files = new TempDirectory();
         File.WriteAllText(Path.Combine(recent.Path, "desktop.ini"), string.Empty);
 
-        Assert.IsEmpty(WindowsRecentSourceProvider.Build(recent.Path, maxItems: 10, ResolveInto(files)));
+        Assert.IsEmpty(WindowsRecentTabProvider.Build(recent.Path, maxItems: 10, ResolveInto(files)));
     }
 
     // A shortcut named "<name>.lnk" in the Recent folder, standing for a real file of that name, with a

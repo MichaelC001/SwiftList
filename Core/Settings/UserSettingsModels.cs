@@ -75,11 +75,6 @@ public class HotkeyPageSettings
     // isn't user-configurable, matching the always-on scroll-to-navigate gesture.
     public string KeywordHistoryDeleteHotkey { get; set; } = "Ctrl+Delete";
 
-    // Cycles (wraps at both ends) through the Startup Panel's own tab strip -- see
-    // StartupPanelController.SelectNextTab/SelectPreviousTab.
-    public string StartupPanelNextTabHotkey { get; set; } = "Ctrl+Right";
-    public string StartupPanelPreviousTabHotkey { get; set; } = "Ctrl+Left";
-
     // Opens the full SearchWindow from the Quick Window, carrying over the current query -- the same
     // action as the Quick Window's own expand ("Open More") button.
     public string OpenFullWindowHotkey { get; set; } = "Ctrl+F";

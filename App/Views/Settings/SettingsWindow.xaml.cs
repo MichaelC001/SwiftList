@@ -10,7 +10,6 @@ using SwiftList.App.Views.Settings;
 using SwiftList.App.Views.Settings.General;
 using SwiftList.App.Views.Settings.Hotkey;
 using SwiftList.App.Views.Settings.Plugins;
-using SwiftList.App.Views.Settings.StartupPanel;
 namespace SwiftList.App;
 
 // Window chrome and the sidebar's own section-switching. Search box/popup logic lives in
@@ -35,7 +34,6 @@ public partial class SettingsWindow : Window
     private PluginManagementSettingsPage? _pagePlugins;
     private HistorySettingsPage? _pageHistory;
     private FavoritesSettingsPage? _pageFavorites;
-    private StartupPanelSettingsPage? _pageStartupPanel;
     private Views.Settings.QuickPanel.QuickPanelSettingsPage? _pageQuickPanel;
     private AboutSettingsPage? _pageAbout;
     private FrameworkElement? _currentPage;
@@ -44,7 +42,7 @@ public partial class SettingsWindow : Window
     internal IndexSettingsPage PageIndex => _pageIndex ??= AddPage(new IndexSettingsPage());
     internal GeneralSettingsPage PageGeneral => _pageGeneral ??= AddPage(new GeneralSettingsPage());
     internal AppearanceSettingsPage PageAppearance => _pageAppearance ??= AddPage(new AppearanceSettingsPage());
-    // Hotkeys/Plugins/History/Favorites/StartupPanel set their own DataContext explicitly (previously done
+    // Hotkeys/Plugins/History/Favorites set their own DataContext explicitly (previously done
     // via SettingsWindow.xaml's DataContext="{Binding Xxx}") -- the rest inherit it from this Window like
     // before, since inherited DataContext still flows correctly through a subtree added via
     // Children.Add rather than markup.
@@ -52,7 +50,6 @@ public partial class SettingsWindow : Window
     internal PluginManagementSettingsPage PagePlugins => _pagePlugins ??= AddPage(new PluginManagementSettingsPage { DataContext = ((SettingsViewModel)DataContext).Plugins });
     internal HistorySettingsPage PageHistory => _pageHistory ??= AddPage(new HistorySettingsPage { DataContext = ((SettingsViewModel)DataContext).History });
     internal FavoritesSettingsPage PageFavorites => _pageFavorites ??= AddPage(new FavoritesSettingsPage { DataContext = ((SettingsViewModel)DataContext).Favorites });
-    internal StartupPanelSettingsPage PageStartupPanel => _pageStartupPanel ??= AddPage(new StartupPanelSettingsPage { DataContext = ((SettingsViewModel)DataContext).StartupPanel });
     internal Views.Settings.QuickPanel.QuickPanelSettingsPage PageQuickPanel => _pageQuickPanel ??= AddPage(new Views.Settings.QuickPanel.QuickPanelSettingsPage { DataContext = ((SettingsViewModel)DataContext).QuickPanel });
     internal AboutSettingsPage PageAbout => _pageAbout ??= AddPage(new AboutSettingsPage());
 
@@ -161,7 +158,7 @@ public partial class SettingsWindow : Window
     // jump+highlight a typed search-box match would trigger) rather than duplicating its section/tab-
     // selection and highlight logic.
     //
-    // Passes this window's own real DataContext (needed so the Plugins/Hotkeys/StartupPanel dynamic
+    // Passes this window's own real DataContext (needed so the Plugins/Hotkeys dynamic
     // entries' Reveal step resolves against the SAME live-bound objects actually in the visual tree --
     // otherwise ContainerFromItem never finds a match and the highlight silently no-ops), but
     // evaluateConditionalVisibility: false so the static IsVisible-gated entries (WSL tab, etc.) are

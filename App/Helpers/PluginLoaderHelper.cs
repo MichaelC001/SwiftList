@@ -91,7 +91,7 @@ public static class PluginLoaderHelper
         : 2;
 
     /// <summary>Resolves the display name shown for a plugin -- Plugin Management's card header, and
-    /// any other UI that groups components by their owning plugin (e.g. Startup Panel's reopenable-tabs
+    /// any other UI that groups components by their owning plugin (e.g. the plugin page's own component
     /// list). Prefers the IPlugin's own Name if this assembly has one, else the first named provider
     /// found via FallbackPluginName, else the DLL's bare filename.</summary>
     public static string GetPluginDisplayName(Assembly assembly, PluginManager manager) => GetPluginDisplayName(assembly, manager, out _);

@@ -36,6 +36,33 @@ public sealed class QuickPanelPluginTabSettingsTests
             settings.QuickPanel.ClosedPluginTabIds);
     }
 
+    // Same rule for the display choice, and worth its own case: two lists are now rewritten from the
+    // same rows, and getting one of them right says nothing about the other.
+    [TestMethod]
+    public void Save_KeepsTheDisplayChoiceOfATabItCannotSee()
+    {
+        var settings = BuildSettings();
+        settings.QuickPanel.ListViewPluginTabIds = new List<string> { "Gone::QuickPanelTabProvider::Nothing" };
+
+        new QuickPanelSettingsViewModel(settings).Save();
+
+        CollectionAssert.AreEqual(
+            new[] { "Gone::QuickPanelTabProvider::Nothing" },
+            settings.QuickPanel.ListViewPluginTabIds);
+    }
+
+    // Tiles are what a panel of files is for, so a plugin tab starts on them: absence from the list is
+    // what "tiles" means, exactly as absence from the closed list means "open".
+    [TestMethod]
+    public void APluginTabShowsTilesUntilItIsToldNotTo()
+    {
+        var settings = BuildSettings();
+
+        new QuickPanelSettingsViewModel(settings).Save();
+
+        Assert.IsEmpty(settings.QuickPanel.ListViewPluginTabIds);
+    }
+
     [TestMethod]
     public void APluginTabIsOpenUntilItIsClosed()
     {

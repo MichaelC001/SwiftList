@@ -6,7 +6,6 @@ using SwiftList.App.Helpers;
 using SwiftList.App.Services;
 using SwiftList.App.ViewModels.Settings;
 using SwiftList.App.ViewModels.Settings.Plugins;
-using SwiftList.App.ViewModels.Settings.StartupPanel;
 using SwiftList.Core;
 
 using SwiftList.Core.SearchIndex;
@@ -42,7 +41,7 @@ internal static class SettingsWindowSearchExtensions
     // Every currently-reachable settings entry, static + dynamic, in one fixed order: this is the single
     // source of truth for the in-app search box, JumpToEntry's index resolution, and the SDK-facing
     // SettingsSearchService feed (see App.xaml.cs), so all three agree on what "entry N" means and none
-    // of them silently omits the plugin/hotkey-action/startup-panel-tab entries the other two include.
+    // of them silently omits the plugin or hotkey-action entries the other two include.
     // vm is null for the SDK feed (no live SettingsWindow may exist yet) -- the three dynamic sections
     // then fall back to building their own data straight from PluginManager.Instance/UserSettings
     // instead of reading the live window's already-built collections, since Activate/Reveal only matter
@@ -52,7 +51,7 @@ internal static class SettingsWindowSearchExtensions
     // rows, ...), independently of vm's own null-ness: the SDK feed always builds with vm: null, which
     // unconditionally excludes these entries (no live window to evaluate their predicate against) --
     // JumpToEntry must reproduce that exact same exclusion to keep its indices aligned with the SDK's,
-    // even though it DOES have a real, live vm available (needed for the Plugins/Hotkeys/StartupPanel
+    // even though it DOES have a real, live vm available (needed for the Plugins/Hotkeys
     // dynamic sections below, whose Reveal step looks up a container by reference-equality against the
     // live window's own bound collection -- rebuilding fresh throwaway objects there, as vm: null would,
     // makes ContainerFromItem find nothing and silently skips the highlight). Defaults to true (evaluate
@@ -113,24 +112,6 @@ internal static class SettingsWindowSearchExtensions
             {
                 results.Add(new SettingsSearchResultItem(action.DisplayName, $"{hotkeysSectionLabel} › {pluginActionsTabLabel} › {group.PluginName}", "Hotkeys", SelectPluginActionsTab,
                     Reveal: new SettingsSearchDynamicReveal("PluginActionGroupsList", capturedGroup, action)));
-            }
-        }
-
-        var startupPanelSectionLabel = TranslationManager.Instance["Settings_StartupPanel"];
-        var pluginTabsTabLabel = TranslationManager.Instance["StartupPanel_TabPluginTabs"];
-        var pluginTabGroups = vm?.StartupPanel.PluginTabGroups ?? (IEnumerable<StartupPanelPluginGroupViewModel>)StartupPanelSettingsViewModel.BuildPluginTabGroups();
-        foreach (var group in pluginTabGroups)
-        {
-            var capturedGroup = group;
-            void SelectPluginTabsSubTab(SettingsViewModel v) => v.StartupPanel.SelectedSubTab = "PluginTabs";
-
-            results.Add(new SettingsSearchResultItem(group.PluginName, $"{startupPanelSectionLabel} › {pluginTabsTabLabel}", "StartupPanel", SelectPluginTabsSubTab,
-                Reveal: new SettingsSearchDynamicReveal("PluginTabGroupsList", capturedGroup)));
-
-            foreach (var tab in group.Tabs)
-            {
-                results.Add(new SettingsSearchResultItem(tab.Label, $"{startupPanelSectionLabel} › {pluginTabsTabLabel} › {group.PluginName}", "StartupPanel", SelectPluginTabsSubTab,
-                    Reveal: new SettingsSearchDynamicReveal("PluginTabGroupsList", capturedGroup, tab)));
             }
         }
 
@@ -325,7 +306,6 @@ internal static class SettingsWindowSearchExtensions
         "Plugins" => window.PagePlugins,
         "History" => window.PageHistory,
         "Favorites" => window.PageFavorites,
-        "StartupPanel" => window.PageStartupPanel,
         "QuickPanel" => window.PageQuickPanel,
         "About" => window.PageAbout,
         _ => null,

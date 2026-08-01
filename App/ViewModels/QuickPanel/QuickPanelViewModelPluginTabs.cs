@@ -54,6 +54,16 @@ public partial class QuickPanelViewModel
                 Modified: entry.Metadata.Modified is var modified && modified != DateTime.MinValue ? modified : (DateTime?)null))
             .ToList();
 
-        place(new QuickPanelGroupViewModel(id, name, string.Empty, items, showsHeading: false), 0);
+        // Tiles unless the settings page says otherwise, which is what a folder source gets too. The
+        // header's own toggle still overrides it for as long as the panel is open.
+        var asList = _readSettings().ListViewPluginTabIds.Contains(id, StringComparer.OrdinalIgnoreCase);
+
+        place(new QuickPanelGroupViewModel(
+            id, name, string.Empty, items,
+            QuickPanelSortMode.ModifiedDescending,
+            thumbnailView: !asList,
+            expanded: true,
+            acceptsDrops: false,
+            showsHeading: false), 0);
     }
 }

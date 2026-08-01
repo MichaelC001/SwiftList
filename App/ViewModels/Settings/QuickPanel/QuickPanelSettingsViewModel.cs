@@ -11,9 +11,9 @@ namespace SwiftList.App.ViewModels.Settings.QuickPanel;
 /// <see cref="Save"/> runs, the same way every other settings page works.
 /// </summary>
 /// <remarks>
-/// The tabs edited here are the panel's workspaces -- one set of sources per project -- and have
-/// nothing to do with the Startup Panel's tab strip, where a tab is one content source. Same word, two
-/// concepts; they must not be wired together.
+/// The tabs edited here are the panel's workspaces -- one set of sources per project -- which is not
+/// what a tab means on the Plugin tabs page beside it, where one tab is one plugin's whole list. Same
+/// word, two concepts; they must not be wired together.
 /// </remarks>
 public class QuickPanelSettingsViewModel : ViewModelBase
 {
@@ -161,11 +161,16 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         // switched off has no row on this page, and rewriting the list from these rows alone would quietly
         // reopen a tab the user closed before disabling its plugin.
         var listed = PluginTabs.Select(option => option.Id).ToList();
-        panel.ClosedPluginTabIds = panel.ClosedPluginTabIds
-            .Where(id => !listed.Contains(id, StringComparer.OrdinalIgnoreCase))
-            .Concat(PluginTabs.Where(option => !option.IsOpen).Select(option => option.Id))
-            .ToList();
+        panel.ClosedPluginTabIds = Merge(panel.ClosedPluginTabIds, listed, option => !option.IsOpen);
+        panel.ListViewPluginTabIds = Merge(panel.ListViewPluginTabIds, listed, option => option.ShowAsList);
     }
+
+    /// <summary>Rewrites one of the per-plugin-tab lists from the rows, keeping what has no row.</summary>
+    private List<string> Merge(List<string> stored, List<string> listed, Func<QuickPanelPluginTabOption, bool> isSet)
+        => stored
+            .Where(id => !listed.Contains(id, StringComparer.OrdinalIgnoreCase))
+            .Concat(PluginTabs.Where(isSet).Select(option => option.Id))
+            .ToList();
 
     /// <summary>The tabs the installed plugins offer, each ticked while the strip shows it.</summary>
     /// <remarks>
@@ -177,6 +182,28 @@ public class QuickPanelSettingsViewModel : ViewModelBase
     public IReadOnlyList<QuickPanelPluginTabOption> PluginTabs { get; }
 
     public bool HasPluginTabs => PluginTabs.Count > 0;
+
+    /// <summary>Re-reads every label on this page after a language switch.</summary>
+    /// <remarks>
+    /// Driven from SettingsViewModel's own TranslationManager subscription rather than a second one here,
+    /// so there is one handler to unhook in Cleanup() instead of one per page.
+    ///
+    /// Walked live rather than pushed to a list captured when the page was built: workspaces and sources
+    /// are added and removed while the window is open, and a row created after the switch is already
+    /// correct while one created before it is not.
+    /// </remarks>
+    public void NotifyLanguageChanged()
+    {
+        foreach (var tab in Tabs)
+        {
+            tab.NotifyLanguageChanged();
+            foreach (var source in tab.Sources)
+                source.RefreshTranslations();
+        }
+
+        foreach (var option in PluginTabs)
+            option.NotifyLanguageChanged();
+    }
 
     private void AddTab()
     {
