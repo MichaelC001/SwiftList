@@ -1,4 +1,4 @@
-using SwiftList.App.ViewModels.Search;
+﻿using SwiftList.App.ViewModels.Search;
 using SwiftList.Core;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
@@ -8,12 +8,25 @@ namespace SwiftList.App.ViewModels.QuickPanel;
 // is part of.
 public partial class QuickPanelViewModel
 {
-    /// <summary>Reloads before the panel is shown, and picks the workspace the app in front claims.</summary>
+    /// <summary>
+    /// Starts loading every workspace and returns as soon as there is something worth opening for --
+    /// or when everything has finished and there is not.
+    /// </summary>
     /// <remarks>
-    /// Every open, not once: the panel shows what is recent and where you currently are, and it is
-    /// reused rather than rebuilt, so a version that loaded at construction would keep showing whatever
-    /// was true the first time it was ever opened. Awaited before the panel opens, not after, because
-    /// whether it opens at all depends on what this turns up.
+    /// Nothing waits on anything else. Each source is its own task, each group appears the moment its own
+    /// source is ready, and the panel opens on the first one to arrive rather than the last. A source on
+    /// a disconnected share used to hold the whole summon open behind it; now it costs only its own
+    /// group, which turns up late or not at all.
+    ///
+    /// The task returned is deliberately not "everything is loaded": the caller's question is only
+    /// whether to open a window, and that is answered by the first entry. The rest lands afterwards,
+    /// into a panel that is already on screen.
+    ///
+    /// Streaming stops at the source, not inside it. A source's entries are ordered and capped as a set
+    /// (see QuickPanelSourceLoader.Order), so emitting them one at a time would mean re-sorting the group
+    /// under the pointer and re-deciding which ones the cap keeps, on every arrival. A slow source
+    /// honestly shows up as its group arriving late; it should not show up as a list that will not sit
+    /// still.
     /// </remarks>
     public async Task RefreshAsync(string? processName = null, CancellationToken token = default)
     {
@@ -29,114 +42,129 @@ public partial class QuickPanelViewModel
         // no tab must also not be reachable by a process rule or by the number keys.
         var enabled = settings.Tabs.Where(tab => tab.Enabled).ToList();
 
-        // Every workspace, not just the one about to be shown. A tab is only worth a place in the strip
-        // if there is something behind it, and there is no way to know that without asking -- so they
-        // are all asked, together rather than one after another, which makes the wait the slowest
-        // workspace instead of the sum of them. Switching tabs afterwards is a swap, not a reload.
-        var loaded = await Task.WhenAll(
-            enabled.Select(workspace => LoadWorkspaceAsync(workspace, token))).ConfigureAwait(true);
-
         _content = new Dictionary<string, List<QuickPanelGroupViewModel>>(StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < enabled.Count; i++)
-        {
-            if (loaded[i].Count > 0)
-                _content[enabled[i].Id] = loaded[i];
-        }
-
-        _workspaces = enabled.Where(workspace => _content.ContainsKey(workspace.Id)).ToList();
-        _activeTabId = ResolveActiveTabId(settings, processName);
+        _workspaces = new List<QuickPanelTab>();
+        _pendingWorkspaces = enabled;
+        // What the panel wants to open on, decided before anything has loaded. _activeTabId is what it
+        // is actually showing, which may be a stand-in until the wanted one turns up -- or forever, if
+        // that workspace has nothing in it.
+        _wantedTabId = ResolveActiveTabId(settings, processName, enabled);
+        _activeTabId = string.Empty;
 
         RebuildTabs();
         ShowActiveWorkspace();
+
+        // Completed by the first group to land. Nothing else awaits it, so a summon that turns up empty
+        // still finishes -- through the WhenAll below rather than through this.
+        var firstArrival = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _firstArrival = firstArrival;
+
+        var everything = Task.WhenAll(enabled.Select(workspace => LoadWorkspaceAsync(workspace, token)));
+
+        // Whichever comes first: something to show, or nothing left to wait for.
+        await Task.WhenAny(firstArrival.Task, everything).ConfigureAwait(true);
+        _firstArrival = null;
     }
 
-    // The registration keys currently held, one per group on screen. Empty means nothing is subscribed.
-    private readonly List<string> _watchKeys = new();
+    /// <summary>Enabled workspaces still loading, in configured order -- what a group's rank is read from.</summary>
+    private List<QuickPanelTab> _pendingWorkspaces = new();
 
-    // Each source subscribes under its own key, so the notification names which group to reload rather
-    // than "something the panel is showing changed". Prefixed to keep it clear of a plugin's own id,
-    // which is what this registry is otherwise keyed by.
-    private static string WatchKey(string sourceId) => "__quickpanel::" + sourceId;
+    private TaskCompletionSource? _firstArrival;
 
-    /// <summary>Starts noticing changes to the folders on screen. Called once the panel is up.</summary>
+    /// <summary>Loads one workspace's visible sources, each on its own, and files each result as it lands.</summary>
+    private async Task LoadWorkspaceAsync(QuickPanelTab workspace, CancellationToken token)
+    {
+        var visible = QuickPanelGroupOrdering.Resolve(
+            workspace.Folders.Select(folder => folder.Id),
+            workspace.GroupOrder,
+            workspace.DisabledGroupIds).ToList();
+
+        await Task.WhenAll(visible.Select(async (id, rank) =>
+        {
+            var source = workspace.Folders.FirstOrDefault(folder => folder.Id == id);
+            if (source == null) return;
+
+            var group = await BuildGroupAsync(workspace, source, token).ConfigureAwait(true);
+            if (group != null) Place(workspace, group, rank);
+        })).ConfigureAwait(true);
+    }
+
+    /// <summary>Files a finished group under its workspace, in the position the settings give it.</summary>
     /// <remarks>
-    /// Through the directory registry rather than a watcher of the panel's own, which is the difference
-    /// between duplicating the USN index and using it: the registry reports from BOTH the index taking
-    /// an update in and a FileSystemWatcher, debounced together, with the watcher there for the
-    /// directories no index covers (a share, a drive indexing is off for). A watcher on its own is early
-    /// by construction -- it fires when the filesystem changes, while the panel reads the index, which
-    /// has not caught up yet.
+    /// At its configured rank, never appended. Groups now arrive in whatever order their sources happen
+    /// to finish, so appending would let a fast source outrank a slow one and quietly replace the user's
+    /// own order with a race -- the same trap the startup panel's tabs hit and solved the same way.
     ///
-    /// Only the workspace being shown, not all of them: a folder behind a tab nobody is looking at can
-    /// change all it likes, and that tab is reloaded when it is switched to anyway.
+    /// The tab appears with the workspace's first group, for the same reason it disappears when a
+    /// workspace has none: a tab is only worth a place in the strip if there is something behind it.
     /// </remarks>
-    public void StartWatching()
+    private void Place(QuickPanelTab workspace, QuickPanelGroupViewModel group, int rank)
     {
-        StopWatching();
-
-        // Touching Instance is what binds the SDK delegates this then calls through; without it the
-        // registration below is a silent no-op.
-        _ = Core.Services.Plugin.DirectoryIndex.CoreDirectoryIndexManager.Instance;
-        PluginSdk.Services.DirectoryIndexerService.DirectoryChanged += OnDirectoryChanged;
-
-        foreach (var group in Groups)
+        // Sources finish on their own tasks, so two can land at the same moment. In the running app the
+        // UI SynchronizationContext serialises the continuations and this is safe by accident of where
+        // they resume; the lock is what makes it true without depending on that, and it is the only
+        // thing holding these collections together anywhere there is no dispatcher.
+        lock (_placing)
         {
-            var source = SourceOf(group.SourceId);
-            if (source == null || string.IsNullOrEmpty(group.FolderPath)) continue;
+            if (!_content.TryGetValue(workspace.Id, out var groups))
+            {
+                _content[workspace.Id] = groups = new List<QuickPanelGroupViewModel>();
+                AddWorkspaceTab(workspace);
+            }
 
-            var key = WatchKey(group.SourceId);
-            // Recursive to match the source: a source that lists its subfolders is changed by a write in
-            // one of them, and one that does not is not.
-            PluginSdk.Services.DirectoryIndexerService.RegisterDirectory(
-                key, group.FolderPath, source.Recursive, "*");
-            _watchKeys.Add(key);
+            var at = groups.FindIndex(existing => RankOf(existing.SourceId) > rank);
+            if (at < 0) at = groups.Count;
+            groups.Insert(at, group);
+            _ranks[group.SourceId] = rank;
+
+            if (workspace.Id.Equals(_activeTabId, StringComparison.OrdinalIgnoreCase))
+                ShowActiveWorkspace();
         }
+
+        _firstArrival?.TrySetResult();
     }
 
-    /// <summary>Stops, and forgets, everything StartWatching set up. Safe to call when nothing is running.</summary>
-    public void StopWatching()
-    {
-        PluginSdk.Services.DirectoryIndexerService.DirectoryChanged -= OnDirectoryChanged;
+    private readonly object _placing = new();
 
-        foreach (var key in _watchKeys)
-            PluginSdk.Services.DirectoryIndexerService.UnregisterDirectories(key);
-        _watchKeys.Clear();
-    }
+    // Where each source sits in its workspace's configured order, remembered as it lands so the next
+    // arrival can be slotted against it.
+    private readonly Dictionary<string, int> _ranks = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Re-aims the watchers at whatever is on screen now, but only if they were already running.</summary>
+    private int RankOf(string sourceId) => _ranks.TryGetValue(sourceId, out var rank) ? rank : int.MaxValue;
+
+    /// <summary>What the panel wants to be showing, which it may not be able to yet.</summary>
+    private string _wantedTabId = string.Empty;
+
+    /// <summary>Gives a workspace its tab, at the position the settings order it in.</summary>
     /// <remarks>
-    /// Switching workspace replaces every group, so watchers aimed at the old ones are watching folders
-    /// nobody is looking at. Conditional, because this also runs during a refresh that happens before
-    /// there is a window: starting unconditionally would leave watchers running for a panel that never
-    /// opened.
+    /// Tabs arrive in whatever order their workspaces first produce something, so the position comes
+    /// from the configured order rather than from arrival -- appending would let a fast workspace
+    /// outrank a slow one and quietly replace the user's own order with a race.
+    ///
+    /// The wanted workspace may be slower than another, or may have nothing at all. Until it arrives the
+    /// panel shows the first tab it has, and switches the moment the wanted one does turn up. The wanted
+    /// id is never overwritten by that stand-in, which is what lets it still be honoured later.
     /// </remarks>
-    private void RewatchIfWatching()
+    private void AddWorkspaceTab(QuickPanelTab workspace)
     {
-        if (_watchKeys.Count > 0) StartWatching();
+        var at = _pendingWorkspaces.IndexOf(workspace);
+        var before = _workspaces.FindIndex(existing => _pendingWorkspaces.IndexOf(existing) > at);
+        if (before < 0) before = _workspaces.Count;
+        _workspaces.Insert(before, workspace);
+
+        var isWanted = workspace.Id.Equals(_wantedTabId, StringComparison.OrdinalIgnoreCase);
+        var showingNothing = string.IsNullOrEmpty(_activeTabId)
+            || !_workspaces.Any(tab => tab.Id.Equals(_activeTabId, StringComparison.OrdinalIgnoreCase));
+
+        if (isWanted || showingNothing)
+            _activeTabId = isWanted ? workspace.Id : _workspaces[0].Id;
+
+        RebuildTabs();
+        if (isWanted || showingNothing) ShowActiveWorkspace();
     }
 
-    /// <summary>Reloads the one group whose folder settled. Raised off the UI thread, so it comes back.</summary>
-    /// <remarks>
-    /// The registry is process-wide and every plugin's registrations report through the same event, so
-    /// the key is checked rather than assumed: everything not registered by this panel is somebody
-    /// else's.
-    /// </remarks>
-    private void OnDirectoryChanged(string key)
-    {
-        if (!_watchKeys.Contains(key)) return;
-
-        var sourceId = key["__quickpanel::".Length..];
-        var dispatcher = System.Windows.Application.Current?.Dispatcher;
-        if (dispatcher == null) return;
-
-        dispatcher.BeginInvoke(new Action(() =>
-        {
-            var group = Groups.FirstOrDefault(g => g.SourceId.Equals(sourceId, StringComparison.OrdinalIgnoreCase));
-            if (group != null) _ = ReloadGroupAsync(group);
-        }));
-    }
-
-    private QuickPanelFolderSource? SourceOf(string sourceId) => _workspaces
+    /// <summary>The folder source behind a group, looked up across every workspace this refresh knows.</summary>
+    private QuickPanelFolderSource? SourceOf(string sourceId) => _pendingWorkspaces
         .SelectMany(workspace => workspace.Folders)
         .FirstOrDefault(folder => folder.Id.Equals(sourceId, StringComparison.OrdinalIgnoreCase));
 
@@ -179,29 +207,6 @@ public partial class QuickPanelViewModel
         // A group that the reload emptied is hidden by its own HasMatches, so the panel's own "nothing
         // here" line has to be recomputed against what is left.
         IsEmpty = !Groups.Any(shown => shown.HasMatches);
-    }
-
-    /// <summary>One workspace's visible sources, in the order it stores, minus the ones that came back empty.</summary>
-    private async Task<List<QuickPanelGroupViewModel>> LoadWorkspaceAsync(
-        QuickPanelTab workspace, CancellationToken token)
-    {
-        var groups = new List<QuickPanelGroupViewModel>();
-
-        foreach (var id in QuickPanelGroupOrdering.Resolve(
-                     workspace.Folders.Select(folder => folder.Id),
-                     workspace.GroupOrder,
-                     workspace.DisabledGroupIds))
-        {
-            var source = workspace.Folders.FirstOrDefault(folder => folder.Id == id);
-            if (source == null)
-                continue;
-
-            var group = await BuildGroupAsync(workspace, source, token).ConfigureAwait(true);
-            if (group != null)
-                groups.Add(group);
-        }
-
-        return groups;
     }
 
     /// <summary>One configured source, loaded and dressed as a group -- or null when it has nothing.</summary>

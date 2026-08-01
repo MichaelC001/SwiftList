@@ -82,22 +82,25 @@ public partial class QuickPanelViewModel : ViewModelBase
     /// <remarks>
     /// The app in front outranks the remembered tab deliberately -- a workspace that names an app is a
     /// statement that this app means these folders, and honouring where the panel was last left instead
-    /// would make that rule fire only when it happened to agree. Every candidate is checked against the
-    /// workspaces that actually have a tab, so a claim on an empty one falls through like any other miss.
+    /// would make that rule fire only when it happened to agree.
+    ///
+    /// Answered against every enabled workspace rather than the ones that turned out to have content,
+    /// because nothing has loaded yet when this runs: the answer is what the panel WANTS to open on, and
+    /// AddWorkspaceTab settles for something else only until that one arrives.
     /// </remarks>
-    private string ResolveActiveTabId(QuickPanelSettings settings, string? processName)
+    private string ResolveActiveTabId(QuickPanelSettings settings, string? processName, List<QuickPanelTab> candidates)
     {
-        var claimed = QuickPanelTabSelection.SelectTabId(processName, _workspaces);
+        var claimed = QuickPanelTabSelection.SelectTabId(processName, candidates);
         if (claimed != null)
             return claimed;
         if (Contains(_activeTabId))
             return _activeTabId;
         if (Contains(settings.ActiveTabId))
             return settings.ActiveTabId;
-        return _workspaces.Count > 0 ? _workspaces[0].Id : string.Empty;
+        return candidates.Count > 0 ? candidates[0].Id : string.Empty;
 
         bool Contains(string id) => !string.IsNullOrEmpty(id)
-            && _workspaces.Any(tab => tab.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            && candidates.Any(tab => tab.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool _rebuildingTabs;
