@@ -195,6 +195,26 @@ internal sealed class NetworkIndex : IDisposable
         }
     }
 
+    // Directory listing rather than search: the same walk local drives get, over this drive's own
+    // LiveIndex -- network/WSL/folder indexes live in this process, not in the elevated service, so a
+    // caller enumerating a share has to come through here to reach one. False = this index doesn't
+    // hold that path (wrong drive, or the directory isn't in it), so the caller can try elsewhere.
+    public bool EnumerateDirectory(string path, bool recursive, string[]? patterns, int limit, Action<SearchResult> onResult, CancellationToken token)
+    {
+        if (_live == null)
+            return false;
+        try
+        {
+            return IndexV2Searcher.EnumerateDirectory(_live, path, recursive, patterns, limit, onResult, token);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Swapped out mid-walk (checkpoint/refresh/delete), same as SearchStreaming above -- report
+            // "not held here" so the caller falls back rather than reporting an empty directory.
+            return false;
+        }
+    }
+
     public void ClearPathCache()
     {
         // IndexV2's Snapshot has no per-row path memo to clear -- see UsnIndexer.ClearAllPathCaches.

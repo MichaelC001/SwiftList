@@ -34,5 +34,10 @@ public static class UserNetworkDriveSearch
 
     public static void SearchStreaming(string query, int limit, Action<SearchResult> onResult, CancellationToken token = default, string? directoryFilter = null) => NetworkIndexer.SearchStreaming(query, limit, onResult, token, directoryFilter);
 
+    // In-process counterpart of SearchEngine.EnumerateDirectory (which only ever sees local drives):
+    // lists a directory out of whichever network/WSL/folder index holds it. False = none of them does.
+    public static bool EnumerateDirectory(string path, bool recursive, string filterPattern, int limit, Action<SearchResult> onResult, CancellationToken token = default)
+        => NetworkIndexer.EnumerateDirectory(path, recursive, Plugin.DirectoryIndex.FilterPatternHelper.SplitOrNullIfMatchAll(filterPattern), limit, onResult, token);
+
     public static List<SearchResult> GetRecentFiles(IReadOnlyList<string> directories, int limit, int maxAgeMinutes) => NetworkIndexer.GetRecentFiles(directories, limit, maxAgeMinutes);
 }

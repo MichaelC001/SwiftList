@@ -249,6 +249,60 @@ public sealed class DirectoryEnumeratorTests
         CollectionAssert.DoesNotContain(Paths(results), @"C:\Projects\newdir\inner.txt\ignored");
     }
 
+    // A folder index's source root is a full path ("D:\Projects\ProjectA\"), not a drive letter, and a
+    // UNC share's is "\\server\share\" -- both are reached through the in-process NetworkIndexer rather
+    // than the service. Listing the root ITSELF is the case that breaks if the path isn't normalized to
+    // end with a separator before it is matched against that root.
+    [TestMethod]
+    public void Enumerate_SourceRootedAtAFolderIndex_ListsItsOwnRootAndSubdirectories()
+    {
+        using var fixture = LiveIndexFixture.Build(@"D:\Projects\ProjectA", new[]
+        {
+            LiveIndexFixture.Root(),
+            new FileRecord(2, 1, "src", FileRecordFlags.Directory),
+            new FileRecord(3, 2, "main.cs", FileRecordFlags.None),
+            new FileRecord(4, 1, "readme.md", FileRecordFlags.None),
+        });
+
+        var (resolvedRoot, atRoot) = Enumerate(fixture, @"D:\Projects\ProjectA");
+        var (resolvedSub, inSub) = Enumerate(fixture, @"D:\Projects\ProjectA\src");
+
+        Assert.IsTrue(resolvedRoot);
+        CollectionAssert.AreEqual(new[] { @"D:\Projects\ProjectA\readme.md", @"D:\Projects\ProjectA\src" }, Paths(atRoot));
+        Assert.IsTrue(resolvedSub);
+        CollectionAssert.AreEqual(new[] { @"D:\Projects\ProjectA\src\main.cs" }, Paths(inSub));
+    }
+
+    [TestMethod]
+    public void Enumerate_SourceRootedAtAUncShare_ListsItsOwnRoot()
+    {
+        using var fixture = LiveIndexFixture.Build(@"\\server\share", new[]
+        {
+            LiveIndexFixture.Root(),
+            new FileRecord(2, 1, "movie.mp4", FileRecordFlags.None),
+        });
+
+        var (resolved, results) = Enumerate(fixture, @"\\server\share");
+
+        Assert.IsTrue(resolved);
+        CollectionAssert.AreEqual(new[] { @"\\server\share\movie.mp4" }, Paths(results));
+    }
+
+    [TestMethod]
+    public void Enumerate_PathOutsideThisSourcesRoot_ReportsUnresolved()
+    {
+        using var fixture = LiveIndexFixture.Build(@"D:\Projects\ProjectA", new[]
+        {
+            LiveIndexFixture.Root(),
+            new FileRecord(2, 1, "src", FileRecordFlags.Directory),
+        });
+
+        // Shares a textual prefix with the root but is a sibling, not a child -- the separator the
+        // normalization adds is what keeps these apart.
+        Assert.IsFalse(Enumerate(fixture, @"D:\Projects\ProjectAB").Resolved);
+        Assert.IsFalse(Enumerate(fixture, @"D:\Projects").Resolved);
+    }
+
     [TestMethod]
     public void Enumerate_HiddenAndSystemEntries_AreNotReturned()
     {

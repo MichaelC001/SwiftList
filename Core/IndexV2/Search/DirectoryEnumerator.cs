@@ -28,6 +28,14 @@ internal static class DirectoryEnumerator
         if (string.IsNullOrWhiteSpace(path))
             return false;
         var pathLower = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar).ToLowerInvariant();
+        // Trailing separator, always: TryResolve first checks the path starts with this source's ROOT,
+        // which itself always ends with one (PathHelpers.BuildSourceRoot). Without it, enumerating a
+        // source at its own root fails the prefix check outright -- harmless for a drive letter, where
+        // the root is "c:\" and a full path always has that separator anyway, but it means a folder
+        // index or UNC share ("d:\projects\projecta\", "\\server\share\") could never list its own root.
+        // The resolver skips the empty last segment it produces, so nothing else changes.
+        if (!pathLower.EndsWith(Path.DirectorySeparatorChar))
+            pathLower += Path.DirectorySeparatorChar;
         if (!DirectoryFilterResolver.TryResolve(snapshot, delta, pathLower, forceLastSegmentAsQuery: false, out var root, out var remainder)
             || remainder.Length != 0)
             return false;

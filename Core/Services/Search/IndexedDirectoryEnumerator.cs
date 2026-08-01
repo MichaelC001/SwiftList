@@ -1,3 +1,5 @@
+using SwiftList.Core.Services.Network;
+
 using SwiftList.Core.Services.Plugin.DirectoryIndex;
 
 using SwiftList.Core.Wire;
@@ -5,9 +7,15 @@ namespace SwiftList.Core.Services.Search;
 
 /// <summary>
 /// Client half of "list this directory without touching the disk": streams a directory's entries out of
-/// the service's index, and walks the real filesystem only for a directory no index covers. Routing is
-/// the same rule the rest of search uses (<see cref="SearchServiceHelper.CheckNeedsLiveSearch"/>) --
-/// a local drive enabled for indexing is indexed in full, so its listing always comes from the index.
+/// whichever index holds it, and walks the real filesystem only for a directory none of them does.
+/// <para>
+/// There are two places an index can live, the same split search itself works with (see
+/// <c>SearchService.SearchStreamingAsync</c>'s local/network tasks): local drives are indexed by the
+/// elevated service and reached over the pipe, while network, WSL and folder indexes live in THIS
+/// process. A local drive enabled for indexing is indexed in full, so it is asked first and answers on
+/// its own; everything else falls through to the in-process indexes, and only then to the disk. A
+/// folder index is what makes that last hop worth taking for a local path the service doesn't cover.
+/// </para>
 /// <para>
 /// The user's exclusion settings deliberately play no part here: the caller named one exact directory,
 /// which is the same "show me what is actually in this place" intent that already bypasses them for a
@@ -32,13 +40,33 @@ public static class IndexedDirectoryEnumerator
             return;
         var path = Path.GetFullPath(directoryPath);
 
-        if (SearchServiceHelper.CheckNeedsLiveSearch(path, ExclusionRuleSet.From(UserSettings.Load())))
-        {
-            await Task.Run(() => ScanLive(path, recursive, filterPattern, onResult, limit, token), token).ConfigureAwait(false);
+        // A local drive the service indexes: asked first and preferred over any in-process index that
+        // also happens to cover the path (a folder index nested inside it), since the service's copy is
+        // the USN-live, whole-volume one. Skipped outright for a network/UNC path -- the service only
+        // ever holds local drives, so that would be a round trip that cannot succeed.
+        if (!IsInProcessIndexedSource(path)
+            && !SearchServiceHelper.CheckNeedsLiveSearch(path, ExclusionRuleSet.From(UserSettings.Load()))
+            && await TryServiceIndexAsync(path, recursive, filterPattern, onResult, limit, token).ConfigureAwait(false))
             return;
-        }
 
-        var notIndexed = false;
+        // Network drive, WSL distro or folder index -- these are built and held in this process, so the
+        // pipe never knew about them. Cheap to try even when the path belongs to none of them: each
+        // index rejects a path outside its own root before touching anything.
+        if (UserNetworkDriveSearch.EnumerateDirectory(path, recursive, filterPattern, limit, onResult, token))
+            return;
+
+        // Nothing has it: an unconfigured share, a drive indexing is off for, an index still building,
+        // the service down, or a path that simply doesn't exist. Every one of those emitted nothing
+        // above, so walking the disk here cannot duplicate what was already delivered.
+        await Task.Run(() => ScanLive(path, recursive, filterPattern, onResult, limit, token), token).ConfigureAwait(false);
+    }
+
+    // False = the service answered "no loaded index of mine holds this path" (still building, mid-swap,
+    // no engine yet) or could not be reached at all -- both mean the caller should keep looking.
+    private static async Task<bool> TryServiceIndexAsync(string path, bool recursive, string filterPattern,
+        Action<SearchResult> onResult, int limit, CancellationToken token)
+    {
+        var indexed = true;
         try
         {
             await SearchPipeClient.SendSearchPipeCommandAsync(new SearchRequestMessage
@@ -48,7 +76,7 @@ public static class IndexedDirectoryEnumerator
                 Query = filterPattern,
                 Recursive = recursive,
                 Limit = limit
-            }, onResult, token, onNotIndexed: () => notIndexed = true).ConfigureAwait(false);
+            }, onResult, token, onNotIndexed: () => indexed = false).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -56,19 +84,28 @@ public static class IndexedDirectoryEnumerator
         }
         catch (Exception ex)
         {
-            // The service being down/mid-restart is the one case where the index genuinely has nothing
-            // to say about a drive it does cover, so this walks the disk rather than reporting an empty
-            // directory. Callers that were doing their own Directory.EnumerateFiles before this existed
-            // are no worse off than they were.
-            Logger.Log($"[IndexedDirectoryEnumerator] Index enumeration of '{path}' failed, falling back to a live walk: {ex.Message}", LogLevel.Warn);
-            notIndexed = true;
+            Logger.Log($"[IndexedDirectoryEnumerator] Index enumeration of '{path}' failed, falling back: {ex.Message}", LogLevel.Warn);
+            return false;
         }
+        return indexed;
+    }
 
-        // The service answered, and answered "no loaded index holds this path" -- an index still being
-        // built, or the brief swap window of a rebuild. It emits nothing in that case, so falling back
-        // here cannot duplicate anything already delivered.
-        if (notIndexed)
-            await Task.Run(() => ScanLive(path, recursive, filterPattern, onResult, limit, token), token).ConfigureAwait(false);
+    // Where the path's index would live if it has one: network drives, WSL distros and folder indexes
+    // are all held in this process. Only used to skip a pipe round trip that could not succeed -- the
+    // in-process lookup below is authoritative and runs either way.
+    private static bool IsInProcessIndexedSource(string path)
+    {
+        if (path.StartsWith(@"\\", StringComparison.Ordinal))
+            return true;
+        try
+        {
+            var root = Path.GetPathRoot(path);
+            return !string.IsNullOrEmpty(root) && new DriveInfo(root).DriveType == DriveType.Network;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // Matches the index-side walk's semantics on purpose (DirectoryEnumerator): directories are listed

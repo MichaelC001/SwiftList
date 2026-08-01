@@ -43,6 +43,34 @@ public static class NetworkIndexerSearchExtensions
             });
     }
 
+    // No fan-out and no IsDriveAllowed pre-filter, unlike the search above: a path lives under one
+    // index root, and each index rejects a path outside its own source root before doing any work.
+    // First one that holds it answers -- with nested roots (a folder index inside a mapped share) both
+    // hold the same content, so either answer is the same content.
+    public static bool EnumerateDirectory(
+        this NetworkIndexer indexer,
+        string path,
+        bool recursive,
+        string[]? patterns,
+        int limit,
+        Action<SearchResult> onResult,
+        CancellationToken token)
+    {
+        indexer.EnsureConfigured();
+
+        NetworkIndex[] snapshots;
+        lock (indexer.Gate)
+            snapshots = indexer._indexes.Values.ToArray();
+
+        foreach (var index in snapshots)
+        {
+            token.ThrowIfCancellationRequested();
+            if (index.EnumerateDirectory(path, recursive, patterns, limit, onResult, token))
+                return true;
+        }
+        return false;
+    }
+
     private static bool IsDriveAllowed(string indexDrive, ParsedSearchQuery parsed, string? directoryFilterLower)
     {
         // The "d:foo" query-scoping modifier only makes sense against a bare drive letter -- a
