@@ -125,8 +125,16 @@
                                         <!-- A group the filter left with nothing goes entirely, heading
                                                   and all: a run of empty headings is the answer already,
                                                   said once per folder. -->
+                                        <!-- The whole block is the drop target, header and list alike:
+                                             the folder is what a drop means, and aiming at a heading a
+                                             few pixels tall is not something to ask of a drag. The
+                                             outline it wears while a drop is over it lives on the group
+                                             (IsDropTarget), which is where the decision is made. -->
                                         <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
                                                   Visibility="{Binding HasMatches, Converter={StaticResource BoolToVis}}"
+                                                  AllowDrop="True"
+                                                  DragOver="Group_DragOver" DragLeave="Group_DragLeave"
+                                                  Drop="Group_Drop"
                                                   Style="{StaticResource QuickPanelGroupExpanderStyle}">
                                             <Expander.Header>
                                                 <Grid Margin="0,2,0,2">

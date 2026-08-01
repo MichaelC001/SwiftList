@@ -31,6 +31,7 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
             _filterPattern = folder.FilterPattern,
             _maxItems = folder.MaxItems,
             _maxAgeMinutes = folder.MaxAgeMinutes,
+            _acceptsDrops = folder.AcceptsDrops,
         };
 
     public string Id { get; }
@@ -61,6 +62,19 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
     {
         get => _isVisible;
         set => SetProperty(ref _isVisible, value);
+    }
+
+    private bool _acceptsDrops;
+
+    /// <summary>
+    /// Whether this group takes files dragged onto it, copying them into its folder. Off unless asked
+    /// for: a panel that quietly wrote into whatever folder the pointer happened to be over would be a
+    /// worse thing to get wrong than one that ignores a drop.
+    /// </summary>
+    public bool AcceptsDrops
+    {
+        get => _acceptsDrops;
+        set => SetProperty(ref _acceptsDrops, value);
     }
 
     private bool _showAsList;
@@ -221,5 +235,6 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
         _folder.FilterPattern = string.IsNullOrWhiteSpace(FilterPattern) ? "*" : FilterPattern.Trim();
         _folder.MaxItems = MaxItems;
         _folder.MaxAgeMinutes = MaxAgeMinutes;
+        _folder.AcceptsDrops = AcceptsDrops;
     }
 }

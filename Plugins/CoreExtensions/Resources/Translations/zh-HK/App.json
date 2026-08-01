@@ -46,6 +46,8 @@
   "QuickPanel_KindLauncher": "全部內容,按名稱排序",
   "QuickPanel_SourcePath": "資料夾",
   "QuickPanel_Recursive": "包含子資料夾",
+  "QuickPanel_AcceptsDrops": "接收拖入的檔案",
+  "QuickPanel_AcceptsDropsTooltip": "拖到這個分組上的檔案和資料夾會被複製進它的資料夾,使用 Windows 自己的檔案複製。永遠是複製,不會移動。",
   "QuickPanel_FilterPattern": "檔案",
   "QuickPanel_FilterPatternTooltip": "可以用「;」或者「,」分隔多個模式(例如 *.mp4;*.mkv)。資料夾一律顯示。",
   "QuickPanel_MaxItems": "最多",

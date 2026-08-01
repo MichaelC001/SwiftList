@@ -131,6 +131,7 @@ public class QuickPanelTab
             FilterPattern = f.FilterPattern,
             MaxItems = f.MaxItems,
             MaxAgeMinutes = f.MaxAgeMinutes,
+            AcceptsDrops = f.AcceptsDrops,
         }).ToList(),
         GroupOrder = new List<string>(GroupOrder),
         DisabledGroupIds = new List<string>(DisabledGroupIds),
@@ -170,6 +171,14 @@ public class QuickPanelFolderSource
 
     /// <summary>Only entries changed within this many minutes qualify. 0 means no age limit at all.</summary>
     public int MaxAgeMinutes { get; set; }
+
+    /// <summary>
+    /// Whether this source's group is a drop target: files dragged onto it are copied into this folder.
+    /// Off by default, and asked per source rather than once for the panel -- a folder kept as an inbox
+    /// wants this, and a "recent files" source pointing somewhere you only ever read from does not, and
+    /// there is no way to tell those apart except by asking.
+    /// </summary>
+    public bool AcceptsDrops { get; set; }
 
     public static QuickPanelFolderSource For(string path, QuickPanelSourceKind kind = QuickPanelSourceKind.RecentFiles)
         => new() { Id = QuickPanelTab.NewId(), Path = path, Kind = kind };

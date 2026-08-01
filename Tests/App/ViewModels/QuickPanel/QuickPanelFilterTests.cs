@@ -160,6 +160,34 @@ public sealed class QuickPanelFilterTests
         Assert.AreEqual(string.Empty, vm.SearchQuery);
     }
 
+    // What the manager reads to decide whether losing the foreground should dismiss the panel: dragging
+    // a file in from Explorer starts by clicking Explorer, so a droppable panel has to stay up.
+    [TestMethod]
+    public async Task AcceptsDrops_IsTrueOnlyWhenAGroupOnScreenTakesThem()
+    {
+        var settings = new QuickPanelSettings
+        {
+            Tabs = new List<QuickPanelTab>
+            {
+                new() { Id = "w1", Name = "Read", Folders = { new QuickPanelFolderSource { Id = "s1", Path = @"C:\docs" } } },
+                new() { Id = "w2", Name = "Inbox", Folders = { new QuickPanelFolderSource { Id = "s2", Path = @"C:\inbox", AcceptsDrops = true } } },
+            },
+            ActiveTabId = "w1",
+        };
+
+        var vm = new QuickPanelViewModel(
+            () => settings,
+            (source, _) => Task.FromResult(new List<SearchResult> { Entry(source.Path, "file.txt") }),
+            saveSettings: () => { });
+        await vm.RefreshAsync();
+
+        Assert.IsFalse(vm.AcceptsDrops, "the workspace on screen takes nothing");
+
+        await vm.SelectTabAsync("w2");
+
+        Assert.IsTrue(vm.AcceptsDrops, "switching to one that does has to change the answer");
+    }
+
     [TestMethod]
     public async Task Filter_SurvivesSwitchingWorkspace()
     {

@@ -116,7 +116,8 @@ public partial class QuickPanelViewModel
             // The settings page owns this one: the header's own toggle overrides it for the session it
             // is pressed in, and this is what the group opens as.
             preference?.ThumbnailView ?? true,
-            preference?.Expanded ?? true);
+            preference?.Expanded ?? true,
+            source.AcceptsDrops);
     }
 
     private static string TitleOf(QuickPanelFolderSource source, QuickPanelGroupPreference? preference)

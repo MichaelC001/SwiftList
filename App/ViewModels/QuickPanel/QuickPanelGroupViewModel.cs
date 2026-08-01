@@ -30,11 +30,13 @@ public class QuickPanelGroupViewModel : ViewModelBase
         List<(AppSearchResult Item, DateTime? Modified)> loaded,
         QuickPanelSortMode sortMode = QuickPanelSortMode.ModifiedDescending,
         bool thumbnailView = true,
-        bool expanded = true)
+        bool expanded = true,
+        bool acceptsDrops = false)
     {
         SourceId = sourceId;
         Title = title;
         FolderPath = folderPath;
+        AcceptsDrops = acceptsDrops;
         _loaded = loaded;
         // The fields, not the properties: each setter rebuilds, and the group has nothing to rebuild
         // from until the call below.
@@ -50,8 +52,25 @@ public class QuickPanelGroupViewModel : ViewModelBase
     /// <summary>The heading: the user's own name for the source, or the source's default one.</summary>
     public string Title { get; }
 
-    /// <summary>The folder itself, shown in full beside the heading.</summary>
+    /// <summary>The folder itself, shown in full beside the heading, and where a drop lands.</summary>
     public string FolderPath { get; }
+
+    /// <summary>Whether files dragged onto this group are copied into its folder.</summary>
+    public bool AcceptsDrops { get; }
+
+    private bool _isDropTarget;
+
+    /// <summary>True while a droppable drag is over this group, which is what the outline is bound to.</summary>
+    /// <remarks>
+    /// On the view model rather than a visual state on the Expander: what counts as droppable is a
+    /// question about this group (does it accept drops, is the drag carrying files, did it come from
+    /// inside the panel), and the answer has to be worked out before anything can be drawn either way.
+    /// </remarks>
+    public bool IsDropTarget
+    {
+        get => _isDropTarget;
+        set => SetProperty(ref _isDropTarget, value);
+    }
 
     /// <summary>How many entries this group is showing, which under a filter is how many matched.</summary>
     public int Count => Items.Count;

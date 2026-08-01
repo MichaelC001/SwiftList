@@ -124,6 +124,7 @@ public sealed class QuickPanelSettingsViewModelTests
         row.Recursive = true;
         row.FilterPattern = " *.exe;*.lnk ";
         row.MaxItems = 50;
+        row.AcceptsDrops = true;
 
         vm.Save();
 
@@ -132,6 +133,10 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.IsTrue(folder.Recursive);
         Assert.AreEqual("*.exe;*.lnk", folder.FilterPattern);
         Assert.AreEqual(50, folder.MaxItems);
+        Assert.IsTrue(folder.AcceptsDrops);
+
+        // And back: reopening the page shows the box the way it was left.
+        Assert.IsTrue(new QuickPanelSettingsViewModel(settings).Tabs.Single().Sources.Single().AcceptsDrops);
     }
 
     // The clone gets its own folder ids, so everything that addresses a source by id has to be rewritten

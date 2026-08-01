@@ -46,6 +46,8 @@
   "QuickPanel_KindLauncher": "全部内容,按名称排序",
   "QuickPanel_SourcePath": "文件夹",
   "QuickPanel_Recursive": "包含子文件夹",
+  "QuickPanel_AcceptsDrops": "接收拖入的文件",
+  "QuickPanel_AcceptsDropsTooltip": "拖到这个分组上的文件和文件夹会被复制进它的文件夹,使用 Windows 自己的文件复制。永远是复制,不会移动。",
   "QuickPanel_FilterPattern": "文件",
   "QuickPanel_FilterPatternTooltip": "可用「;」或「,」分隔多个模式(例如 *.mp4;*.mkv)。文件夹始终显示。",
   "QuickPanel_MaxItems": "最多",

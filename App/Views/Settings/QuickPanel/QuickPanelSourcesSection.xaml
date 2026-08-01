@@ -183,6 +183,12 @@
                                 <CheckBox Margin="14,0,0,0" VerticalAlignment="Center"
                                           IsChecked="{Binding ShowAsList, Mode=TwoWay}"
                                           Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ViewList]}"/>
+                                <!-- Beside the display options rather than under the folder field: it is
+                                     a thing this group does, not a property of the path. -->
+                                <CheckBox Margin="14,0,0,0" VerticalAlignment="Center"
+                                          IsChecked="{Binding AcceptsDrops, Mode=TwoWay}"
+                                          ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AcceptsDropsTooltip]}"
+                                          Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AcceptsDrops]}"/>
                             </StackPanel>
 
                             <TextBlock Grid.Row="1" Style="{StaticResource SourceFieldLabel}"

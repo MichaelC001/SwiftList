@@ -46,6 +46,8 @@
   "QuickPanel_KindLauncher": "Everything, by name",
   "QuickPanel_SourcePath": "Folder",
   "QuickPanel_Recursive": "Include subfolders",
+  "QuickPanel_AcceptsDrops": "Accept dropped files",
+  "QuickPanel_AcceptsDropsTooltip": "Files and folders dragged onto this group are copied into its folder, using Windows' own file copy. Always a copy, never a move.",
   "QuickPanel_FilterPattern": "Files",
   "QuickPanel_FilterPatternTooltip": "One or more patterns separated by ';' or ',' (e.g. *.mp4;*.mkv). Folders are always shown.",
   "QuickPanel_MaxItems": "At most",

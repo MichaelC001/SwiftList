@@ -46,6 +46,8 @@
   "QuickPanel_KindLauncher": "すべての項目(名前順)",
   "QuickPanel_SourcePath": "フォルダー",
   "QuickPanel_Recursive": "サブフォルダーを含める",
+  "QuickPanel_AcceptsDrops": "ドロップされたファイルを受け取る",
+  "QuickPanel_AcceptsDropsTooltip": "このグループにドラッグしたファイルやフォルダーは、Windows 自身のファイルコピーでこのフォルダーにコピーされます。常にコピーで、移動はしません。",
   "QuickPanel_FilterPattern": "ファイル",
   "QuickPanel_FilterPatternTooltip": "「;」または「,」で複数のパターンを区切れます(例: *.mp4;*.mkv)。フォルダーは常に表示されます。",
   "QuickPanel_MaxItems": "最大",

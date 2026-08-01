@@ -280,16 +280,27 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Expander">
-                    <StackPanel>
-                        <ToggleButton Style="{StaticResource QuickPanelGroupToggleStyle}"
-                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                      Content="{TemplateBinding Header}"/>
-                        <ContentPresenter x:Name="Body" Visibility="Collapsed"/>
-                    </StackPanel>
+                    <!-- The outline a drop wears. A border rather than a background wash: the rows
+                         underneath already use background to mean "selected", and a drop landing in a
+                         folder is about the folder, not about what happens to be selected in it. Drawn
+                         at a fixed thickness with a transparent brush when idle, so arriving does not
+                         shift the layout by a pixel. -->
+                    <Border x:Name="DropOutline" BorderThickness="1" CornerRadius="6"
+                            BorderBrush="Transparent" Background="Transparent">
+                        <StackPanel>
+                            <ToggleButton Style="{StaticResource QuickPanelGroupToggleStyle}"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          Content="{TemplateBinding Header}"/>
+                            <ContentPresenter x:Name="Body" Visibility="Collapsed"/>
+                        </StackPanel>
+                    </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsExpanded" Value="True">
                             <Setter TargetName="Body" Property="Visibility" Value="Visible"/>
                         </Trigger>
+                        <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                            <Setter TargetName="DropOutline" Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+                        </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

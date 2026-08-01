@@ -46,6 +46,8 @@
   "QuickPanel_KindLauncher": "Todo, por nombre",
   "QuickPanel_SourcePath": "Carpeta",
   "QuickPanel_Recursive": "Incluir subcarpetas",
+  "QuickPanel_AcceptsDrops": "Aceptar archivos soltados",
+  "QuickPanel_AcceptsDropsTooltip": "Los archivos y carpetas que sueltes en este grupo se copian en su carpeta con la copia de archivos de Windows. Siempre copia, nunca mueve.",
   "QuickPanel_FilterPattern": "Archivos",
   "QuickPanel_FilterPatternTooltip": "Uno o varios patrones separados por ';' o ',' (p. ej. *.mp4;*.mkv). Las carpetas siempre se muestran.",
   "QuickPanel_MaxItems": "Como máximo",

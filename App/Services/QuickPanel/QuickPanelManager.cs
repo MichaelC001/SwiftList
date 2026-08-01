@@ -151,6 +151,13 @@ public sealed class QuickPanelManager : IDisposable
                 // needs it alive to reach it, so hiding here would take the menu down with the panel
                 // and leave every shortcut on it looking dead.
                 if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
+
+                // Nor while the workspace on screen has a group that takes dropped files. Dragging one
+                // in from Explorer begins by clicking Explorer, which is this very event -- so a panel
+                // that dismissed itself here would be gone before the drag it exists for could start.
+                // It closes on the hotkey or Escape instead, for as long as that is true.
+                if (_viewModel is { AcceptsDrops: true }) return;
+
                 Hide();
             };
         }

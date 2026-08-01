@@ -53,6 +53,17 @@ public partial class QuickPanelViewModel : ViewModelBase
     /// <summary>The strip only earns its space once there is more than one workspace to reach.</summary>
     public bool HasTabStrip => Tabs.Count > 1;
 
+    /// <summary>Whether the workspace on screen has any group that takes files dropped onto it.</summary>
+    /// <remarks>
+    /// The panel dismisses itself when it loses the foreground, and dragging a file in from Explorer
+    /// begins by clicking Explorer -- so a droppable panel would vanish before the drag it exists for
+    /// ever started. While this is true the manager leaves it up, and the hotkey or Escape closes it.
+    ///
+    /// Not narrowed to "while a drag is running", which would be the better rule: the deactivation
+    /// happens when the other window is clicked, which is before any drag exists to detect.
+    /// </remarks>
+    public bool AcceptsDrops => Groups.Any(group => group.AcceptsDrops);
+
     /// <summary>Whether there is anything worth opening the panel for.</summary>
     /// <remarks>
     /// Distinct from IsEmpty below, which they are easy to mistake for each other. This one gates
@@ -200,5 +211,7 @@ public partial class QuickPanelViewModel : ViewModelBase
             IsEmpty = Groups.Count == 0;
 
         OnPropertyChanged(nameof(HasContent));
+        // Switching workspace can change the answer: one tab may take drops where the next does not.
+        OnPropertyChanged(nameof(AcceptsDrops));
     }
 }
