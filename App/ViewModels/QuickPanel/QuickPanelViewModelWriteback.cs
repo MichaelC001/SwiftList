@@ -57,22 +57,27 @@ public partial class QuickPanelViewModel
     /// statement about the strip rather than about them -- the same thing the startup panel's own x
     /// means. The settings page is where one comes back.
     /// </remarks>
-    public async Task CloseTabAsync(string tabId, CancellationToken token = default)
+    public Task CloseTabAsync(string tabId, CancellationToken token = default)
     {
         var settings = _readSettings();
         var workspace = settings.Tabs.FirstOrDefault(tab => tab.Id == tabId);
-        if (workspace is not { Enabled: true }) return;
+        if (workspace is not { Enabled: true }) return Task.CompletedTask;
 
         workspace.Enabled = false;
         _saveSettings();
 
-        _workspaces = settings.Tabs.Where(tab => tab.Enabled).ToList();
+        // Dropped from what is already loaded rather than reloaded: closing a tab says nothing about
+        // what the others hold, and the panel is open while this happens.
+        _content.Remove(tabId);
+        _workspaces = _workspaces.Where(tab => tab.Id != tabId).ToList();
+
         // Closing the tab being looked at leaves the panel on the first one still there, rather than on
         // a workspace that no longer has a tab to reach it by.
         if (!_workspaces.Any(tab => tab.Id == _activeTabId))
             _activeTabId = _workspaces.Count > 0 ? _workspaces[0].Id : string.Empty;
 
         RebuildTabs();
-        await LoadActiveWorkspaceAsync(token).ConfigureAwait(true);
+        ShowActiveWorkspace();
+        return Task.CompletedTask;
     }
 }

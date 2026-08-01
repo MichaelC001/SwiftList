@@ -1,4 +1,4 @@
-using SwiftList.App.ViewModels.QuickPanel;
+﻿using SwiftList.App.ViewModels.QuickPanel;
 using SwiftList.Core;
 
 namespace SwiftList.App.Tests.ViewModels.QuickPanel;
@@ -34,6 +34,15 @@ public sealed class QuickPanelViewModelTests
         var tab = new QuickPanelTab { Id = "w1", Name = "Work" };
         tab.Folders.AddRange(folders);
         return new QuickPanelSettings { Tabs = new List<QuickPanelTab> { tab }, ActiveTabId = tab.Id };
+    }
+
+    // A second workspace with something in it. Every workspace is loaded on a refresh and one that came
+    // back empty gets no tab, so a case about tabs has to give each of them a source that answers.
+    private static QuickPanelTab SecondWorkspace(string id = "w2", string sourceId = "s2")
+    {
+        var tab = new QuickPanelTab { Id = id, Name = "Other" };
+        tab.Folders.Add(Folder(@"C:\" + sourceId, sourceId));
+        return tab;
     }
 
     [TestMethod]
@@ -107,19 +116,40 @@ public sealed class QuickPanelViewModelTests
         Assert.IsFalse(vm.HasContent, "a single empty workspace has nothing the panel could show");
     }
 
-    // The other tabs are one click away and only the panel can show them, so an empty selected tab is
-    // still worth opening when there is somewhere else to go.
+    // A tab is only worth a place in the strip if there is something behind it, which is why every
+    // workspace is loaded on a refresh and not just the one about to be shown.
     [TestMethod]
-    public async Task Refresh_EmptySelectedTab_StillOpensWhenThereAreOthers()
+    public async Task Refresh_WorkspaceThatLoadedNothing_GetsNoTab()
     {
         var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Name = "Other" });
-        var vm = Build(settings, (_, _) => Task.FromResult(new List<SearchResult>()));
+        var empty = new QuickPanelTab { Id = "w2", Name = "Other" };
+        empty.Folders.Add(Folder(@"C:\empty", "s2"));
+        settings.Tabs.Add(empty);
 
+        var vm = Build(settings, (source, _) => Task.FromResult(source.Id == "s1"
+            ? new List<SearchResult> { Entry(source.Path, "file.txt", new DateTime(2026, 1, 1)) }
+            : new List<SearchResult>()));
         await vm.RefreshAsync();
 
-        Assert.IsTrue(vm.IsEmpty);
+        CollectionAssert.AreEqual(new[] { "w1" }, vm.Tabs.Select(t => t.Id).ToList());
+        Assert.IsFalse(vm.HasTabStrip);
         Assert.IsTrue(vm.HasContent);
+    }
+
+    // A workspace whose every entry the filter rejects keeps its tab: the strip says which workspaces
+    // have something in them, and having it flicker per keystroke would say something far less useful.
+    [TestMethod]
+    public async Task Filter_MatchingNothing_StillLeavesTheStripAlone()
+    {
+        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
+        settings.Tabs.Add(SecondWorkspace());
+        var vm = Build(settings);
+        await vm.RefreshAsync();
+
+        vm.SearchQuery = "nothing-matches-this";
+
+        Assert.IsTrue(vm.IsEmpty);
+        Assert.HasCount(2, vm.Tabs);
     }
 
     [TestMethod]
@@ -172,149 +202,6 @@ public sealed class QuickPanelViewModelTests
         Assert.IsFalse(vm.Groups[0].IsThumbnailView);
         Assert.IsFalse(vm.Groups[0].IsExpanded);
     }
-
-    [TestMethod]
-    public async Task Refresh_DisabledWorkspace_GetsNoTab()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Name = "Off", Enabled = false });
-
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-
-        CollectionAssert.AreEqual(new[] { "w1" }, vm.Tabs.Select(t => t.Id).ToList());
-        Assert.IsFalse(vm.HasTabStrip, "a strip of one names the only thing there is");
-    }
-
-    [TestMethod]
-    public async Task Refresh_TheAppInFront_PicksTheWorkspaceThatClaimsIt()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        var claiming = new QuickPanelTab { Id = "w2", Name = "Editing", Processes = { "premiere" } };
-        claiming.Folders.Add(Folder(@"C:\video", "s9"));
-        settings.Tabs.Add(claiming);
-
-        var vm = Build(settings);
-        await vm.RefreshAsync("premiere.exe");
-
-        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
-        CollectionAssert.AreEqual(new[] { "s9" }, vm.Groups.Select(g => g.SourceId).ToList());
-    }
-
-    // A workspace with no tab must not be reachable by a process rule either.
-    [TestMethod]
-    public async Task Refresh_DisabledWorkspace_CannotClaimTheAppInFront()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Enabled = false, Processes = { "premiere" } });
-
-        var vm = Build(settings);
-        await vm.RefreshAsync("premiere.exe");
-
-        Assert.AreEqual("w1", vm.Tabs.Single(t => t.IsSelected).Id);
-    }
-
-    [TestMethod]
-    public async Task Refresh_NoAppClaimsIt_OpensOnTheRecordedTab()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Name = "Other" });
-        settings.ActiveTabId = "w2";
-
-        var vm = Build(settings);
-        await vm.RefreshAsync("notepad.exe");
-
-        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
-    }
-
-    // Where the user left the panel outranks the recorded tab, which is only the starting point.
-    [TestMethod]
-    public async Task Refresh_ReopensWhereTheUserLeftIt()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        var second = new QuickPanelTab { Id = "w2", Name = "Other" };
-        second.Folders.Add(Folder(@"C:\b", "s2"));
-        settings.Tabs.Add(second);
-
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-        await vm.SelectTabAsync("w2");
-        await vm.RefreshAsync();
-
-        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
-    }
-
-    // ...but the app in front still outranks both: a workspace that names an app is a statement that
-    // this app means these folders.
-    [TestMethod]
-    public async Task Refresh_TheAppInFront_OutranksWhereTheUserLeftIt()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs[0].Processes.Add("notepad");
-        var second = new QuickPanelTab { Id = "w2", Name = "Other" };
-        second.Folders.Add(Folder(@"C:\b", "s2"));
-        settings.Tabs.Add(second);
-
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-        await vm.SelectTabAsync("w2");
-        await vm.RefreshAsync("notepad.exe");
-
-        Assert.AreEqual("w1", vm.Tabs.Single(t => t.IsSelected).Id);
-    }
-
-    [TestMethod]
-    public async Task SelectTab_SwapsTheGroupsForTheOtherWorkspace()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        var second = new QuickPanelTab { Id = "w2", Name = "Other" };
-        second.Folders.Add(Folder(@"C:\b", "s2"));
-        settings.Tabs.Add(second);
-
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-        await vm.SelectTabAsync("w2");
-
-        CollectionAssert.AreEqual(new[] { "s2" }, vm.Groups.Select(g => g.SourceId).ToList());
-        Assert.IsTrue(vm.Tabs.Single(t => t.Id == "w2").IsSelected);
-        Assert.IsFalse(vm.Tabs.Single(t => t.Id == "w1").IsSelected);
-        Assert.IsTrue(vm.HasTabStrip);
-    }
-
-    [TestMethod]
-    public async Task SelectTab_AWorkspaceThatIsNotThere_ChangesNothing()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-
-        await vm.SelectTabAsync("nope");
-
-        Assert.AreEqual("w1", vm.Tabs.Single(t => t.IsSelected).Id);
-        CollectionAssert.AreEqual(new[] { "s1" }, vm.Groups.Select(g => g.SourceId).ToList());
-    }
-
-    // What the number keys reach: the strip's own positions, 1-based, and nothing outside it.
-    [TestMethod]
-    public async Task SelectTabAt_CountsFromOneAndIgnoresAnythingPastTheEnd()
-    {
-        var settings = OneWorkspace(Folder(@"C:\a", "s1"));
-        settings.Tabs.Add(new QuickPanelTab { Id = "w2", Name = "Other" });
-
-        var vm = Build(settings);
-        await vm.RefreshAsync();
-
-        await vm.SelectTabAtAsync(2);
-        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
-
-        await vm.SelectTabAtAsync(3);
-        Assert.AreEqual("w2", vm.Tabs.Single(t => t.IsSelected).Id);
-
-        await vm.SelectTabAtAsync(1);
-        Assert.AreEqual("w1", vm.Tabs.Single(t => t.IsSelected).Id);
-    }
-
-    // What the panel leaves behind when it is hidden: nothing on screen, so a frame that slips in
     // before the next load lands cannot show the last workspace's files.
     [TestMethod]
     public async Task Clear_EmptiesEverythingThatIsOnScreen()

@@ -52,6 +52,7 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -89,81 +90,17 @@
                     </Grid>
                 </Border>
 
-                <!-- Workspace strip. TabStripScrollView, same as the quick window's own startup panel
-                     strip: the workspaces are user-configurable and an unnamed one takes a translated
-                     name, so the row can overflow a panel this narrow and needs its left/right arrows.
-
-                     Gone entirely with a single workspace: a strip of one names the only thing there is
-                     and offers nowhere to go, and this panel is a quarter of the window it docks to. -->
-                <ctrl:TabStripScrollView Grid.Row="0" Margin="12,16,12,0"
-                                         Visibility="{Binding HasTabStrip, Converter={StaticResource BoolToVis}}">
-                    <!-- Dragging a tab reorders the workspaces, and the tab itself is the handle: there
-                         is nowhere on a strip to put a grip, and a tab is already the thing you would
-                         reach for. IsHorizontal so the drop line stands between two tabs rather than
-                         lying across them. -->
-                    <ItemsControl ItemsSource="{Binding Tabs}"
-                                  helpers:DragReorder.IsEnabled="True"
-                                  helpers:DragReorder.IsHorizontal="True">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Margin="0,0,16,0">
-                                    <StackPanel Orientation="Horizontal">
-                                    <Button Content="{Binding Label}" Command="{Binding SelectCommand}"
-                                            helpers:DragReorder.IsHandle="True">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
-                                                <!-- Two points down from the settings window's own tabs,
-                                                     which is where that style is sized for. This panel is
-                                                     a quarter of the window it docks to, and a 14pt strip
-                                                     stood taller than the group headings under it. -->
-                                                <Setter Property="FontSize" Value="12"/>
-                                                <Setter Property="Padding" Value="0,0,0,8"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
-                                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                    <!-- Closes the tab, which disables the workspace rather than
-                                         deleting it: the sources behind one took assembling, and this
-                                         is a statement about the strip, not about them. Same glyph and
-                                         the same treatment the startup panel's own close carries. -->
-                                    <Button Content="&#xE711;" Command="{Binding CloseCommand}"
-                                            Margin="6,0,0,7" Width="13" Height="13" FontSize="8"
-                                            ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_CloseWorkspaceTooltip]}"
-                                            VerticalAlignment="Bottom"
-                                            Style="{StaticResource QuickPanelTabCloseStyle}"/>
-                                    </StackPanel>
-                                    <Border>
-                                        <Border.Style>
-                                            <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ctrl:TabStripScrollView>
+                <local:QuickPanelTabStrip Grid.Row="0" Margin="12,16,12,0"/>
 
 
                 <!-- The whole content area listens for the click, not each group's list: the blank space
                      that should drop the selection is as much the gap between two groups and the run
                      below the last one as it is the end of a row of tiles. -->
-                <Border Grid.Row="1" Background="{DynamicResource ContentBg}"
+                <!-- Filters what the workspace already loaded, in its own row so it is there whether or
+                     not the strip above it is. -->
+                <local:QuickPanelSearchBox Grid.Row="1" Margin="12,4,12,6"/>
+
+                <Border Grid.Row="2" Background="{DynamicResource ContentBg}"
                         PreviewMouseLeftButtonDown="Content_PreviewMouseLeftButtonDown">
                     <Grid>
                         <!-- One block per source, each with its own header and its own list.
@@ -178,7 +115,11 @@
                             <ItemsControl ItemsSource="{Binding Groups}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
+                                        <!-- A group the filter left with nothing goes entirely, heading
+                                                  and all: a run of empty headings is the answer already,
+                                                  said once per folder. -->
                                         <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                                  Visibility="{Binding HasMatches, Converter={StaticResource BoolToVis}}"
                                                   Style="{StaticResource QuickPanelGroupExpanderStyle}">
                                             <Expander.Header>
                                                 <Grid Margin="0,2,0,2">

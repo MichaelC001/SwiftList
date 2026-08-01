@@ -60,6 +60,7 @@
   "QuickPanel_ViewList": "一覧で表示",
   "QuickPanel_ViewThumbnails": "サムネイルで表示",
   "QuickPanel_CloseWorkspaceTooltip": "このワークスペースを閉じる（設定 > クイックパネル から再度有効にできます）",
+  "QuickPanel_SearchPlaceholder": "このワークスペースを絞り込む",
   "StartupPanel_Enabled": "スタートアップパネルを有効化",
   "StartupPanel_TabRecentFiles": "最近使ったファイル",
   "StartupPanel_SecondsAgo": "{0}秒前",

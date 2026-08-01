@@ -38,6 +38,32 @@ public partial class QuickPanelWindow
             : 0;
     }
 
+    /// <summary>Clicking anything that is not a row drops the selection, as a file manager's own blank
+    /// space does.</summary>
+    /// <remarks>
+    /// Previewed, because the click this exists for lands on a group's ListBox background and that
+    /// ListBox would otherwise be first to see it -- and left unhandled, so the row click, the rubber
+    /// band and the drag helper all still get their turn.
+    /// </remarks>
+    private void Content_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Whatever else this press turns out to be -- a row click, the start of a rubber band, a click on
+        // nothing -- the list it landed in is the one the user is now working in. Only right-click and
+        // double-click used to say so, so a plain left-click (or a band) left the hotkeys acting on
+        // whichever list had been double-clicked last.
+        if (e.OriginalSource is DependencyObject clicked
+            && FindAncestor<System.Windows.Controls.ListBox>(clicked) is { } list)
+            _activeList = list;
+
+        // Not while a selection is being extended. Ctrl or Shift on blank space is the start of adding
+        // to what is already selected -- a rubber band drawn with Ctrl held, most obviously -- and this
+        // runs first, so without the check it would empty the very selection that gesture is extending.
+        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0) return;
+
+        if (e.OriginalSource is DependencyObject source && IsClickOnNothing(source))
+            ClearSelection((DependencyObject)sender);
+    }
+
     /// <summary>Whether what was hit is blank space rather than something that acts on its own.</summary>
     /// <remarks>
     /// A row, obviously. Also anything in a group header: collapsing a group or switching its order is

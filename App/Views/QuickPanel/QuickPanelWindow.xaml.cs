@@ -104,6 +104,16 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
         // one act as well would dismiss the panel out from under a menu the user was only closing.
         if (Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
 
+        // A filter in the box is undone first, and only a second Escape closes the panel. Anything else
+        // means the one key that gets you out of a narrowed list also throws away the panel you were
+        // narrowing it in.
+        if (DataContext is QuickPanelViewModel { SearchQuery.Length: > 0 } filtered)
+        {
+            e.Handled = true;
+            filtered.SearchQuery = string.Empty;
+            return;
+        }
+
         e.Handled = true;
         Services.QuickPanel.QuickPanelManager.Instance?.Hide();
     }
@@ -136,12 +146,16 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     /// is an overload taking only IPluginSearchWindow, which is what the quick navigation menu already
     /// calls for the same reason, so the panel uses that directly.
     ///
-    /// Bare keys are allowed through here where the full window checks its caret first: with no search
-    /// box there is nothing a bare keystroke could be typing into, so a bound one can only have been
-    /// meant as the action.
+    /// Bare keys are allowed through here where the full window checks its caret first -- but only while
+    /// nothing is being typed into. That used to be free: there was no box in this panel at all, so a
+    /// bound key could only have been meant as the action. The filter box changed that premise, and
+    /// every combination stands down while it has focus, not just the bare ones: Ctrl+A and Ctrl+C in a
+    /// text box are the box's, whatever else they may also be bound to.
     /// </remarks>
     private void TryRunActionHotkey(System.Windows.Input.KeyEventArgs e)
     {
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox) return;
+
         if (Keyboard.Modifiers == ModifierKeys.None && !Helpers.HotkeyActionTrigger.HasBareKeyActionHotkey(e.Key))
             return;
 
@@ -205,36 +219,6 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     /// hold a selection.
     /// </remarks>
     private System.Windows.Controls.ListBox? _activeList;
-
-    /// <summary>Clicking anything that is not a row drops the selection, as a file manager's own blank
-    /// space does.</summary>
-    /// <remarks>
-    /// Previewed, because the click this exists for lands on a group's ListBox background and that
-    /// ListBox would otherwise be first to see it -- and left unhandled, so the row click, the rubber
-    /// band and the drag helper all still get their turn.
-    ///
-    /// Every group is cleared, not just the one under the pointer: each renders its own list, so a
-    /// selection left in another group would keep a row looking selected that a keystroke no longer
-    /// acts on.
-    /// </remarks>
-    private void Content_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        // Whatever else this press turns out to be -- a row click, the start of a rubber band, a click on
-        // nothing -- the list it landed in is the one the user is now working in. Only right-click and
-        // double-click used to say so, so a plain left-click (or a band) left the hotkeys acting on
-        // whichever list had been double-clicked last.
-        if (e.OriginalSource is DependencyObject clicked
-            && FindAncestor<System.Windows.Controls.ListBox>(clicked) is { } list)
-            _activeList = list;
-
-        // Not while a selection is being extended. Ctrl or Shift on blank space is the start of adding
-        // to what is already selected -- a rubber band drawn with Ctrl held, most obviously -- and this
-        // runs first, so without the check it would empty the very selection that gesture is extending.
-        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0) return;
-
-        if (e.OriginalSource is DependencyObject source && IsClickOnNothing(source))
-            ClearSelection((DependencyObject)sender);
-    }
 
     private void GroupList_Loaded(object sender, RoutedEventArgs e)
     {
