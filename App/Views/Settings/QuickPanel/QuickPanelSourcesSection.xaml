@@ -18,78 +18,104 @@
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- One row per source, which is one group in the panel. The row itself stays scannable:
-                 shown/hidden, name, where it comes from. Everything that needs a decision rather than
-                 a glance sits behind the chevron, so a list of eight folders is still readable. -->
+            <Style x:Key="SourceFieldLabel" TargetType="TextBlock">
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+                <Setter Property="Margin" Value="0,0,10,0"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            </Style>
+
+            <!-- One row per source, which is one group in the panel. Name, path and the row's own
+                 buttons share ONE line so a workspace with eight folders is eight lines, not sixteen;
+                 anything that needs a decision rather than a glance is behind the chevron. -->
             <DataTemplate x:Key="SourceRowTemplate">
-                <Border BorderBrush="{DynamicResource SettingsRowBorderBrush}" BorderThickness="0,0,0,1" Padding="0,6">
+                <Border BorderBrush="{DynamicResource SettingsRowBorderBrush}" BorderThickness="0,0,0,1" Padding="0,5">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="210"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,8,0"
+                            <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0"
                                       ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceVisibleTooltip]}"/>
 
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <Grid>
-                                    <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource RuleTextBox}"
-                                             ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceNameTooltip]}"/>
-                                    <!-- The name this group will actually carry, shown while the box is
-                                         empty. Without it an unrenamed row is a blank rectangle, and
-                                         the built-in sources have no path underneath to hint at it. -->
-                                    <TextBlock Text="{Binding DefaultName}" IsHitTestVisible="False"
-                                               Margin="10,0,0,0" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource TextSecondary}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DisplayName}" Value="">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Grid>
-                                <TextBlock Text="{Binding Path}" Style="{StaticResource SettingsHintText}"
-                                           TextTrimming="CharacterEllipsis" Margin="2,3,0,0"
-                                           Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"/>
-                            </StackPanel>
+                            <Grid Grid.Column="1">
+                                <TextBox Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource RuleTextBox}"
+                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceNameTooltip]}"/>
+                                <!-- The name this group will actually carry, shown while the box is
+                                     empty. Without it an unrenamed row is a blank rectangle, and the
+                                     built-in sources have no path beside them to hint at it. -->
+                                <TextBlock Text="{Binding DefaultName}" IsHitTestVisible="False"
+                                           Margin="10,0,6,0" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextSecondary}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DisplayName}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
 
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock Grid.Column="2" Text="{Binding Path}" Margin="10,0,8,0"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Path}"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"/>
+
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Content="&#xE70E;"
                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveUpTooltip]}"
                                         Style="{StaticResource RuleIconButton}"
-                                        Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"/>
                                 <Button Content="&#xE70D;"
                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveDownTooltip]}"
                                         Style="{StaticResource RuleIconButton}"
-                                        Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"/>
-                                <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
-                                              Content="&#xE712;" FontFamily="Segoe MDL2 Assets" FontSize="12"
-                                              Width="28" Height="28" Background="Transparent" BorderThickness="0"
-                                              Foreground="{DynamicResource TextPrimary2}"
-                                              ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceOptionsTooltip]}"
-                                              Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"/>
+                                <!-- A Button, not a ToggleButton: a checked ToggleButton paints the
+                                     system accent over whatever style it is given, which here came out
+                                     as a bright blue block instead of an icon. The glyph carries the
+                                     state instead, which is what the row actually needs to show. -->
+                                <Button Command="{Binding ToggleOptionsCommand}"
+                                        Style="{StaticResource RuleIconButton}"
+                                        ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceOptionsTooltip]}"
+                                        Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
+                                    <Button.Content>
+                                        <TextBlock Text="&#xE712;">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Button.Content>
+                                </Button>
                                 <Button Content="&#xE74D;"
                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_RemoveSourceTooltip]}"
                                         Style="{StaticResource RuleIconButton}"
                                         Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"
-                                        Command="{Binding DataContext.RemoveSourceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Command="{Binding DataContext.RemoveSourceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"/>
                             </StackPanel>
                         </Grid>
 
                         <!-- Only a folder source has any of this, and only when asked for. -->
-                        <Grid Margin="26,8,0,4" Grid.IsSharedSizeScope="True">
+                        <Grid Margin="34,8,0,6">
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -105,7 +131,7 @@
                                 </Style>
                             </Grid.Style>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" SharedSizeGroup="QuickPanelFieldLabel"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -113,43 +139,49 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceKind]}"
-                                       VerticalAlignment="Center" Margin="0,0,12,6"/>
-                            <ComboBox Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Left" MinWidth="180"
+                            <TextBlock Style="{StaticResource SourceFieldLabel}"
+                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceKind]}"/>
+                            <ComboBox Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Left" MinWidth="200"
+                                      Style="{StaticResource SettingsComboBox}"
                                       SelectedValue="{Binding Kind, Mode=TwoWay}" SelectedValuePath="Tag">
-                                <ComboBoxItem Tag="{x:Static core:QuickPanelSourceKind.RecentFiles}"
+                                <!-- Each item carries the style itself: ItemContainerStyle only reaches
+                                     containers the ComboBox generates, and these are declared. -->
+                                <ComboBoxItem Style="{StaticResource SettingsComboBoxItem}"
+                                              Tag="{x:Static core:QuickPanelSourceKind.RecentFiles}"
                                               Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_KindRecentFiles]}"/>
-                                <ComboBoxItem Tag="{x:Static core:QuickPanelSourceKind.Launcher}"
+                                <ComboBoxItem Style="{StaticResource SettingsComboBoxItem}"
+                                              Tag="{x:Static core:QuickPanelSourceKind.Launcher}"
                                               Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_KindLauncher]}"/>
                             </ComboBox>
 
-                            <TextBlock Grid.Row="1" Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourcePath]}"
-                                       VerticalAlignment="Center" Margin="0,0,12,6"/>
+                            <TextBlock Grid.Row="1" Style="{StaticResource SourceFieldLabel}"
+                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourcePath]}"/>
                             <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" Style="{StaticResource RuleTextBox}"
                                      Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <CheckBox Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,6"
-                                      IsChecked="{Binding Recursive, Mode=TwoWay}"
-                                      Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Recursive]}"/>
+                            <TextBlock Grid.Row="2" Style="{StaticResource SourceFieldLabel}"
+                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPattern]}"/>
+                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBox Width="150" Style="{StaticResource RuleTextBox}"
+                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPatternTooltip]}"
+                                         Text="{Binding FilterPattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <CheckBox Margin="14,0,0,0" VerticalAlignment="Center"
+                                          IsChecked="{Binding Recursive, Mode=TwoWay}"
+                                          Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Recursive]}"/>
+                            </StackPanel>
 
-                            <TextBlock Grid.Row="3" Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPattern]}"
-                                       VerticalAlignment="Center" Margin="0,0,12,6"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" Margin="0,0,0,6" Style="{StaticResource RuleTextBox}"
-                                     ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPatternTooltip]}"
-                                     Text="{Binding FilterPattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-
-                            <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal">
-                                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxItems]}"
-                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox Width="70" Style="{StaticResource RuleTextBox}"
+                            <TextBlock Grid.Row="3" Style="{StaticResource SourceFieldLabel}"
+                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxItems]}"/>
+                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                                <TextBox Width="64" Style="{StaticResource RuleTextBox}"
                                          Text="{Binding MaxItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
-                                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxAge]}"
-                                           VerticalAlignment="Center" Margin="16,0,8,0"
+                                <TextBlock Margin="14,0,10,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxAge]}"
                                            Visibility="{Binding IsRecentFiles, Converter={StaticResource BoolToVis}}"/>
-                                <TextBox Width="70" Style="{StaticResource RuleTextBox}"
+                                <TextBox Width="64" Style="{StaticResource RuleTextBox}"
                                          Visibility="{Binding IsRecentFiles, Converter={StaticResource BoolToVis}}"
                                          Text="{Binding MaxAgeMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
                             </StackPanel>
@@ -161,7 +193,7 @@
     </UserControl.Resources>
 
     <StackPanel>
-        <DockPanel Margin="0,0,0,6">
+        <DockPanel Margin="0,0,0,4">
             <Button DockPanel.Dock="Right"
                     Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AddFolder]}"
                     Style="{StaticResource PrimarySettingsButton}"
@@ -170,10 +202,8 @@
                        Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0"/>
         </DockPanel>
 
-        <!-- Scrolls inside its own pane: a workspace with a dozen sources, or one row expanded, must
-             not stretch the card past the bottom of the window. -->
-        <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="ListQuickPanelSources" ItemsSource="{Binding Sources}" ItemTemplate="{StaticResource SourceRowTemplate}"/>
-        </ScrollViewer>
+        <!-- No scroll viewer of its own: the page already scrolls, and bounding this one meant an
+             expanded row was clipped into a strip you had to scroll inside a scroll. -->
+        <ItemsControl x:Name="ListQuickPanelSources" ItemsSource="{Binding Sources}" ItemTemplate="{StaticResource SourceRowTemplate}"/>
     </StackPanel>
 </UserControl>

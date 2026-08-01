@@ -76,6 +76,16 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
         set => SetProperty(ref _isExpanded, value);
     }
 
+    /// <summary>
+    /// Opens and closes the block above. A command driving a plain Button rather than a ToggleButton
+    /// bound to <see cref="IsExpanded"/>: a ToggleButton's checked state paints the system accent
+    /// colour straight over whatever style it is given, which in this app's dark settings window is a
+    /// bright blue block where an icon should be.
+    /// </summary>
+    public System.Windows.Input.ICommand ToggleOptionsCommand => _toggleOptions ??= new Helpers.RelayCommand(() => IsExpanded = !IsExpanded);
+
+    private System.Windows.Input.ICommand? _toggleOptions;
+
     private string _path = string.Empty;
     public string Path
     {
