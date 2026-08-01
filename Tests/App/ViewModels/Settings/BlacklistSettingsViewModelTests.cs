@@ -13,8 +13,8 @@ public sealed class BlacklistSettingsViewModelTests
 
         var vm = new BlacklistSettingsViewModel(settings);
 
-        Assert.HasCount(2, vm.BlacklistedProcesses);
-        Assert.AreEqual("explorer.exe" + Environment.NewLine + "notepad.exe", vm.BlacklistText);
+        Assert.HasCount(2, vm.Global.Items);
+        Assert.AreEqual("explorer.exe" + Environment.NewLine + "notepad.exe", vm.Global.BulkText);
     }
 
     [TestMethod]
@@ -24,7 +24,7 @@ public sealed class BlacklistSettingsViewModelTests
 
         var vm = new BlacklistSettingsViewModel(settings);
 
-        Assert.HasCount(1, vm.BlacklistedProcesses);
+        Assert.HasCount(1, vm.Global.Items);
     }
 
     [TestMethod]
@@ -32,95 +32,102 @@ public sealed class BlacklistSettingsViewModelTests
     {
         var vm = new BlacklistSettingsViewModel(new UserSettings());
 
-        Assert.IsFalse(vm.AddProcessCommand.CanExecute(null));
+        Assert.IsFalse(vm.Global.AddProcessCommand.CanExecute(null));
 
-        vm.NewProcessName = "a.exe";
+        vm.Global.NewProcessName = "a.exe";
 
-        Assert.IsTrue(vm.AddProcessCommand.CanExecute(null));
+        Assert.IsTrue(vm.Global.AddProcessCommand.CanExecute(null));
     }
 
     [TestMethod]
     public void AddProcessCommand_Execute_AddsTrimmedUnquotedNameAndClearsInput()
     {
-        var vm = new BlacklistSettingsViewModel(new UserSettings()) { NewProcessName = "  \"chrome.exe\"  " };
+        var vm = Build(newName: "  \"chrome.exe\"  ");
 
-        vm.AddProcessCommand.Execute(null);
+        vm.Global.AddProcessCommand.Execute(null);
 
-        Assert.AreEqual("chrome.exe", vm.BlacklistedProcesses[0].Value);
-        Assert.AreEqual("", vm.NewProcessName);
+        Assert.AreEqual("chrome.exe", vm.Global.Items[0].Value);
+        Assert.AreEqual("", vm.Global.NewProcessName);
     }
 
     [TestMethod]
     public void AddProcessCommand_Execute_DuplicateNameCaseInsensitive_IsNotAddedTwice()
     {
-        var vm = new BlacklistSettingsViewModel(new UserSettings()) { NewProcessName = "chrome.exe" };
-        vm.AddProcessCommand.Execute(null);
-        vm.NewProcessName = "CHROME.EXE";
+        var vm = Build(newName: "chrome.exe");
+        vm.Global.AddProcessCommand.Execute(null);
+        vm.Global.NewProcessName = "CHROME.EXE";
 
-        vm.AddProcessCommand.Execute(null);
+        vm.Global.AddProcessCommand.Execute(null);
 
-        Assert.HasCount(1, vm.BlacklistedProcesses);
+        Assert.HasCount(1, vm.Global.Items);
     }
 
     [TestMethod]
     public void RemoveProcessCommand_Execute_RemovesItemAndRefreshesText()
     {
-        var vm = new BlacklistSettingsViewModel(new UserSettings()) { NewProcessName = "a.exe" };
-        vm.AddProcessCommand.Execute(null);
-        var item = vm.BlacklistedProcesses[0];
+        var vm = Build(newName: "a.exe");
+        vm.Global.AddProcessCommand.Execute(null);
+        var item = vm.Global.Items[0];
 
-        vm.RemoveProcessCommand.Execute(item);
+        vm.Global.RemoveProcessCommand.Execute(item);
 
-        Assert.IsEmpty(vm.BlacklistedProcesses);
-        Assert.AreEqual("", vm.BlacklistText);
+        Assert.IsEmpty(vm.Global.Items);
+        Assert.AreEqual("", vm.Global.BulkText);
     }
 
     [TestMethod]
     public void EditProcessCommand_Execute_MovesValueBackIntoInputAndRemovesFromList()
     {
-        var vm = new BlacklistSettingsViewModel(new UserSettings()) { NewProcessName = "a.exe" };
-        vm.AddProcessCommand.Execute(null);
-        var item = vm.BlacklistedProcesses[0];
+        var vm = Build(newName: "a.exe");
+        vm.Global.AddProcessCommand.Execute(null);
+        var item = vm.Global.Items[0];
 
-        vm.EditProcessCommand.Execute(item);
+        vm.Global.EditProcessCommand.Execute(item);
 
-        Assert.AreEqual("a.exe", vm.NewProcessName);
-        Assert.IsEmpty(vm.BlacklistedProcesses);
+        Assert.AreEqual("a.exe", vm.Global.NewProcessName);
+        Assert.IsEmpty(vm.Global.Items);
     }
 
     [TestMethod]
     public void ApplyTextCommand_Execute_ParsesMultilineTextIntoDistinctTrimmedItems()
     {
-        var vm = new BlacklistSettingsViewModel(new UserSettings())
-        {
-            BlacklistText = "a.exe\r\n\"b.exe\"\nA.EXE\n  \n"
-        };
+        var vm = Build(bulkText: "a.exe\r\n\"b.exe\"\nA.EXE\n  \n");
 
-        vm.ApplyTextCommand.Execute(null);
+        vm.Global.ApplyTextCommand.Execute(null);
 
-        CollectionAssert.AreEqual(new[] { "a.exe", "b.exe" }, vm.BlacklistedProcesses.Select(x => x.Value).ToList());
+        CollectionAssert.AreEqual(new[] { "a.exe", "b.exe" }, vm.Global.Items.Select(x => x.Value).ToList());
     }
 
     [TestMethod]
     public void ExportTextCommand_Execute_RewritesBlacklistTextFromCurrentItems()
     {
-        var vm = new BlacklistSettingsViewModel(new UserSettings()) { NewProcessName = "a.exe" };
-        vm.AddProcessCommand.Execute(null);
-        vm.BlacklistText = "stale text";
+        var vm = Build(newName: "a.exe");
+        vm.Global.AddProcessCommand.Execute(null);
+        vm.Global.BulkText = "stale text";
 
-        vm.ExportTextCommand.Execute(null);
+        vm.Global.ExportTextCommand.Execute(null);
 
-        Assert.AreEqual("a.exe", vm.BlacklistText);
+        Assert.AreEqual("a.exe", vm.Global.BulkText);
     }
 
     [TestMethod]
     public void Save_WritesNormalizedListBackToUserSettings()
     {
         var settings = new UserSettings();
-        var vm = new BlacklistSettingsViewModel(settings) { BlacklistText = "a.exe\nA.EXE\nb.exe" };
+        var vm = Build(bulkText: "a.exe\nA.EXE\nb.exe", settings: settings);
 
         vm.Save();
 
         CollectionAssert.AreEqual(new[] { "a.exe", "b.exe" }, settings.BlacklistedProcesses);
+    }
+
+    // The editor moved out of this type (ProcessBlacklistEditorViewModel, shared with the quick
+    // panel's own lists), so these reach it through Global rather than setting fields here.
+    private static BlacklistSettingsViewModel Build(string? newName = null, string? bulkText = null, UserSettings? settings = null)
+    {
+        var vm = new BlacklistSettingsViewModel(settings ?? new UserSettings());
+        if (newName != null) vm.Global.NewProcessName = newName;
+        if (bulkText != null) vm.Global.BulkText = bulkText;
+        return vm;
     }
 }

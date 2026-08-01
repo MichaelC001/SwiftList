@@ -57,6 +57,9 @@ public class PluginConfigFieldViewModel : ViewModelBase
 
     public ICommand AddCommand { get; }
 
+    /// <summary>Copies the selected array item, for entries that differ in one field.</summary>
+    public ICommand DuplicateCommand { get; }
+
     public object? LocalValueStore
     {
         get
@@ -121,6 +124,7 @@ public class PluginConfigFieldViewModel : ViewModelBase
         _onValueChanged = onValueChanged;
         _arraySupport = new PluginConfigArrayFieldSupport(this);
         AddCommand = new RelayCommand(_arraySupport.AddArrayItem);
+        DuplicateCommand = new RelayCommand(_arraySupport.DuplicateArrayItem, () => SelectedArrayItem != null);
 
         if (_onValueChanged == null)
         {

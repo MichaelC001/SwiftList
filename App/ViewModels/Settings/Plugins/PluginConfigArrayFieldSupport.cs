@@ -89,6 +89,27 @@ internal sealed class PluginConfigArrayFieldSupport
         SaveArrayFromChildren();
     }
 
+    /// <summary>
+    /// Copies the selected item and selects the copy. For a list whose entries differ in one field --
+    /// a second custom command with the same action but another keyword -- which is otherwise filling
+    /// every field in again by hand.
+    /// </summary>
+    public void DuplicateArrayItem()
+    {
+        if (_field.SelectedArrayItem is not { } source)
+            return;
+
+        // A fresh dictionary, not the one the source item holds: the copy has to be editable without
+        // writing through to the item it was copied from.
+        var value = source.GetValue();
+        if (value is IDictionary<string, object> fields)
+            value = new Dictionary<string, object>(fields, StringComparer.OrdinalIgnoreCase);
+
+        AddArrayItemViewModel(value);
+        _field.SelectedArrayItem = _field.ArrayItems[^1];
+        SaveArrayFromChildren();
+    }
+
     private void AddArrayItemViewModel(object? itemValue)
     {
         PluginConfigArrayItemViewModel? itemVM = null;

@@ -111,8 +111,11 @@
                 </StackPanel.Style>
                 <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ProcessesDesc]}"
                            Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <TextBox x:Name="RowQuickPanelProcesses" Style="{StaticResource RuleBulkTextBox}" MinHeight="120"
-                         Text="{Binding SelectedTab.ProcessesText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- The same editor the hotkey blacklist uses: same job, so the same type-and-add list
+                     rather than a bare text box. -->
+                <ContentControl x:Name="RowQuickPanelProcesses" Focusable="False"
+                                Content="{Binding SelectedTab.Processes}"
+                                ContentTemplate="{StaticResource ProcessListEditorTemplate}"/>
             </StackPanel>
         </Grid>
     </DockPanel>

@@ -232,6 +232,11 @@
         <Setter Property="Margin" Value="4,0,0,0"/>
     </Style>
 
+    <Style x:Key="ArrayHeaderDuplicateButton" TargetType="Button" BasedOn="{StaticResource ArrayHeaderAddButton}">
+        <Setter Property="Content" Value="&#xE8C8;"/>
+        <Setter Property="Command" Value="{Binding DuplicateCommand}"/>
+    </Style>
+
     <Style x:Key="ArrayRowMoveUpButton" TargetType="Button" BasedOn="{StaticResource ArrayRowDeleteButton}">
         <Setter Property="Content" Value="&#xE74A;"/>
         <Setter Property="Command" Value="{Binding MoveUpCommand}"/>

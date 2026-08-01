@@ -150,6 +150,7 @@ public static class SettingsSearchIndex
         new("Hotkeys_StartupPanelPreviousTab", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Global", "TabGlobal/RowStartupPanelPreviousTab", "Hotkeys_Tab_Global"),
         new("Hotkeys_Tab_PluginActions", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "PluginActions", "TabPluginActions"),
         new("Settings_Blacklist", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Blacklist", "TabBlacklist"),
+        new("Blacklist_GlobalTitle", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Blacklist", "TabBlacklist/RowBlacklistGlobal", "Settings_Blacklist"),
         // The quick panel's own blacklist is edited here, beside the global one it adds to, so it is
         // found under Hotkeys rather than on the panel's page.
         new("QuickPanel_BlacklistTitle", "Hotkeys", vm => vm.Hotkeys.SelectedTab = "Blacklist", "TabBlacklist/RowQuickPanelBlacklist", "Settings_Blacklist"),

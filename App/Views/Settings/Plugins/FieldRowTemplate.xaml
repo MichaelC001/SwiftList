@@ -119,9 +119,12 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <Button Grid.Row="0" HorizontalAlignment="Right" Margin="0,0,0,4"
-                                    Style="{StaticResource ArrayHeaderAddButton}"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Add]}"/>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
+                                <Button Style="{StaticResource ArrayHeaderAddButton}"
+                                        ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Add]}"/>
+                                <Button Style="{StaticResource ArrayHeaderDuplicateButton}"
+                                        ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Duplicate]}"/>
+                            </StackPanel>
                             <!-- No horizontal scrolling of its own. Left at the default it hands each
                                  row an unbounded width, the row's Star column resolves to however
                                  long the title happens to be, and the list grows a second horizontal

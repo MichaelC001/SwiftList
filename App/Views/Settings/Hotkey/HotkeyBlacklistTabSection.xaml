@@ -9,8 +9,8 @@
     <!-- Split out of HotkeySettingsPage.xaml (the "Blacklist" tab) to keep that file under the
          project's line-count convention. DataContext is inherited from the host page: bindings here
          (Blacklist.*) are HotkeySettingsViewModel/BlacklistSettingsViewModel members, same as before
-         extraction. The Rule*/BlacklistItemTemplate resources moved here too since this tab was their
-         only consumer in the host page. -->
+         extraction. Both cards are the one shared ProcessListEditorTemplate (see SettingsWindow.xaml),
+         which is also what the quick panel's per-workspace app list uses. -->
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -18,35 +18,6 @@
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SearchWindow.xaml"/>
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-
-            <DataTemplate x:Key="BlacklistItemTemplate">
-                <Border BorderBrush="{DynamicResource SettingsRowBorderBrush}" BorderThickness="0,0,0,1" Padding="0,9">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="24"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="&#xEA18;" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                                   Foreground="{DynamicResource AccentColor}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13"
-                                   Foreground="{DynamicResource TextPrimary2}" VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis" Margin="8,0,0,0"/>
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="&#xE70F;"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_EditTooltip]}"
-                                    Style="{StaticResource RuleIconButtonAccent}"
-                                    Command="{Binding DataContext.Blacklist.EditProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"/>
-                            <Button Content="&#xE74D;"
-                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_RemoveTooltip]}"
-                                    Style="{StaticResource RuleIconButtonAccent}"
-                                    Command="{Binding DataContext.Blacklist.RemoveProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -56,31 +27,13 @@
 
         <Border Style="{StaticResource SettingsCard}">
             <StackPanel>
+                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_GlobalTitle]}"
+                           FontWeight="SemiBold" Margin="0,0,0,4"/>
                 <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_ProcessCardDesc]}"
                            Style="{StaticResource SettingsHintText}" Margin="0,0,0,10" TextWrapping="Wrap"/>
-
-                <DockPanel Margin="0,0,0,10">
-                    <Button DockPanel.Dock="Right"
-                            Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_AddBtn]}"
-                            Style="{StaticResource PrimarySettingsButton}"
-                            Command="{Binding Blacklist.AddProcessCommand}" Margin="10,0,0,0"/>
-                    <TextBox Style="{StaticResource RuleTextBox}"
-                             Text="{Binding Blacklist.NewProcessName, UpdateSourceTrigger=PropertyChanged}"/>
-                </DockPanel>
-
-                <ItemsControl ItemsSource="{Binding Blacklist.BlacklistedProcesses}" ItemTemplate="{StaticResource BlacklistItemTemplate}"/>
-
-                <TextBox Style="{StaticResource RuleBulkTextBox}" Margin="0,10,0,8"
-                         Text="{Binding Blacklist.BlacklistText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_GenerateBtn]}"
-                            Style="{StaticResource SettingsButton}"
-                            Command="{Binding Blacklist.ExportTextCommand}" Margin="0,0,8,0"/>
-                    <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Blacklist_ApplyBtn]}"
-                            Style="{StaticResource PrimarySettingsButton}"
-                            Command="{Binding Blacklist.ApplyTextCommand}"/>
-                </StackPanel>
+                <ContentControl x:Name="RowBlacklistGlobal" Focusable="False"
+                                Content="{Binding Blacklist.Global}"
+                                ContentTemplate="{StaticResource ProcessListEditorTemplate}"/>
             </StackPanel>
         </Border>
 
@@ -91,9 +44,10 @@
                 <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_BlacklistTitle]}"
                            FontWeight="SemiBold" Margin="0,0,0,4"/>
                 <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_BlacklistDesc]}"
-                           Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <TextBox x:Name="RowQuickPanelBlacklist" Style="{StaticResource RuleBulkTextBox}" MinHeight="70"
-                         Text="{Binding Blacklist.QuickPanelBlacklistText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                           Style="{StaticResource SettingsHintText}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                <ContentControl x:Name="RowQuickPanelBlacklist" Focusable="False"
+                                Content="{Binding Blacklist.QuickPanel}"
+                                ContentTemplate="{StaticResource ProcessListEditorTemplate}"/>
             </StackPanel>
         </Border>
     </StackPanel>

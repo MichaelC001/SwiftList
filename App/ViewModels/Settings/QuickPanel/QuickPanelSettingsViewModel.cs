@@ -127,7 +127,9 @@ public class QuickPanelSettingsViewModel : ViewModelBase
 
         var panel = _userSettings.QuickPanel;
         panel.Enabled = Enabled;
-        panel.BlacklistedProcesses = QuickPanelTabSettingsViewModel.ParseLines(BlacklistText);
+        // BlacklistedProcesses is not written here: it is edited on the Hotkeys page, beside the global
+        // list it adds to, and saved by BlacklistSettingsViewModel. Writing it from both would make
+        // whichever page saved last the winner.
         // Ordered by the strip, not by _models: the list on screen is what the user arranged.
         panel.Tabs = Tabs.Select(t => _models.First(m => m.Id == t.Id)).ToList();
         panel.ActiveTabId = SelectedTab?.Id ?? panel.Tabs.FirstOrDefault()?.Id ?? string.Empty;
