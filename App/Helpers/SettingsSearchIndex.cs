@@ -185,6 +185,14 @@ public static class SettingsSearchIndex
         new("StartupPanel_TabPluginTabs", "StartupPanel", vm => vm.StartupPanel.SelectedSubTab = "PluginTabs", "SubTabPluginTabs"),
         new("StartupPanel_TabOrder", "StartupPanel", vm => vm.StartupPanel.SelectedSubTab = "TabOrder", "SubTabOrder"),
 
+        new("Settings_QuickPanel", "QuickPanel"),
+        new("QuickPanel_Enabled", "QuickPanel", TargetElementName: "RowQuickPanelEnabled"),
+        new("QuickPanel_WorkspaceName", "QuickPanel", TargetElementName: "RowQuickPanelWorkspaceName"),
+        // Lives in QuickPanelSourcesSection, inside the page: the anchor is found by name anywhere in
+        // the page's tree, so the section split is invisible here.
+        new("QuickPanel_ProcessesDesc", "QuickPanel", TargetElementName: "RowQuickPanelProcesses"),
+        new("QuickPanel_BlacklistDesc", "QuickPanel", TargetElementName: "RowQuickPanelBlacklist"),
+
         // About
         new("Settings_About", "About"),
         new("About_CheckUpdate", "About", TargetElementName: "BtnCheckUpdate"),

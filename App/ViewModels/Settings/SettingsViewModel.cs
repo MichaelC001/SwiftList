@@ -39,6 +39,7 @@ public class SettingsViewModel : ViewModelBase
         History = new HistorySettingsViewModel(_userSettings);
         Favorites = new FavoritesSettingsViewModel(_userSettings);
         StartupPanel = new StartupPanelSettingsViewModel(_userSettings);
+        QuickPanel = new QuickPanel.QuickPanelSettingsViewModel(_userSettings);
         RefreshCommand = new RelayCommand(Refresh);
         ApplyCommand = new RelayCommand(Apply, () => CanApply);
 
@@ -73,6 +74,12 @@ public class SettingsViewModel : ViewModelBase
     public HistorySettingsViewModel History { get; }
     public FavoritesSettingsViewModel Favorites { get; }
     public StartupPanelSettingsViewModel StartupPanel { get; }
+
+    /// <summary>
+    /// The floating panel's own page. Its "tabs" are workspaces, unrelated to the Startup Panel's tab
+    /// strip above -- see QuickPanelSettingsViewModel.
+    /// </summary>
+    public QuickPanel.QuickPanelSettingsViewModel QuickPanel { get; }
     public ICommand RefreshCommand { get; }
     public ICommand ApplyCommand { get; }
 
@@ -152,6 +159,7 @@ public class SettingsViewModel : ViewModelBase
         History.Save();
         Favorites.Save();
         StartupPanel.Save();
+        QuickPanel.Save();
         _userSettings.Save();
         App.HookClient?.SendMessage(new IpcMessage { Id = IpcMessageId.ReloadSettings });
         PluginManager.Instance.RefreshDisabledComponents();

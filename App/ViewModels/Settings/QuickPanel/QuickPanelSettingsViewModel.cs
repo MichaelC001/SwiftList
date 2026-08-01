@@ -25,6 +25,7 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         _userSettings = userSettings;
         var panel = userSettings.QuickPanel;
         _enabled = panel.Enabled;
+        _blacklistText = string.Join(Environment.NewLine, panel.BlacklistedProcesses);
 
         // A settings file edited by hand (or one from before this page existed) can have no tabs at all,
         // and a panel with nowhere to put a source is not something the user can recover from here.
@@ -48,6 +49,19 @@ public class QuickPanelSettingsViewModel : ViewModelBase
     {
         get => _enabled;
         set => SetProperty(ref _enabled, value);
+    }
+
+    private string _blacklistText;
+
+    /// <summary>
+    /// Apps the panel stays out of, one process name per line. Added to the global hotkey blacklist
+    /// rather than replacing it -- anything blocked there is blocked here too, and this list is for the
+    /// apps only a panel that docks itself over the window in front has a reason to avoid.
+    /// </summary>
+    public string BlacklistText
+    {
+        get => _blacklistText;
+        set => SetProperty(ref _blacklistText, value);
     }
 
     public ObservableCollection<QuickPanelTabSettingsViewModel> Tabs { get; } = new();
@@ -79,6 +93,7 @@ public class QuickPanelSettingsViewModel : ViewModelBase
 
         var panel = _userSettings.QuickPanel;
         panel.Enabled = Enabled;
+        panel.BlacklistedProcesses = QuickPanelTabSettingsViewModel.ParseLines(BlacklistText);
         // Ordered by the strip, not by _models: the list on screen is what the user arranged.
         panel.Tabs = Tabs.Select(t => _models.First(m => m.Id == t.Id)).ToList();
         panel.ActiveTabId = SelectedTab?.Id ?? panel.Tabs.FirstOrDefault()?.Id ?? string.Empty;

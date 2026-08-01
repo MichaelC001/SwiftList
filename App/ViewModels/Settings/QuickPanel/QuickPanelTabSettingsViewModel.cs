@@ -20,6 +20,7 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
     {
         _model = model;
         _name = model.Name;
+        _processesText = string.Join(Environment.NewLine, model.Processes);
 
         foreach (var id in QuickPanelGroupOrdering.Resolve(AvailableIds(model), model.GroupOrder, disabled: null))
             Sources.Add(BuildRow(model, id));
@@ -49,6 +50,19 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         ? TranslationManager.Instance["QuickPanel_DefaultTabName"]
         : Name.Trim();
 
+    private string _processesText = string.Empty;
+
+    /// <summary>
+    /// The apps this workspace belongs to, one process name per line. A plain text box rather than a
+    /// managed list: it is a handful of names typed once, and the same shape the exclusion and
+    /// directory lists elsewhere in Settings already offer for exactly that reason.
+    /// </summary>
+    public string ProcessesText
+    {
+        get => _processesText;
+        set => SetProperty(ref _processesText, value);
+    }
+
     public ObservableCollection<QuickPanelSourceRowViewModel> Sources { get; } = new();
 
     public ICommand AddFolderCommand { get; }
@@ -60,6 +74,7 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
     public void Save()
     {
         _model.Name = Name.Trim();
+        _model.Processes = ParseLines(ProcessesText);
 
         foreach (var row in Sources)
             row.SaveFolderFields();
@@ -127,6 +142,14 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
             return;
         Sources.Move(from, to);
     }
+
+    /// <summary>One entry per line, trimmed, blanks and repeats dropped. Shared with the panel's own blacklist box.</summary>
+    internal static List<string> ParseLines(string? text) => (text ?? string.Empty)
+        .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+        .Select(line => line.Trim().Trim('"'))
+        .Where(line => line.Length > 0)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
 
     private static IEnumerable<string> AvailableIds(QuickPanelTab model)
         => model.Folders.Select(f => f.Id)

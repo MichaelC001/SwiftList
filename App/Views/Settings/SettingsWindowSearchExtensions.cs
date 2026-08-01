@@ -326,6 +326,7 @@ internal static class SettingsWindowSearchExtensions
         "History" => window.PageHistory,
         "Favorites" => window.PageFavorites,
         "StartupPanel" => window.PageStartupPanel,
+        "QuickPanel" => window.PageQuickPanel,
         "About" => window.PageAbout,
         _ => null,
     };

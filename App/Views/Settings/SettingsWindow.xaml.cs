@@ -36,6 +36,7 @@ public partial class SettingsWindow : Window
     private HistorySettingsPage? _pageHistory;
     private FavoritesSettingsPage? _pageFavorites;
     private StartupPanelSettingsPage? _pageStartupPanel;
+    private Views.Settings.QuickPanel.QuickPanelSettingsPage? _pageQuickPanel;
     private AboutSettingsPage? _pageAbout;
     private FrameworkElement? _currentPage;
 
@@ -52,6 +53,7 @@ public partial class SettingsWindow : Window
     internal HistorySettingsPage PageHistory => _pageHistory ??= AddPage(new HistorySettingsPage { DataContext = ((SettingsViewModel)DataContext).History });
     internal FavoritesSettingsPage PageFavorites => _pageFavorites ??= AddPage(new FavoritesSettingsPage { DataContext = ((SettingsViewModel)DataContext).Favorites });
     internal StartupPanelSettingsPage PageStartupPanel => _pageStartupPanel ??= AddPage(new StartupPanelSettingsPage { DataContext = ((SettingsViewModel)DataContext).StartupPanel });
+    internal Views.Settings.QuickPanel.QuickPanelSettingsPage PageQuickPanel => _pageQuickPanel ??= AddPage(new Views.Settings.QuickPanel.QuickPanelSettingsPage { DataContext = ((SettingsViewModel)DataContext).QuickPanel });
     internal AboutSettingsPage PageAbout => _pageAbout ??= AddPage(new AboutSettingsPage());
 
     private T AddPage<T>(T page) where T : FrameworkElement

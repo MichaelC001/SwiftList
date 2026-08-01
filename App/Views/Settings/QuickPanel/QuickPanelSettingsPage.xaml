@@ -1,0 +1,89 @@
+<UserControl x:Class="SwiftList.App.Views.Settings.QuickPanel.QuickPanelSettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:services="clr-namespace:SwiftList.App.Services"
+             xmlns:local="clr-namespace:SwiftList.App.Views.Settings.QuickPanel"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="760">
+    <!-- Workspaces on the left, the selected one's sources on the right. Two panes rather than a
+         dropdown above one list: a workspace IS a set of sources, and the shape should say so. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/SwiftList.App;component/Resources/Styles.xaml"/>
+                <ResourceDictionary Source="../../../Resources/Styles/Windows/SearchWindow.xaml"/>
+                <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,8,0">
+            <CheckBox x:Name="RowQuickPanelEnabled" Margin="0,0,0,8"
+                      IsChecked="{Binding Enabled, Mode=TwoWay}"
+                      Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Enabled]}"/>
+            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_HotkeyHint]}"
+                       Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <Grid MinHeight="320">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <DockPanel Grid.Column="0" Margin="0,0,14,0">
+                        <TextBlock DockPanel.Dock="Top" Margin="0,0,0,6"
+                                   Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Workspaces]}"/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="&#xE710;" Style="{StaticResource RuleIconButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AddWorkspace]}"
+                                    Command="{Binding AddTabCommand}"/>
+                            <Button Content="&#xE8C8;" Style="{StaticResource RuleIconButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_DuplicateWorkspace]}"
+                                    Command="{Binding DuplicateTabCommand}"/>
+                            <Button Content="&#xE74D;" Style="{StaticResource RuleIconButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_RemoveWorkspace]}"
+                                    Command="{Binding RemoveTabCommand}"/>
+                            <Button Content="&#xE70E;" Style="{StaticResource RuleIconButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveUpTooltip]}"
+                                    Command="{Binding MoveTabUpCommand}"/>
+                            <Button Content="&#xE70D;" Style="{StaticResource RuleIconButton}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MoveDownTooltip]}"
+                                    Command="{Binding MoveTabDownCommand}"/>
+                        </StackPanel>
+                        <ListBox x:Name="ListQuickPanelWorkspaces" ItemsSource="{Binding Tabs}"
+                                 SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                                 BorderThickness="1" BorderBrush="{DynamicResource SettingsRowBorderBrush}"
+                                 Background="Transparent">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding EffectiveName}" Margin="2,4" TextTrimming="CharacterEllipsis"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <StackPanel Grid.Column="1" DataContext="{Binding SelectedTab}">
+                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_WorkspaceName]}"
+                                   Margin="0,0,0,4"/>
+                        <TextBox x:Name="RowQuickPanelWorkspaceName" Style="{StaticResource RuleTextBox}" Margin="0,0,0,14"
+                                 Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <local:QuickPanelSourcesSection/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}" Margin="0,15,0,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_BlacklistDesc]}"
+                               Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <TextBox x:Name="RowQuickPanelBlacklist" Style="{StaticResource RuleBulkTextBox}" MinHeight="70"
+                             Text="{Binding BlacklistText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
