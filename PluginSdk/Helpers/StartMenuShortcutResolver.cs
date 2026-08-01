@@ -21,6 +21,17 @@ public static class StartMenuShortcutResolver
         ".exe"
     };
 
+    /// <summary>
+    /// The same extensions <see cref="ShouldIndex"/> accepts, as a Win32 filter pattern for the host's
+    /// own directory enumeration (see <c>DirectoryIndexerService.EnumerateDirectoryAsync</c>).
+    /// </summary>
+    /// <remarks>
+    /// Built from the one list rather than written out a second time: a pattern that drifted from
+    /// <see cref="ShouldIndex"/> would either hide an app kind or drag files back that are then dropped
+    /// anyway, and nothing would say which of the two had happened.
+    /// </remarks>
+    public static string AppFilePattern { get; } = string.Join(';', AppFileExtensions.Select(ext => "*" + ext));
+
     public static bool ShouldIndex(string path)
     {
         var fileName = Path.GetFileName(path);

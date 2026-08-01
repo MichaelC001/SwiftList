@@ -93,7 +93,7 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
         // 2. Gather all unique shortcut files from all roots
         foreach (var root in roots)
         {
-            foreach (var path in StartMenuShortcutResolver.EnumerateFilesSafe(root))
+            foreach (var path in EnumerateAppFiles(root))
             {
                 if (!StartMenuShortcutResolver.ShouldIndex(path) || !indexedPaths.Add(path))
                     continue;
@@ -182,6 +182,52 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
         AppendAppsFolderApps(list, entriesByName.Keys);
 
         return list;
+    }
+
+    /// <summary>Every app file under <paramref name="root"/>, from the host's index where it has one.</summary>
+    /// <remarks>
+    /// Through the host rather than Directory.GetFiles: for a drive it indexes -- which the Start Menu
+    /// and Desktop live on -- this costs no disk I/O at all, and the walk it replaces was a recursive
+    /// one over trees that can hold hundreds of entries. A directory no index covers (a share, a drive
+    /// with indexing off, or simply an index still building at startup) is walked live by the host on
+    /// its own, so this never has to know which case it is in.
+    ///
+    /// Blocking, because ISearchableItemProvider.GetSearchableItems is synchronous by contract and this
+    /// already runs on the background task SearchableItemCache loads providers on -- there is no UI
+    /// thread here to free up.
+    ///
+    /// The host drops hidden and system entries, which the old walk did not. A shortcut deliberately
+    /// hidden by its installer therefore stops appearing; that is the same rule every other search
+    /// result in the app already follows, and a hidden shortcut is one the shell itself does not offer.
+    /// </remarks>
+    private static IEnumerable<string> EnumerateAppFiles(string root)
+    {
+        var files = new List<string>();
+        try
+        {
+            var enumerate = DirectoryIndexerService.EnumerateDirectoryAsync(
+                root, recursive: true, filterPattern: StartMenuShortcutResolver.AppFilePattern);
+
+            var collect = Task.Run(async () =>
+            {
+                await foreach (var entry in enumerate.ConfigureAwait(false))
+                {
+                    // The pattern selects files, but directories come back regardless -- see
+                    // EnumerateDirectoryAsync's own contract.
+                    if (!entry.IsDir && !string.IsNullOrEmpty(entry.FullPath))
+                        files.Add(entry.FullPath);
+                }
+            });
+            collect.GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            // One unreadable root costs its own entries and nothing else, exactly as the walk it
+            // replaced logged and carried on per directory.
+            PluginSdk.Logger.Log($"[StartMenuAppItemProvider] Failed to enumerate '{root}': {ex.Message}", PluginSdk.LogLevel.Warn);
+        }
+
+        return files;
     }
 
     private static void AppendAppsFolderApps(List<SearchableItem> list, IEnumerable<string> alreadyIndexedNames)
