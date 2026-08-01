@@ -4,38 +4,11 @@ using SwiftList.Core.DriveMonitoring;
 using SwiftList.Core.Indexer.Usn.Journal;
 namespace SwiftList.Core.Indexer.Usn;
 
-public class UsnIndexer : IDisposable
+// Partial: the status types it publishes, and SnapshotStatus, live in UsnIndexerStatus.cs.
+public partial class UsnIndexer : IDisposable
 {
     public event Action<IndexerStatus>? StatusChanged;
     private long _lastProgressPublishTicks;
-
-    public class IndexerStatus
-    {
-        public string State { get; set; } = "idle";
-        public int Progress { get; set; } = 0;
-        public int TotalFiles { get; set; } = 0;
-        public int TotalDirs { get; set; } = 0;
-        public double ElapsedTime { get; set; } = 0.0;
-        public bool IsMaintenanceBusy { get; set; }
-        public List<string> ActiveDrives { get; set; } = new();
-        public List<DriveIndexStatus> Drives { get; set; } = new();
-    }
-
-    public class DriveIndexStatus
-    {
-        public string Drive { get; set; } = string.Empty;
-        public bool Enabled { get; set; }
-        public string Kind { get; set; } = "LocalNtfs";
-        public string State { get; set; } = "unknown";
-        public int Files { get; set; }
-        public int Dirs { get; set; }
-        public string CachePath { get; set; } = string.Empty;
-        // Bumped once per applied change batch on this drive, so a subscriber can tell "this drive's
-        // index just moved" from "this status arrived for some other reason". Files/Dirs cannot answer
-        // that: editing a file in place changes its size and timestamps in the index without changing
-        // either count. Monotonic per process, meaningless across restarts -- only differences matter.
-        public long Revision { get; set; }
-    }
 
     internal readonly object _lockObj = new();
     internal readonly JournalReader _reader = new();
@@ -206,15 +179,6 @@ public class UsnIndexer : IDisposable
     // monitor (still alive throughout, by design -- see DriveMonitorFactory) would otherwise overwrite the
     // in-progress scan's own reported progress with the stale old index's total and flip the row back to
     // "ready" early -- the exact up/down flicker this guard exists to prevent.
-    // Records that this drive's index just took a batch of changes -- every kind of change, including
-    // ones that leave the entry counts untouched. Caller holds LockObj.
-    internal void BumpDriveRevision(string drive)
-    {
-        var item = Status.Drives.FirstOrDefault(d => d.Drive.Equals(drive, StringComparison.OrdinalIgnoreCase));
-        if (item != null)
-            item.Revision++;
-    }
-
     internal void UpdateDriveCounts(string drive, bool markReady = false)
     {
         var item = Status.Drives.FirstOrDefault(d => d.Drive.Equals(drive, StringComparison.OrdinalIgnoreCase));
@@ -241,34 +205,6 @@ public class UsnIndexer : IDisposable
         foreach (var live in _recordIndexes.Values)
             live.Dispose();
         _recordIndexes.Clear();
-    }
-
-    public IndexerStatus SnapshotStatus()
-    {
-        lock (LockObj)
-        {
-            return new IndexerStatus
-            {
-                State = Status.State,
-                Progress = Status.Progress,
-                TotalFiles = Status.TotalFiles,
-                TotalDirs = Status.TotalDirs,
-                ElapsedTime = Status.ElapsedTime,
-                IsMaintenanceBusy = Status.IsMaintenanceBusy,
-                ActiveDrives = Status.ActiveDrives.ToList(),
-                Drives = Status.Drives.Select(d => new DriveIndexStatus
-                {
-                    Drive = d.Drive,
-                    Enabled = d.Enabled,
-                    Kind = d.Kind,
-                    State = d.State,
-                    Files = d.Files,
-                    Dirs = d.Dirs,
-                    CachePath = d.CachePath,
-                    Revision = d.Revision
-                }).ToList()
-            };
-        }
     }
 
     internal void PublishStatusChanged()

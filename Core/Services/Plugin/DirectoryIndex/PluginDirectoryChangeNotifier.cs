@@ -98,8 +98,7 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
     // The elevated service publishes a status update after every applied change batch (see
     // UsnIndexerExtensions.ApplyUsnRecords/ApplyFolderChange), which is the only signal this process
     // gets that a local drive's index moved. Which drive moved is read from its revision, bumped by
-    // exactly those two -- the status carries no change list, and asking for one would mean a second,
-    // far chattier subscription for something no caller here needs.
+    // exactly those two; WHERE it moved comes from the directories carried alongside it.
     private async Task WatchLocalIndexAsync(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
@@ -130,6 +129,11 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
         }
     }
 
+    // The revision half of the status only says the volume changed, and matching that against a
+    // registered directory can only ask "does this directory sit on that drive" -- true of everything
+    // on C:, so a temp file or a log line used to wake every plugin watching anything there, and each
+    // paid a full re-listing for it. The directories carried with the revision are what turn that back
+    // into a question with an answer.
     private void OnLocalStatus(Indexer.Usn.UsnIndexer.IndexerStatus status)
     {
         if (status.Drives == null)
@@ -139,16 +143,58 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
         {
             if (string.IsNullOrEmpty(drive.Drive))
                 continue;
+
+            long previousRevision;
             lock (_gate)
             {
                 // First sight of a drive is not a change: it is this subscription starting up, and
                 // re-listing every plugin's directories for that would be a refresh nobody asked for.
-                var known = _lastLocalRevisions.TryGetValue(drive.Drive, out var previous);
+                var known = _lastLocalRevisions.TryGetValue(drive.Drive, out previousRevision);
                 _lastLocalRevisions[drive.Drive] = drive.Revision;
-                if (!known || previous == drive.Revision)
+                if (!known || previousRevision == drive.Revision)
                     continue;
             }
-            ReportSource(drive.Drive);
+
+            ReportLocalChange(drive, previousRevision);
+        }
+    }
+
+    private void ReportLocalChange(Indexer.Usn.UsnIndexer.DriveIndexStatus drive, long previousRevision)
+    {
+        foreach (var pluginId in PluginsForLocalChange(drive, previousRevision, _registrations()))
+            Report(pluginId);
+    }
+
+    /// <summary>
+    /// The plugins a local drive's revision move actually concerns, from the directories it moved in.
+    /// </summary>
+    /// <remarks>
+    /// Falls back to the whole drive when the change list cannot account for everything since
+    /// <paramref name="previousRevision"/> -- a batch too wide to enumerate, or one whose entries have
+    /// since fallen off the end. Losing precision there costs a refresh nobody needed; assuming
+    /// nothing happened would cost a plugin the change it was watching for, so the imprecise answer is
+    /// the safe one.
+    /// </remarks>
+    internal static IEnumerable<string> PluginsForLocalChange(
+        Indexer.Usn.UsnIndexer.DriveIndexStatus drive,
+        long previousRevision,
+        IReadOnlyList<(string PluginId, string Path)> registrations)
+    {
+        if (!drive.ChangedDirectories.Covers(previousRevision))
+        {
+            foreach (var pluginId in PluginsUnderSource(drive.Drive, registrations))
+                yield return pluginId;
+            yield break;
+        }
+
+        var reported = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var directory in drive.ChangedDirectories.DirectoriesAfter(previousRevision))
+        {
+            foreach (var (pluginId, path) in registrations)
+            {
+                if (SourceTouchesPath(directory, path) && reported.Add(pluginId))
+                    yield return pluginId;
+            }
         }
     }
 

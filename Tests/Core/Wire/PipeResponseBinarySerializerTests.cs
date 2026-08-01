@@ -96,6 +96,51 @@ public sealed class PipeResponseBinarySerializerTests
         Assert.AreEqual(1234567890123L, drive.Revision);
     }
 
+    // The revision says a drive moved; these say where, which is the difference between a plugin
+    // watching one folder being woken by its own changes and being woken by every write on the volume.
+    // Trailing the drive record, so a size that forgot them would truncate the payload outright.
+    [TestMethod]
+    public async Task RoundTrip_Status_PreservesEachDrivesChangedDirectories()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.Record(41, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
+        changed.Record(42, new[] { @"C:\Users\me\AppData\Local\Temp", @"C:\Windows\Logs" });
+
+        var status = new UsnIndexer.IndexerStatus
+        {
+            Drives = { new UsnIndexer.DriveIndexStatus { Drive = "C", Revision = 42, ChangedDirectories = changed } }
+        };
+
+        var result = await RoundTripAsync(s => PipeResponseBinarySerializer.WriteStatusAsync(s, status));
+
+        var received = result.Status!.Drives[0].ChangedDirectories;
+        CollectionAssert.AreEqual(
+            new[] { @"C:\Users\me\AppData\Local\Temp", @"C:\Windows\Logs" },
+            received.DirectoriesAfter(41).ToList());
+        Assert.IsTrue(received.Covers(0), "nothing had fallen off the sender's list, so nothing may fall off the receiver's");
+    }
+
+    // A list that arrived full must not be re-trimmed on the way in: doing so would drop its oldest
+    // revision a second time and quietly narrow what the receiver believes it can account for.
+    [TestMethod]
+    public async Task RoundTrip_Status_ChangedDirectoriesAtCapacity_KeepsTheSendersCoverage()
+    {
+        var changed = new DriveChangedDirectories();
+        for (var revision = 1; revision <= DriveChangedDirectories.Capacity; revision++)
+            changed.Record(revision, new[] { $@"C:\Dir{revision}" });
+
+        var status = new UsnIndexer.IndexerStatus
+        {
+            Drives = { new UsnIndexer.DriveIndexStatus { Drive = "C", Revision = DriveChangedDirectories.Capacity, ChangedDirectories = changed } }
+        };
+
+        var result = await RoundTripAsync(s => PipeResponseBinarySerializer.WriteStatusAsync(s, status));
+
+        var received = result.Status!.Drives[0].ChangedDirectories;
+        Assert.AreEqual(changed.Covers(0), received.Covers(0));
+        Assert.HasCount(DriveChangedDirectories.Capacity, received.DirectoriesAfter(0).ToList());
+    }
+
     [TestMethod]
     public async Task RoundTrip_MachineSettings_PreservesLocalDrives()
     {

@@ -48,6 +48,10 @@ public static class UsnIndexerExtensions
 
         var namePool = new FileRecordNamePool();
         var pendingMetadataFrns = new HashSet<UInt128>();
+        // Collected here rather than derived afterwards from the delta: the record names its parent
+        // directly, so this costs a hash insert per record and no path work at all for the (many)
+        // batches that turn out to be several changes in the same folder.
+        var changedParentFrns = new HashSet<UInt128>();
 
         // One Mutate call for the whole batch -- LiveIndex's write lock makes the batch atomic with
         // respect to concurrent searches on this drive (a search never sees half the batch applied).
@@ -61,6 +65,7 @@ public static class UsnIndexerExtensions
                 var parentFrn = record.ParentFileReferenceNumber;
                 var linkName = namePool.Get(record.FileName);
                 var linkFlags = FileRecordFlagsHelper.FromAttributes((FileAttributes)record.FileAttributes);
+                changedParentFrns.Add(parentFrn);
 
                 if ((record.Reason & Win32Api.USN_REASON_HARD_LINK_CHANGE) != 0
                     && (record.Reason & (Win32Api.USN_REASON_FILE_CREATE | Win32Api.USN_REASON_FILE_DELETE)) == 0)
@@ -91,11 +96,15 @@ public static class UsnIndexerExtensions
             }
         });
 
+        // Resolved before taking LockObj, never inside it: reading a path takes the LiveIndex's own
+        // lock, and taking the two in this order here and the other order anywhere else is a deadlock.
+        var changedDirectories = UsnIndexerChangedDirectories.Resolve(live, changedParentFrns);
+
         lock (indexer.LockObj)
         {
             indexer.UpdateTotalsFromRuntime();
             indexer.UpdateDriveCounts(drive);
-            indexer.BumpDriveRevision(drive);
+            indexer.RecordDriveChange(drive, changedDirectories);
         }
         SearchCoordinator.ClearCaches();
 
@@ -170,7 +179,8 @@ public static class UsnIndexerExtensions
         }
 
         var root = $"{drive}:\\";
-        var normalizedPath = PathHelpers.NormalizePath(path, Directory.Exists(path));
+        var isDirectory = Directory.Exists(path);
+        var normalizedPath = PathHelpers.NormalizePath(path, isDirectory);
         var changed = false;
 
         try
@@ -197,12 +207,18 @@ public static class UsnIndexerExtensions
         if (!changed)
             return;
 
+        // A rename moves something out of one directory and into another, so both are places a
+        // subscriber watching either one needs to hear about.
+        var changedDirectories = UsnIndexerChangedDirectories.ForPath(normalizedPath, isDirectory);
+        if (changeType == WatcherChangeTypes.Renamed && !string.IsNullOrWhiteSpace(oldPath))
+            changedDirectories.AddRange(UsnIndexerChangedDirectories.ForPath(oldPath, isDirectory: false));
+
         bool isRebuilding;
         lock (indexer.LockObj)
         {
             indexer.UpdateTotalsFromRuntime();
             indexer.UpdateDriveCounts(drive);
-            indexer.BumpDriveRevision(drive);
+            indexer.RecordDriveChange(drive, changedDirectories);
             isRebuilding = MarkMissedIfRebuilding(indexer, drive);
         }
         SearchCoordinator.ClearCaches();

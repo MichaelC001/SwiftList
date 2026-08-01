@@ -1,3 +1,4 @@
+using SwiftList.Core.Indexer.Usn;
 using SwiftList.Core.Services.Plugin.DirectoryIndex;
 
 namespace SwiftList.Core.Tests.Services.Plugin.DirectoryIndex;
@@ -73,5 +74,86 @@ public sealed class PluginDirectoryChangeNotifierTests
         var registrations = new List<(string PluginId, string Path)> { ("FileFilters", @"C:\Movies") };
 
         Assert.IsEmpty(PluginDirectoryChangeNotifier.PluginsUnderSource("Z", registrations).ToList());
+    }
+
+    private static readonly List<(string PluginId, string Path)> Registrations = new()
+    {
+        ("CoreExtensions.StartMenu", @"C:\ProgramData\Microsoft\Windows\Start Menu"),
+        ("FileFilters", @"C:\Movies"),
+    };
+
+    private static UsnIndexer.DriveIndexStatus Drive(long revision, DriveChangedDirectories changed)
+        => new() { Drive = "C", Revision = revision, ChangedDirectories = changed };
+
+    // The bug this whole mechanism exists for: a drive revision alone says "C: moved", which is true of
+    // every temp file write, and the Start Menu sits on C: like everything else does.
+    [TestMethod]
+    public void PluginsForLocalChange_ChangeElsewhereOnTheDrive_WakesNobody()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.Record(1, new[] { @"C:\Users\me\AppData\Local\Temp" });
+
+        Assert.IsEmpty(PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(1, changed), 0, Registrations).ToList());
+    }
+
+    [TestMethod]
+    public void PluginsForLocalChange_ChangeInsideARegisteredDirectory_WakesThatPluginOnly()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.Record(1, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
+
+        CollectionAssert.AreEqual(
+            new[] { "CoreExtensions.StartMenu" },
+            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(1, changed), 0, Registrations).ToList());
+    }
+
+    // Several directories under the same registration in one span is still one refresh.
+    [TestMethod]
+    public void PluginsForLocalChange_ReportsEachPluginOnce()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.Record(1, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
+        changed.Record(2, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Tools" });
+
+        CollectionAssert.AreEqual(
+            new[] { "CoreExtensions.StartMenu" },
+            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(2, changed), 0, Registrations).ToList());
+    }
+
+    // Only what happened since this subscriber's own revision: an older entry it already acted on must
+    // not make it act again.
+    [TestMethod]
+    public void PluginsForLocalChange_IgnoresDirectoriesItHasAlreadySeen()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.Record(1, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" });
+        changed.Record(2, new[] { @"C:\Users\me\AppData\Local\Temp" });
+
+        Assert.IsEmpty(PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(2, changed), 1, Registrations).ToList());
+    }
+
+    // A gap means "something happened and I cannot tell you where". Refreshing everything under the
+    // drive is a wasted pass; concluding nothing happened would lose the change.
+    [TestMethod]
+    public void PluginsForLocalChange_WhenTheChangeListHasAGap_FallsBackToTheWholeDrive()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.RecordUnknown(5);
+
+        CollectionAssert.AreEquivalent(
+            new[] { "CoreExtensions.StartMenu", "FileFilters" },
+            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(5, changed), 0, Registrations).ToList());
+    }
+
+    // A plugin registered ABOVE the directory that changed is affected too -- its listing includes it.
+    [TestMethod]
+    public void PluginsForLocalChange_ChangeBelowARegisteredDirectory_StillWakesIt()
+    {
+        var changed = new DriveChangedDirectories();
+        changed.Record(1, new[] { @"C:\Movies\2024\Summer" });
+
+        CollectionAssert.AreEqual(
+            new[] { "FileFilters" },
+            PluginDirectoryChangeNotifier.PluginsForLocalChange(Drive(1, changed), 0, Registrations).ToList());
     }
 }
