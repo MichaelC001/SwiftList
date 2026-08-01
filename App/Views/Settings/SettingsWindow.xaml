@@ -170,10 +170,17 @@
                                 </ListBoxItem>
                             </ListBox>
                             <Border DockPanel.Dock="Bottom" Height="1" Background="{DynamicResource BorderColor}" Margin="12,4"/>
+                            <!-- CanContentScroll="False": a ListBox scrolls by ITEM by default, so its
+                                 viewport is rounded down to a whole number of rows. Every row that
+                                 fits by a fraction is one the viewport does not count, which showed a
+                                 scrollbar with all nine sections already visible and then scrolled a
+                                 full row past the last one into blank space. Pixel scrolling measures
+                                 what is actually there. -->
                             <ListBox x:Name="LstSections" BorderThickness="0" Background="Transparent" Margin="0,14"
                                  FontSize="15"
                                  ItemContainerStyle="{StaticResource SidebarItemStyle}"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.CanContentScroll="False"
                                  SelectionChanged="LstSections_SelectionChanged">
                             <ListBoxItem Tag="Service">
                                 <StackPanel Orientation="Horizontal">
