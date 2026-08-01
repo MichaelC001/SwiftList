@@ -34,6 +34,12 @@ obj/
 TestResults/
 # Not a build artifact -- PinyinEngine's embedded pinyin lookup table (tracked source data).
 !Plugins/PinyinAlias/Resources/pinyin.bin
+# Building a WPF project makes MSBuild write a temporary copy of the project file next to the real one
+# (App/App_<random>_wpftmp.csproj) rather than into obj/, so nothing above covers it. It exists only
+# while a build is in flight, which is exactly long enough for a concurrent `git add -A` to commit one,
+# and it is full of resolved absolute paths -- NuGet package locations among them, which name the
+# account the build ran under. See RepositoryHygieneTests, which skips these for the same reason.
+*_wpftmp.csproj
 
 # Visual Studio 2015/2017/2019/2022 cache directory
 .vs/
