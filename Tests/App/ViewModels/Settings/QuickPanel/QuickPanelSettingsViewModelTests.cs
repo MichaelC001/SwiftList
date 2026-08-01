@@ -192,6 +192,36 @@ public sealed class QuickPanelSettingsViewModelTests
         Assert.IsFalse(settings.QuickPanel.Tabs.Single().Enabled);
     }
 
+    // Everything on this page stages until Save, like every other settings page. The view models edit
+    // clones for that reason: the originals live inside the process-wide UserSettings, so touching them
+    // would make each edit instantly live and immune to Cancel.
+    [TestMethod]
+    public void Edits_DoNotReachUserSettingsUntilSave()
+    {
+        var settings = BuildSettings(@"C:\a", @"C:\b");
+        var vm = new QuickPanelSettingsViewModel(settings);
+        var tab = vm.Tabs.Single();
+        tab.Name = "renamed";
+        tab.Enabled = false;
+        tab.Sources.First(s => s.IsFolderSource).DisplayName = "素材";
+        tab.RemoveSourceCommand.Execute(tab.Sources.First(s => s.IsFolderSource));
+        vm.AddTabCommand.Execute(null);
+
+        var live = settings.QuickPanel.Tabs.Single();
+        Assert.HasCount(1, settings.QuickPanel.Tabs, "a workspace was added before Save");
+        Assert.IsEmpty(live.Name);
+        Assert.IsTrue(live.Enabled);
+        Assert.HasCount(2, live.Folders, "a source was removed before Save");
+        Assert.IsEmpty(live.GroupPreferences);
+
+        vm.Save();
+
+        Assert.HasCount(2, settings.QuickPanel.Tabs);
+        Assert.AreEqual("renamed", settings.QuickPanel.Tabs[0].Name);
+        Assert.IsFalse(settings.QuickPanel.Tabs[0].Enabled);
+        Assert.HasCount(1, settings.QuickPanel.Tabs[0].Folders);
+    }
+
     [TestMethod]
     public void RemoveTab_LastRemainingTab_IsKept()
     {

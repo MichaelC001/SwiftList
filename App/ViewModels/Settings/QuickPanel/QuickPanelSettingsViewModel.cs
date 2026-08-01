@@ -42,9 +42,15 @@ public class QuickPanelSettingsViewModel : ViewModelBase
         _rowMoveDown = new RelayCommand<QuickPanelTabSettingsViewModel>(tab => MoveTab(tab, +1));
         _rowRemove = new RelayCommand<QuickPanelTabSettingsViewModel>(RemoveTab);
 
+        // Cloned, not referenced: these objects live inside the process-wide UserSettings, so editing
+        // them in place would make every change instantly live and survive Cancel. Save() puts the
+        // working copies back, which is what makes this page stage like every other one.
+        //
         // A settings file edited by hand (or one from before this page existed) can have no tabs at all,
         // and a panel with nowhere to put a source is not something the user can recover from here.
-        _models = panel.Tabs.Count > 0 ? panel.Tabs.ToList() : new List<QuickPanelTab> { QuickPanelTab.CreateDefault() };
+        _models = panel.Tabs.Count > 0
+            ? panel.Tabs.Select(tab => tab.Clone()).ToList()
+            : new List<QuickPanelTab> { QuickPanelTab.CreateDefault() };
         foreach (var model in _models)
             Tabs.Add(BindRow(new QuickPanelTabSettingsViewModel(model)));
 

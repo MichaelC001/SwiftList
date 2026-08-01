@@ -120,6 +120,42 @@ public class QuickPanelTab
 
     /// <summary>Short, stable, and never shown -- only ever compared.</summary>
     public static string NewId() => Guid.NewGuid().ToString("N").Substring(0, 8);
+
+    /// <summary>
+    /// A copy that shares nothing mutable with this one, ids included. What the settings page edits, so
+    /// that adding a folder or deleting a workspace is staged like every other setting rather than
+    /// taking effect the moment it is typed -- these objects live inside the process-wide UserSettings,
+    /// and mutating them in place is both instantly live and unaffected by Cancel.
+    /// </summary>
+    public QuickPanelTab Clone() => new()
+    {
+        Id = Id,
+        Name = Name,
+        Enabled = Enabled,
+        Processes = new List<string>(Processes),
+        Folders = Folders.Select(f => new QuickPanelFolderSource
+        {
+            Id = f.Id,
+            Path = f.Path,
+            Kind = f.Kind,
+            Recursive = f.Recursive,
+            FilterPattern = f.FilterPattern,
+            MaxItems = f.MaxItems,
+            MaxAgeMinutes = f.MaxAgeMinutes,
+        }).ToList(),
+        GroupOrder = new List<string>(GroupOrder),
+        DisabledGroupIds = new List<string>(DisabledGroupIds),
+        GroupPreferences = GroupPreferences.ToDictionary(
+            pair => pair.Key,
+            pair => new QuickPanelGroupPreference
+            {
+                DisplayName = pair.Value.DisplayName,
+                Sort = pair.Value.Sort,
+                ThumbnailView = pair.Value.ThumbnailView,
+                Expanded = pair.Value.Expanded,
+            },
+            StringComparer.OrdinalIgnoreCase),
+    };
 }
 
 /// <summary>A folder the user added as a source. One folder is one group.</summary>
