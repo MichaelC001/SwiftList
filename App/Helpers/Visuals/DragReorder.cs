@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -45,6 +45,16 @@ public static class DragReorder
 
     public static void SetIsHandle(FrameworkElement element, bool value) => element.SetValue(IsHandleProperty, value);
     public static bool GetIsHandle(FrameworkElement element) => (bool)element.GetValue(IsHandleProperty);
+
+    // Set on a list whose items run left-to-right (a tab strip) rather than top-to-bottom. Only the drop
+    // indicator actually cares: which container the pointer is over, and what index it maps to, are the
+    // same question either way. Left off, a horizontal strip drew its "it lands here" line across the
+    // rows instead of between the tabs, promising a position it never meant.
+    public static readonly DependencyProperty IsHorizontalProperty = DependencyProperty.RegisterAttached(
+        "IsHorizontal", typeof(bool), typeof(DragReorder), new PropertyMetadata(false));
+
+    public static void SetIsHorizontal(ItemsControl control, bool value) => control.SetValue(IsHorizontalProperty, value);
+    public static bool GetIsHorizontal(ItemsControl control) => (bool)control.GetValue(IsHorizontalProperty);
 
     // Keyed per-ItemsControl (not a single shared field) so two reorderable lists open in the same
     // window at once (e.g. this settings page's own sidebar-order and column-order cards) never
@@ -159,11 +169,15 @@ public static class DragReorder
             return;
         }
 
-        var y = oldIndex < targetIndex
-            ? targetContainer.TranslatePoint(new Point(0, targetContainer.ActualHeight), control).Y
-            : targetContainer.TranslatePoint(new Point(0, 0), control).Y;
+        // The trailing edge when the row is moving down/right, the leading edge when it is moving up/left
+        // -- which is the edge it would actually come to rest against, either way.
+        var horizontal = GetIsHorizontal(control);
+        var far = oldIndex < targetIndex;
+        var offset = horizontal
+            ? targetContainer.TranslatePoint(new Point(far ? targetContainer.ActualWidth : 0, 0), control).X
+            : targetContainer.TranslatePoint(new Point(0, far ? targetContainer.ActualHeight : 0), control).Y;
 
-        indicator.Update(y, control.ActualWidth, true);
+        indicator.Update(offset, horizontal ? control.ActualHeight : control.ActualWidth, true, horizontal);
     }
 
     private static void OnDrop(object sender, DragEventArgs e)
@@ -199,17 +213,22 @@ public static class DragReorder
             selector.SelectedItem = s.item;
     }
 
-    // A Button/TextBox press (Move Up/Down, Edit, Remove, ...) always wins even if it happens to sit
-    // inside a marked handle -- IsHandle is meant for otherwise-inert grip icons, not interactive
-    // controls, but this keeps that true regardless of how a template composes the two.
+    // A Button/TextBox press (Move Up/Down, Edit, Remove, ...) does not start a drag: IsHandle is meant
+    // for otherwise-inert grip icons, and a template that puts one near a button should not turn that
+    // button into a drag handle by accident.
+    //
+    // Unless the control IS the handle, which is checked first. A tab strip has no grip to put anywhere:
+    // the tab is the handle, and the tab is a button. Marking it says so explicitly, and a press still
+    // clicks it -- a drag only begins once the pointer has moved past the threshold, which a click by
+    // definition does not.
     private static bool IsWithinHandle(DependencyObject? source, ItemsControl control)
     {
         while (source != null && source != control)
         {
-            if (source is ButtonBase or TextBoxBase)
-                return false;
             if (source is FrameworkElement fe && GetIsHandle(fe))
                 return true;
+            if (source is ButtonBase or TextBoxBase)
+                return false;
             source = VisualTreeHelper.GetParent(source);
         }
         return false;
@@ -229,84 +248,4 @@ public static class DragReorder
         return null;
     }
 
-    // A VisualBrush snapshot of the dragged row, hosted in a real Border child (not just painted in
-    // OnRender) specifically so it can carry a genuine DropShadowEffect -- Adorner.OnRender's
-    // DrawingContext has no Effect concept of its own.
-    private sealed class DragAdorner : Adorner
-    {
-        private readonly Border _visual;
-        private Point _position;
-
-        public DragAdorner(FrameworkElement source, UIElement adornedElement, Point startPosition) : base(adornedElement)
-        {
-            IsHitTestVisible = false;
-            _position = startPosition;
-
-            _visual = new Border
-            {
-                Width = source.ActualWidth,
-                Height = source.ActualHeight,
-                Background = new VisualBrush(source) { Stretch = Stretch.None },
-                Opacity = 0.85,
-                Effect = new DropShadowEffect { BlurRadius = 16, ShadowDepth = 3, Opacity = 0.45, Color = Colors.Black },
-            };
-            AddVisualChild(_visual);
-        }
-
-        protected override int VisualChildrenCount => 1;
-        protected override Visual GetVisualChild(int index) => _visual;
-
-        protected override Size MeasureOverride(Size constraint)
-        {
-            _visual.Measure(constraint);
-            return _visual.DesiredSize;
-        }
-
-        protected override Size ArrangeOverride(Size finalSize)
-        {
-            _visual.Arrange(new Rect(_position.X - _visual.Width / 2, _position.Y - _visual.Height / 2, _visual.Width, _visual.Height));
-            return finalSize;
-        }
-
-        public void UpdatePosition(Point position)
-        {
-            _position = position;
-            InvalidateArrange();
-        }
-    }
-
-    // The horizontal line marking exactly where the dragged row would land -- drawn full-width across
-    // the ItemsControl at whichever row edge OnDragOver's UpdateDropIndicator computes, hidden (not
-    // removed) between updates so it doesn't need to be re-added to the AdornerLayer every frame.
-    private sealed class DropIndicatorAdorner : Adorner
-    {
-        private double _y;
-        private double _width;
-        private bool _visible;
-        private readonly Pen _pen;
-
-        public DropIndicatorAdorner(UIElement adornedElement) : base(adornedElement)
-        {
-            IsHitTestVisible = false;
-
-            var brush = System.Windows.Application.Current?.TryFindResource("AccentBlue") as SolidColorBrush
-                        ?? System.Windows.Media.Brushes.DodgerBlue;
-            _pen = new Pen(brush, 2);
-            _pen.Freeze();
-        }
-
-        public void Update(double y, double width, bool visible)
-        {
-            _y = y;
-            _width = width;
-            _visible = visible;
-            InvalidateVisual();
-        }
-
-        protected override void OnRender(DrawingContext drawingContext)
-        {
-            if (!_visible) return;
-            drawingContext.DrawLine(_pen, new Point(0, _y), new Point(_width, _y));
-        }
-    }
 }
