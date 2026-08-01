@@ -102,9 +102,12 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         foreach (var row in Sources)
             row.SaveFolderFields();
 
-        // Rebuilt from the rows rather than patched: the list IS the order, and a folder removed here
-        // has to leave Folders too.
-        _model.Folders = Sources.Select(r => _model.Folders.First(f => f.Id == r.Id)).ToList();
+        // Rebuilt from the rows rather than patched: the list IS the order, and a source removed here
+        // has to leave the list it came from too. Both lists are rebuilt from the same rows, which is
+        // what keeps a folder and a plugin source in one order rather than two.
+        _model.Folders = Sources.Where(r => r.IsFolderSource)
+            .Select(r => _model.Folders.First(f => f.Id == r.Id)).ToList();
+        _model.PluginSourceIds = Sources.Where(r => !r.IsFolderSource).Select(r => r.Id).ToList();
         _model.GroupOrder = Sources.Select(r => r.Id).ToList();
         _model.DisabledGroupIds = Sources.Where(r => !r.IsVisible).Select(r => r.Id).ToList();
 
@@ -152,6 +155,45 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
             return;
         Sources.Remove(row);
         _model.Folders.RemoveAll(f => f.Id == row.Id);
+        _model.PluginSourceIds.RemoveAll(id => id.Equals(row.Id, StringComparison.OrdinalIgnoreCase));
+        OnPropertyChanged(nameof(PluginSources));
+    }
+
+    /// <summary>
+    /// Every plugin source that could be added, each saying whether this workspace already includes it.
+    /// </summary>
+    /// <remarks>
+    /// Rebuilt on demand rather than held: plugins can be enabled or disabled on their own page while
+    /// this one is open, and a stale list would offer a source that is no longer there or hide one that
+    /// just appeared.
+    /// </remarks>
+    public IReadOnlyList<QuickPanelPluginSourceOption> PluginSources => QuickPanelPluginSourceCatalog
+        .Available()
+        .Select(entry => new QuickPanelPluginSourceOption(entry.Id, entry.Name, IsIncluded(entry.Id), Toggle))
+        .ToList();
+
+    public bool HasPluginSources => PluginSources.Count > 0;
+
+    private bool IsIncluded(string componentId)
+        => Sources.Any(row => row.Id.Equals(componentId, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Adds a plugin source to this workspace, or takes it out again.</summary>
+    /// <remarks>
+    /// Added at the end of the source list, which is where a newly added folder lands too: a source the
+    /// user has just chosen has no position yet, and putting it anywhere other than last would be the
+    /// page deciding one for them.
+    /// </remarks>
+    private void Toggle(string componentId, bool include)
+    {
+        var existing = Sources.FirstOrDefault(row => row.Id.Equals(componentId, StringComparison.OrdinalIgnoreCase));
+        if (include == (existing != null)) return;
+
+        if (include)
+            Sources.Add(QuickPanelSourceRowViewModel.ForPlugin(componentId, QuickPanelPluginSourceCatalog.NameOf(componentId)));
+        else
+            RemoveSource(existing);
+
+        OnPropertyChanged(nameof(PluginSources));
     }
 
     private void Move(QuickPanelSourceRowViewModel? row, int delta)
@@ -165,13 +207,18 @@ public class QuickPanelTabSettingsViewModel : ViewModelBase
         Sources.Move(from, to);
     }
 
-    // Folders are the only kind of source this page knows about; anything else (favorites, the
-    // system's own recent list) will arrive as a plugin and register its own id here.
-    private static IEnumerable<string> AvailableIds(QuickPanelTab model) => model.Folders.Select(f => f.Id);
+    // Folders the user picked, plus whichever plugin sources this workspace includes. One id space, one
+    // order: the list on screen arranges both together, and every per-group preference is keyed the same
+    // way for either.
+    private static IEnumerable<string> AvailableIds(QuickPanelTab model)
+        => model.Folders.Select(f => f.Id).Concat(model.PluginSourceIds);
 
     private static QuickPanelSourceRowViewModel BuildRow(QuickPanelTab model, string id)
     {
-        var row = QuickPanelSourceRowViewModel.ForFolder(model.Folders.First(f => f.Id == id));
+        var folder = model.Folders.FirstOrDefault(f => f.Id == id);
+        var row = folder != null
+            ? QuickPanelSourceRowViewModel.ForFolder(folder)
+            : QuickPanelSourceRowViewModel.ForPlugin(id, QuickPanelPluginSourceCatalog.NameOf(id));
         row.IsVisible = !model.DisabledGroupIds.Contains(id, StringComparer.OrdinalIgnoreCase);
         if (model.GroupPreferences.TryGetValue(id, out var preference))
         {

@@ -167,6 +167,13 @@ internal static class PluginLoader
                     registry.AddStartupPanelTabProvider(provider);
                     Logger.Log($"[PluginManager] Loaded startup panel tab provider: '{type.Name}' from {fileName}");
                 }
+
+                if (typeof(PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider).IsAssignableFrom(type))
+                {
+                    var provider = (PluginSdk.Abstractions.Plugins.IQuickPanelSourceProvider)Activator.CreateInstance(type)!;
+                    registry.AddQuickPanelSourceProvider(provider);
+                    Logger.Log($"[PluginManager] Loaded quick panel source provider: '{type.Name}' from {fileName}");
+                }
             }
         }
         catch (BadImageFormatException)

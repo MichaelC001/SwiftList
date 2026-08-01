@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:services="clr-namespace:SwiftList.App.Services"
              xmlns:local="clr-namespace:SwiftList.App.Views.Settings.QuickPanel"
+             xmlns:conv="clr-namespace:SwiftList.App.Converters"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="520">
     <!-- The selected workspace's two halves: its sources, and the apps it belongs to. DataContext is
@@ -19,6 +20,8 @@
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SearchWindow.xaml"/>
                 <ResourceDictionary Source="../../../Resources/Styles/Windows/SettingsWindow.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToVisibilityConverter x:Key="InvertBoolToVis" Invert="True"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -44,6 +47,34 @@
                         <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding SelectedSubTab}" Value="Sources">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Margin="18,0,0,0">
+                <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_TabPluginSources]}"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="PluginSources">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource TabHeaderButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="PluginSources">
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Border>
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource TabUnderlineStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="PluginSources">
                                     <Setter Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -97,6 +128,42 @@
                 </Border.Style>
                 <local:QuickPanelSourcesSection DataContext="{Binding SelectedTab}"/>
             </Border>
+
+            <!-- Which plugin sources this workspace includes. A separate tab from the source list rather
+                 than more buttons on it: adding one is a decision you make once, while ordering, hiding
+                 and renaming are what the list is for. Once added, a plugin source appears in that list
+                 beside the folders and is arranged exactly like one. -->
+            <StackPanel>
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedSubTab}" Value="PluginSources">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_PluginSourcesDesc]}"
+                           Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_PluginSourcesEmpty]}"
+                           Style="{StaticResource SettingsHintText}" TextWrapping="Wrap"
+                           Visibility="{Binding SelectedTab.HasPluginSources, Converter={StaticResource InvertBoolToVis}}"/>
+
+                <Border Style="{StaticResource SettingsCard}"
+                        Visibility="{Binding SelectedTab.HasPluginSources, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl x:Name="QuickPanelPluginSourcesList" ItemsSource="{Binding SelectedTab.PluginSources}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource SettingsRowBorderBrush}" BorderThickness="0,0,0,1" Padding="0,9">
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsIncluded, Mode=TwoWay}"/>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </StackPanel>
 
             <StackPanel>
                 <StackPanel.Style>

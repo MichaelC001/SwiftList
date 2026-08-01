@@ -74,20 +74,23 @@ public partial class QuickPanelViewModel
     /// <summary>Loads one workspace's visible sources, each on its own, and files each result as it lands.</summary>
     private async Task LoadWorkspaceAsync(QuickPanelTab workspace, CancellationToken token)
     {
+        // Folders and plugin sources share one id space and one order, which is what lets the settings
+        // page's single list arrange them together and every per-group preference key work for both.
         var visible = QuickPanelGroupOrdering.Resolve(
-            workspace.Folders.Select(folder => folder.Id),
+            workspace.Folders.Select(folder => folder.Id).Concat(workspace.PluginSourceIds),
             workspace.GroupOrder,
             workspace.DisabledGroupIds).ToList();
 
         await Task.WhenAll(visible.Select(async (id, rank) =>
         {
-            var source = workspace.Folders.FirstOrDefault(folder => folder.Id == id);
-            if (source == null) return;
+            var group = workspace.Folders.FirstOrDefault(folder => folder.Id == id) is { } folder
+                ? await BuildGroupAsync(workspace, folder, token).ConfigureAwait(true)
+                : await BuildPluginGroupAsync(workspace, id, token).ConfigureAwait(true);
 
-            var group = await BuildGroupAsync(workspace, source, token).ConfigureAwait(true);
             if (group != null) Place(workspace, group, rank);
         })).ConfigureAwait(true);
     }
+
 
     /// <summary>Files a finished group under its workspace, in the position the settings give it.</summary>
     /// <remarks>

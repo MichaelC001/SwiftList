@@ -13,9 +13,9 @@ public sealed record QuickPanelSourceKindOption(QuickPanelSourceKind Value, stri
 /// </summary>
 public class QuickPanelSourceRowViewModel : ViewModelBase
 {
-    private readonly QuickPanelFolderSource _folder;
+    private readonly QuickPanelFolderSource? _folder;
 
-    private QuickPanelSourceRowViewModel(string id, string defaultName, QuickPanelFolderSource folder)
+    private QuickPanelSourceRowViewModel(string id, string defaultName, QuickPanelFolderSource? folder)
     {
         Id = id;
         DefaultName = defaultName;
@@ -33,6 +33,19 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
             _maxAgeMinutes = folder.MaxAgeMinutes,
             _acceptsDrops = folder.AcceptsDrops,
         };
+
+    /// <summary>A row for a plugin-provided source, which has none of a folder's fields.</summary>
+    /// <remarks>
+    /// The list holds both kinds because everything it offers -- rename, show/hide, reorder -- applies to
+    /// both, and the settings store them under one id space. What differs is real rather than cosmetic:
+    /// a plugin decides for itself what it returns, so there is no path, no "show" dropdown, no filter,
+    /// no cap and no drop target. IsFolderSource is what the row template hides those behind.
+    /// </remarks>
+    public static QuickPanelSourceRowViewModel ForPlugin(string componentId, string name)
+        => new(componentId, name, folder: null);
+
+    /// <summary>Whether this row is a folder the user picked, as opposed to a plugin's own source.</summary>
+    public bool IsFolderSource => _folder != null;
 
     public string Id { get; }
 

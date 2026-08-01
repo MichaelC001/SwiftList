@@ -72,6 +72,19 @@ public class QuickPanelTab
     public List<QuickPanelFolderSource> Folders { get; set; } = new();
 
     /// <summary>
+    /// Plugin-provided sources included in this workspace, by component id. Added the way a folder is
+    /// rather than being present everywhere: a source is a thing you put in a workspace, and a workspace
+    /// assembled for one project has no more reason to carry every plugin's source than every folder.
+    /// </summary>
+    /// <remarks>
+    /// Only ids. Everything else a source has here -- where it sits, whether it is hidden, what it is
+    /// called, how it is displayed -- already lives in the three lists below, keyed by that same id, and
+    /// a plugin source uses them exactly as a folder does. Whether the provider is loaded at all is a
+    /// separate question, answered by UserSettings.DisabledPluginComponents on the plugin page.
+    /// </remarks>
+    public List<string> PluginSourceIds { get; set; } = new();
+
+    /// <summary>
     /// Display order, most-preferred first, over every kind of source at once. An id that isn't listed
     /// (a folder just added, a plugin source that appeared) keeps its discovery-order position after
     /// everything listed -- same rule as <see cref="StartupPanelSettings.TabOrder"/>. Plugin-provided
@@ -133,6 +146,7 @@ public class QuickPanelTab
             MaxAgeMinutes = f.MaxAgeMinutes,
             AcceptsDrops = f.AcceptsDrops,
         }).ToList(),
+        PluginSourceIds = new List<string>(PluginSourceIds),
         GroupOrder = new List<string>(GroupOrder),
         DisabledGroupIds = new List<string>(DisabledGroupIds),
         GroupPreferences = GroupPreferences.ToDictionary(
