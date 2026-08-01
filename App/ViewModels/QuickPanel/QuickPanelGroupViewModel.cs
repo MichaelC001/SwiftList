@@ -1,11 +1,14 @@
 using System.Collections.ObjectModel;
-using System.IO;
 using SwiftList.Core;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
 
-/// <summary>One folder's worth of the quick panel, with its own order.</summary>
+/// <summary>One source's worth of the quick panel, with its own order.</summary>
 /// <remarks>
+/// Keyed by the source it was built from rather than by the folder it happens to point at: order,
+/// visibility and per-group preferences are all stored against a source id, and plugin-provided sources
+/// will share that id space without having a path to be keyed by at all.
+///
 /// The panel used to group through a CollectionView, which was simpler but cannot do this: sorting on
 /// a view is a property of the whole view, so every group necessarily shared one order. Ordering per
 /// group means the groups have to be real objects that each hold their own items, which is what this
@@ -19,30 +22,35 @@ public class QuickPanelGroupViewModel : ViewModelBase
 {
     private readonly List<(AppSearchResult Item, DateTime? Modified)> _loaded;
 
-    public QuickPanelGroupViewModel(string folderPath, List<(AppSearchResult Item, DateTime? Modified)> loaded)
+    public QuickPanelGroupViewModel(
+        string sourceId,
+        string title,
+        string folderPath,
+        List<(AppSearchResult Item, DateTime? Modified)> loaded,
+        QuickPanelSortMode sortMode = QuickPanelSortMode.ModifiedDescending,
+        bool thumbnailView = true,
+        bool expanded = true)
     {
+        SourceId = sourceId;
+        Title = title;
         FolderPath = folderPath;
         _loaded = loaded;
+        // The fields, not the properties: each setter rebuilds, and the group has nothing to rebuild
+        // from until the call below.
+        _sortMode = sortMode;
+        _isThumbnailView = thumbnailView;
+        _isExpanded = expanded;
         Rebuild();
     }
 
+    /// <summary>The source this group came from, which is what its stored preferences are filed under.</summary>
+    public string SourceId { get; }
+
+    /// <summary>The heading: the user's own name for the source, or the source's default one.</summary>
+    public string Title { get; }
+
     /// <summary>The folder itself, shown in full beside the heading.</summary>
     public string FolderPath { get; }
-
-    /// <summary>Its last segment, which is what the heading leads with.</summary>
-    /// <remarks>
-    /// A drive root has no last segment, so it stands as its own name: "D:\" reads better as a heading
-    /// than the empty string trimming it would otherwise give.
-    /// </remarks>
-    public string LeafName
-    {
-        get
-        {
-            var trimmed = FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            var leaf = Path.GetFileName(trimmed);
-            return string.IsNullOrEmpty(leaf) ? FolderPath : leaf;
-        }
-    }
 
     public int Count => _loaded.Count;
 

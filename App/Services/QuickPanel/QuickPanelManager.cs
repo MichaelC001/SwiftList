@@ -14,8 +14,8 @@ namespace SwiftList.App.Services.QuickPanel;
 /// The panel is created once and reused, hidden rather than closed, matching the quick window. That is
 /// also why Alt+F4 is suppressed on it: an OS close would leave this holding a dead window.
 ///
-/// Show returns without opening while there is nothing to show, which is every time for now: the data
-/// source is not attached. An empty shell over the window in front would only be in the way.
+/// Show returns without opening when there is nothing to show. An empty shell over the window in front
+/// would only be in the way.
 /// </remarks>
 public sealed class QuickPanelManager : IDisposable
 {
@@ -65,17 +65,47 @@ public sealed class QuickPanelManager : IDisposable
             return;
         }
 
-        Show(host);
+        var settings = Core.UserSettings.Load();
+        if (!settings.QuickPanel.Enabled) return;
+
+        // The same window the panel would dock to is the one that decides whether it may open at all and
+        // which workspace it opens on, so its process is read once here and carried through both.
+        var process = ProcessNameOf(host);
+        if (Core.QuickPanelTabSelection.IsBlocked(process, settings))
+        {
+            Core.Logger.Log($"[QuickPanel] '{process}' is blacklisted, so not opening.", Core.LogLevel.Debug);
+            return;
+        }
+
+        Show(host, process);
     }
 
-    private async void Show(IntPtr host)
+    /// <summary>The foreground window's process name, which is what the workspace rules match on.</summary>
+    private static string? ProcessNameOf(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return null;
+
+        try
+        {
+            Core.Hook.ExplorerNativeHooks.GetWindowThreadProcessId(hwnd, out var pid);
+            return pid != 0 ? System.Diagnostics.Process.GetProcessById((int)pid).ProcessName : null;
+        }
+        catch
+        {
+            // The window can be gone by the time its process is asked for. Null means "no app in front
+            // worth naming", which every rule below already treats as "no claim, no block".
+            return null;
+        }
+    }
+
+    private async void Show(IntPtr host, string? process)
     {
         _viewModel ??= new QuickPanelViewModel();
 
         // Every open, not just the first: the panel is reused rather than rebuilt, so without this it
         // would keep showing whatever was true the first time it was ever opened. Awaited before the
         // window appears because the decision below depends on the result.
-        await _viewModel.RefreshAsync();
+        await _viewModel.RefreshAsync(process);
 
         // Nothing to show, nothing to open: the panel exists to put content over the window in front,
         // and flashing an empty shell over it would only be in the way.

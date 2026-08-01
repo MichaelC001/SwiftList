@@ -173,6 +173,22 @@ public class QuickPanelFolderSource
 
     public static QuickPanelFolderSource For(string path, QuickPanelSourceKind kind = QuickPanelSourceKind.RecentFiles)
         => new() { Id = QuickPanelTab.NewId(), Path = path, Kind = kind };
+
+    /// <summary>
+    /// What the group is called when the user has not renamed it: the folder's own name, or the path
+    /// itself for a drive root, which has no last segment. Here rather than on either of the two view
+    /// models that need it -- the settings row and the panel's group heading have to agree on this, and
+    /// a rename in one place is only visible as a mismatch in the other.
+    /// </summary>
+    public static string DefaultName(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return string.Empty;
+        // Spelled out: this type's own Path property shadows System.IO.Path inside it.
+        var trimmed = path.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
+        var leaf = System.IO.Path.GetFileName(trimmed);
+        return string.IsNullOrEmpty(leaf) ? path : leaf;
+    }
 }
 
 /// <summary>
@@ -189,6 +205,15 @@ public class QuickPanelGroupPreference
     public string DisplayName { get; set; } = string.Empty;
 
     public QuickPanelSortMode Sort { get; set; } = QuickPanelSortMode.ModifiedDescending;
+
+    /// <summary>
+    /// The order a source starts in when the user has never overridden it. Taken from the kind because
+    /// the kind IS an order choice -- "everything, by name" and "everything, newest first" differ in
+    /// nothing else -- so a group with no stored preference must not contradict the dropdown that
+    /// configured it.
+    /// </summary>
+    public static QuickPanelSortMode DefaultSortFor(QuickPanelSourceKind kind)
+        => kind == QuickPanelSourceKind.Launcher ? QuickPanelSortMode.NameAscending : QuickPanelSortMode.ModifiedDescending;
 
     public bool ThumbnailView { get; set; } = true;
 

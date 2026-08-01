@@ -1,0 +1,100 @@
+using System.Diagnostics;
+using System.Windows;
+using SwiftList.App.ViewModels.QuickPanel;
+using SwiftList.Core;
+
+namespace SwiftList.App.Tests.Views.QuickPanel;
+
+// The same guard the settings page carries, for the same two bugs. A StaticResource that does not exist
+// compiles perfectly happily and only throws when the window is first opened, and a binding whose path
+// does not exist throws nothing at all and simply renders nothing -- a group heading that stays blank,
+// a tab strip that never appears. Both have shipped from this window's neighbourhood before.
+// [DoNotParallelize] because the binding check listens to PresentationTraceSources, which is
+// process-wide: run alongside any other test that builds WPF elements and it collects that test's
+// binding errors as if they were this window's.
+[TestClass]
+[DoNotParallelize]
+public sealed class QuickPanelWindowTests
+{
+    // Two workspaces, each with one source that answers with one entry, so the strip, the group header
+    // and both row templates all have something real to bind against.
+    private static QuickPanelViewModel BuildViewModel()
+    {
+        var settings = new QuickPanelSettings { Tabs = new List<QuickPanelTab>() };
+        foreach (var (id, path) in new[] { ("w1", @"C:\a"), ("w2", @"C:\b") })
+        {
+            var tab = new QuickPanelTab { Id = id, Name = id };
+            tab.Folders.Add(new QuickPanelFolderSource { Id = id + "s", Path = path });
+            settings.Tabs.Add(tab);
+        }
+
+        return new QuickPanelViewModel(
+            () => settings,
+            (source, _) => Task.FromResult(new List<SearchResult>
+            {
+                new()
+                {
+                    Name = "file.txt",
+                    Path = System.IO.Path.Combine(source.Path, "file.txt"),
+                    Metadata = new PluginSdk.Abstractions.FileMetadata(0, DateTime.Now, DateTime.Now, DateTime.Now),
+                },
+            }));
+    }
+
+    // Measured through the window's own content rather than the window: laying out a Window that was
+    // never shown is not something WPF supports, and every binding under test hangs off the content.
+    private static FrameworkElement BuildContent(QuickPanelViewModel viewModel)
+    {
+        var window = new SwiftList.App.Views.QuickPanel.QuickPanelWindow(viewModel);
+        return (FrameworkElement)window.Content;
+    }
+
+    [StaTestMethod]
+    public async Task Window_BuildsWithEveryResourceItReferences()
+    {
+        var viewModel = BuildViewModel();
+        await viewModel.RefreshAsync();
+
+        Assert.IsNotNull(BuildContent(viewModel));
+    }
+
+    [StaTestMethod]
+    public async Task Window_LaysOutWithNoBrokenBindings()
+    {
+        var viewModel = BuildViewModel();
+        await viewModel.RefreshAsync();
+
+        var errors = new BindingErrorListener();
+        var previousLevel = PresentationTraceSources.DataBindingSource.Switch.Level;
+        PresentationTraceSources.Refresh();
+        PresentationTraceSources.DataBindingSource.Listeners.Add(errors);
+        PresentationTraceSources.DataBindingSource.Switch.Level = SourceLevels.Error;
+        try
+        {
+            var content = BuildContent(viewModel);
+            content.Measure(new Size(330, 300));
+            content.Arrange(new Rect(0, 0, 330, 300));
+            content.UpdateLayout();
+        }
+        finally
+        {
+            PresentationTraceSources.DataBindingSource.Listeners.Remove(errors);
+            PresentationTraceSources.DataBindingSource.Switch.Level = previousLevel;
+        }
+
+        Assert.IsEmpty(errors.Messages, string.Join(Environment.NewLine, errors.Messages));
+    }
+
+    private sealed class BindingErrorListener : TraceListener
+    {
+        public List<string> Messages { get; } = new();
+
+        public override void Write(string? message) { }
+
+        public override void WriteLine(string? message)
+        {
+            if (!string.IsNullOrEmpty(message))
+                Messages.Add(message);
+        }
+    }
+}

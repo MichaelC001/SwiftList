@@ -146,8 +146,8 @@ public partial class App : Application
 
         HookClient.Start();
 
-        // Prototype: the quick panel, on a hardcoded F2. Owns its own message-only window for the
-        // registration, so it does not depend on any real window having been created yet.
+        // The quick panel. Built here rather than lazily on the first hotkey so the handler above always
+        // has something to call; it creates no window of its own until it is first opened.
         _quickPanelManager = new Services.QuickPanel.QuickPanelManager();
 
         // Set up global exception handlers

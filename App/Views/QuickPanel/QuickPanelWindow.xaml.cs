@@ -8,9 +8,9 @@ using Native = SwiftList.App.Views.InlineSearchWindow.Helpers.InlineSearchWindow
 
 namespace SwiftList.App.Views.QuickPanel;
 
-// Prototype window: the startup panel's tabs, docked to the bottom-right of whatever window is in
-// front. Lifecycle, the F2 trigger and the docking maths all live in QuickPanelManager; this file is
-// only the window's own input handling.
+// The panel itself: one workspace's sources, docked to the bottom-right of whatever window is in
+// front. Lifecycle, the hotkey and the docking maths all live in QuickPanelManager, and what is shown
+// comes from QuickPanelViewModel; this file is only the window's own input handling.
 public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions.IPluginSearchWindow
 {
     // The four methods ActionFlyout needs from whoever hosts it. Deliberately IPluginSearchWindow and
@@ -86,6 +86,7 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
     {
         if (e.Key != Key.Escape)
         {
+            if (TrySwitchWorkspace(e)) return;
             TryRunActionHotkey(e);
             return;
         }
@@ -97,6 +98,39 @@ public partial class QuickPanelWindow : Window, SwiftList.PluginSdk.Abstractions
 
         e.Handled = true;
         Services.QuickPanel.QuickPanelManager.Instance?.Hide();
+    }
+
+    /// <summary>Hold the jump-to-Nth-result modifier and press 1-9 to switch workspace.</summary>
+    /// <remarks>
+    /// The same modifier the result lists use for "jump to result N", rather than a second setting that
+    /// would only ever be set to the same thing -- one "hold this and press a number" key everywhere.
+    /// There is no numbered row to collide with here: this panel's groups are opened by clicking them.
+    ///
+    /// Checked ahead of the action hotkeys because a bare digit can legitimately be bound to an action,
+    /// and the modifier is what tells the two apart.
+    /// </remarks>
+    private bool TrySwitchWorkspace(System.Windows.Input.KeyEventArgs e)
+    {
+        var modifier = Core.UserSettings.Load().Hotkeys.SelectJumpModifier;
+        if (string.IsNullOrEmpty(modifier)) return false;
+
+        // The numpad row counts as the same number: MatchesHotkey parses "Ctrl+3" to Key.D3, so a numpad
+        // press is compared as the digit it typed rather than as the key it came from.
+        var digit = e.Key switch
+        {
+            >= Key.D1 and <= Key.D9 => e.Key - Key.D1 + 1,
+            >= Key.NumPad1 and <= Key.NumPad9 => e.Key - Key.NumPad1 + 1,
+            _ => 0,
+        };
+        if (digit == 0) return false;
+        if (!Helpers.WpfUiHelper.MatchesHotkey($"{modifier}+{digit}", Keyboard.Modifiers, Key.D1 + (digit - 1)))
+            return false;
+
+        if (DataContext is not QuickPanelViewModel viewModel) return false;
+
+        e.Handled = true;
+        _ = viewModel.SelectTabAtAsync(digit);
+        return true;
     }
 
     /// <summary>Runs an action's configured hotkey against the selection, without opening the menu.</summary>

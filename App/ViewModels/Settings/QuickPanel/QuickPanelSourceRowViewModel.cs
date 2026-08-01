@@ -6,11 +6,10 @@ namespace SwiftList.App.ViewModels.Settings.QuickPanel;
 public sealed record QuickPanelSourceKindOption(QuickPanelSourceKind Value, string Label);
 
 /// <summary>
-/// One row of a tab's source list, which is also one group in the panel. Folder sources and the
-/// built-in ones share this type on purpose: everything the list offers -- rename, show/hide, reorder --
-/// applies to both, and the settings store them one way too. Only the fields a built-in source has no
-/// answer for (path, kind, and the rest of the advanced block) are hidden for it, via
-/// <see cref="IsFolderSource"/>.
+/// One row of a tab's source list, which is also one group in the panel. Folders are the only kind of
+/// source today; anything else (favorites, the system's own recent list) will arrive as a plugin and
+/// register its own id alongside these, so what the list offers -- rename, show/hide, reorder -- is
+/// deliberately expressed against a source id rather than against a folder.
 /// </summary>
 public class QuickPanelSourceRowViewModel : ViewModelBase
 {
@@ -24,7 +23,7 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
     }
 
     public static QuickPanelSourceRowViewModel ForFolder(QuickPanelFolderSource folder)
-        => new(folder.Id, DefaultNameForPath(folder.Path), folder)
+        => new(folder.Id, QuickPanelFolderSource.DefaultName(folder.Path), folder)
         {
             _path = folder.Path,
             _kind = folder.Kind,
@@ -186,15 +185,5 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
         _folder.FilterPattern = string.IsNullOrWhiteSpace(FilterPattern) ? "*" : FilterPattern.Trim();
         _folder.MaxItems = MaxItems;
         _folder.MaxAgeMinutes = MaxAgeMinutes;
-    }
-
-    /// <summary>The folder's own name, or the path itself for a drive root, which has no last segment.</summary>
-    internal static string DefaultNameForPath(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-            return string.Empty;
-        var trimmed = path.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
-        var leaf = System.IO.Path.GetFileName(trimmed);
-        return string.IsNullOrEmpty(leaf) ? path : leaf;
     }
 }
