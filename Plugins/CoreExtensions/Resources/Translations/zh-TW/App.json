@@ -29,6 +29,8 @@
   "Settings_LocalSend_DeviceAliasDesc": "在區域網路其他裝置上顯示的本機名稱",
   "Settings_LocalSend_Port": "服務接聽埠",
   "Settings_LocalSend_PortDesc": "UDP/HTTP 傳輸服務通訊埠 (預設: 53317)",
+  "Settings_LocalSend_QuickSave": "自動接收傳輸檔案",
+  "Settings_LocalSend_QuickSaveDesc": "無需手動確認，自動儲存來自局域網設備的傳輸檔案",
   "Settings_LocalSend_DownloadDir": "接收儲存目錄",
   "Settings_LocalSend_StatusTitle": "服務狀態",
   "Settings_LocalSend_StatusRunning": "運行中",

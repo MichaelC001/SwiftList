@@ -158,7 +158,29 @@
                                  Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
 
+                    <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
+
+                    <DockPanel Margin="0,0,0,12">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_QuickSave]}"
+                                       FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_QuickSaveDesc]}"
+                                       FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox DockPanel.Dock="Right" IsChecked="{Binding QuickSave}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    </DockPanel>
+
                     <Grid Margin="0,0,0,4">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding QuickSave}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
