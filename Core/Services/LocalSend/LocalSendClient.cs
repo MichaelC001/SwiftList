@@ -22,7 +22,7 @@ public sealed class LocalSendClient : IDisposable
             ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
             UseProxy = false
         };
-        _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+        _httpClient = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
     }
 
     public async Task<LocalSendDeviceInfo?> GetDeviceInfoAsync(string ip, int port = 53317, bool https = false, CancellationToken token = default)
@@ -122,7 +122,7 @@ public sealed class LocalSendClient : IDisposable
         {
             if (token.IsCancellationRequested)
             {
-                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
                 return LocalSendSendResult.Canceled;
             }
 
@@ -143,7 +143,7 @@ public sealed class LocalSendClient : IDisposable
                 var resp = await _httpClient.PostAsync(uploadUrl, content, token).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
+                    await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
                     if (LocalSendServiceManager.Instance.IsSessionCanceled(sessionId))
                     {
                         return LocalSendSendResult.Declined;
@@ -154,12 +154,14 @@ public sealed class LocalSendClient : IDisposable
             }
             catch (OperationCanceledException)
             {
-                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
+                // Use CancellationToken.None: the user token is already cancelled, so we must
+                // send the /cancel HTTP POST on a fresh token or it silently throws and never arrives.
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
                 return LocalSendSendResult.Canceled;
             }
             catch (Exception ex)
             {
-                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
                 if (LocalSendServiceManager.Instance.IsSessionCanceled(sessionId))
                 {
                     return LocalSendSendResult.Declined;

@@ -87,7 +87,7 @@ public sealed class LocalSendServer : IDisposable
         {
             try
             {
-                client.ReceiveTimeout = 10000;
+                // ponytail: no receive timeout — transfers can be arbitrarily slow; cancellation is via _cts.
                 using var stream = client.GetStream();
                 await LocalSendServerHandler.ProcessAsync(this, stream, client.Client.RemoteEndPoint, token).ConfigureAwait(false);
             }
