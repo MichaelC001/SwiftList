@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Input;
 using SwiftList.App.Services;
 using SwiftList.App.Services.ShellMenu.ActionFlyout;
@@ -30,46 +30,41 @@ public partial class QuickPanelWindow : Window,
     public QuickPanelWindow(QuickPanelViewModel viewModel)
     {
         InitializeComponent();
-        // The system menu and its Alt+F4 stay blocked, though closing is now the normal way out: this
-        // window has no title bar to right-click and no close button, so the menu has nothing to offer,
-        // and the manager's own Escape and hotkey are the ways out that leave it in a known state.
         Helpers.Visuals.SystemMenuBlocker.Attach(this);
         DataContext = viewModel;
 
-        // Each group owns a list of its own, so drag registration and the "which list is this" question
-        // are both answered per list rather than once for a named one. GroupList_Loaded below does the
-        // registering as each appears.
-
         void OnViewModelChanged(object? _, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            // Filtering replaces what every group is showing, so the selection has to be put back on
-            // the first thing still standing. Queued at Background so the layout that the new items
-            // trigger has already run -- selecting into a list that has not been arranged yet selects
-            // nothing.
             if (e.PropertyName == nameof(QuickPanelViewModel.SearchQuery))
             {
                 Dispatcher.BeginInvoke(new Action(SelectFirstResult), System.Windows.Threading.DispatcherPriority.Background);
                 return;
             }
 
-            // Closing the last workspace leaves a panel with no tabs, no groups and nothing it could
-            // ever show -- so it closes, whatever else was asked of it. The pin is not consulted: it
-            // suspends dismissal on focus loss, which is a statement about attention, not a reason to
-            // keep an empty frame on screen. Queued so the close lands after the change that caused it
-            // has finished being applied.
             if (e.PropertyName == nameof(QuickPanelViewModel.HasTabStrip) && !viewModel.HasTabStrip)
                 Dispatcher.BeginInvoke(new Action(() => Services.QuickPanel.QuickPanelManager.Instance?.Hide()));
         }
 
         viewModel.PropertyChanged += OnViewModelChanged;
-        // Unsubscribed explicitly because the view model outlives this window by design: every summon
-        // builds a new one, and a handler left behind would pile up one per open on an object that never
-        // goes away.
         Closed += (_, _) =>
         {
             viewModel.PropertyChanged -= OnViewModelChanged;
             ReleasePreview();
         };
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        // Hide from Alt+Tab switcher by setting WS_EX_TOOLWINDOW style on HWND
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            var exStyle = InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.GetWindowLongPtr(hwnd, InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.GWL_EXSTYLE);
+            var newExStyle = new IntPtr(exStyle.ToInt64() | InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.WS_EX_TOOLWINDOW);
+            InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.SetWindowLongPtr(hwnd, InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.GWL_EXSTYLE, newExStyle);
+        }
     }
 
     /// <summary>Takes the foreground and puts keyboard focus in the filter box.</summary>
