@@ -180,4 +180,49 @@ public static class LocalSendServerHelper
 
         return "#42";
     }
+
+    internal static bool CheckAndNotifyTextReceived(LocalSendServer server, Models.PrepareUploadRequestDto? dto, string fileId, string targetPath, string senderAlias)
+    {
+        try
+        {
+            var isText = false;
+            string? textContent = null;
+
+            if (dto?.Files.TryGetValue(fileId, out var fileDto) == true)
+            {
+                if (fileDto.FileType?.Equals("text", StringComparison.OrdinalIgnoreCase) == true ||
+                    !string.IsNullOrEmpty(fileDto.Preview))
+                {
+                    isText = true;
+                    textContent = fileDto.Preview;
+                }
+            }
+
+            if (!isText && targetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+            {
+                isText = true;
+            }
+
+            if (isText && string.IsNullOrEmpty(textContent) && File.Exists(targetPath))
+            {
+                var fi = new FileInfo(targetPath);
+                if (fi.Length <= 512 * 1024)
+                {
+                    textContent = File.ReadAllText(targetPath);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(textContent))
+            {
+                var trimmed = textContent.Trim();
+                var isLink = Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) &&
+                             (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+                server.InvokeTextReceived(senderAlias, trimmed, isLink);
+                return true;
+            }
+        }
+        catch { }
+
+        return false;
+    }
 }

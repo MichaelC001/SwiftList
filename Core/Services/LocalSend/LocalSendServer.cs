@@ -32,6 +32,7 @@ public sealed class LocalSendServer : IDisposable
 
     public event EventHandler<PrepareUploadRequestDto>? UploadRequested;
     public event EventHandler<(string FileId, string Path)>? FileReceived;
+    public event EventHandler<(string SenderAlias, string Text, bool IsLink)>? TextReceived;
     public event EventHandler<LocalSendDeviceInfo>? DeviceRegistered;
 
     public int ActualPort { get; private set; }
@@ -279,11 +280,13 @@ public sealed class LocalSendServer : IDisposable
             isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
             sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
         FileReceived?.Invoke(this, (fileId, targetPath));
+        LocalSendServerHelper.CheckAndNotifyTextReceived(this, prepareDto, fileId, targetPath, senderAlias);
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }
 
     internal void InvokeDeviceRegistered(LocalSendDeviceInfo dto) => DeviceRegistered?.Invoke(this, dto);
+    internal void InvokeTextReceived(string senderAlias, string text, bool isLink) => TextReceived?.Invoke(this, (senderAlias, text, isLink));
 
     public void Stop()
     {

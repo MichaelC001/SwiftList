@@ -287,6 +287,7 @@ public partial class App : Application
         Core.Services.LocalSend.LocalSendServiceManager.Instance.ApplySettings(settings);
         Core.Services.LocalSend.LocalSendServiceManager.Instance.ProgressChanged += OnLocalSendProgressChanged;
         Core.Services.LocalSend.LocalSendServiceManager.Instance.SessionCanceled += OnLocalSendSessionCanceled;
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.TextReceived += OnLocalSendTextReceived;
     }
 
     private static Views.LocalSend.LocalSendProgressWindow? _activeLocalSendProgressWindow;
@@ -319,6 +320,33 @@ public partial class App : Application
     }
 
     private static void OnLocalSendSessionCanceled(object? sender, string sessionId) => Current.Dispatcher.BeginInvoke(new Action(() => _activeLocalSendProgressWindow?.HandleSessionCanceled(sessionId)));
+
+    private static void OnLocalSendTextReceived(object? sender, (string SenderAlias, string Text, bool IsLink) e) => Current.Dispatcher.BeginInvoke(new Action(() =>
+                                                                                                                          {
+                                                                                                                              try
+                                                                                                                              {
+                                                                                                                                  System.Windows.Clipboard.SetText(e.Text);
+                                                                                                                              }
+                                                                                                                              catch (Exception ex)
+                                                                                                                              {
+                                                                                                                                  Logger.Log($"[App] Failed to set clipboard text: {ex.Message}", LogLevel.Warn);
+                                                                                                                              }
+
+                                                                                                                              if (e.IsLink)
+                                                                                                                              {
+                                                                                                                                  var title = TranslationManager.Instance["Settings_LocalSend_LinkReceivedTitle"];
+                                                                                                                                  var format = TranslationManager.Instance["Settings_LocalSend_ClickToOpenLink"];
+                                                                                                                                  var copiedStr = TranslationManager.Instance["Settings_LocalSend_TextCopied"];
+                                                                                                                                  var result = System.Windows.MessageBox.Show(
+                                                                                                                                      $"{e.SenderAlias}:\n{e.Text}\n\n{copiedStr}\n{format}",
+                                                                                                                                      title, MessageBoxButton.OKCancel, MessageBoxImage.Information);
+                                                                                                                                  if (result == MessageBoxResult.OK)
+                                                                                                                                  {
+                                                                                                                                      try { Process.Start(new ProcessStartInfo(e.Text) { UseShellExecute = true }); }
+                                                                                                                                      catch { }
+                                                                                                                                  }
+                                                                                                                              }
+                                                                                                                          }));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
 
