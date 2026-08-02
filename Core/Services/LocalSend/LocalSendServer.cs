@@ -217,19 +217,13 @@ public sealed class LocalSendServer : IDisposable
 
         if (!isSuccess)
         {
-            if (!IsSessionCanceled(sessionId))
+            for (var i = 0; i < 10; i++)
             {
-                await Task.Delay(150).ConfigureAwait(false);
+                if (IsSessionCanceled(sessionId)) break;
+                await Task.Delay(100).ConfigureAwait(false);
             }
 
-            if (IsSessionCanceled(sessionId))
-            {
-                SessionCanceled?.Invoke(this, sessionId);
-            }
-            else
-            {
-                await LocalSendServerHelper.WriteResponseAsync(stream, 500, "{\"message\":\"Could not save file. Check receiving device for more information.\"}").ConfigureAwait(false);
-            }
+            CancelSession(sessionId);
             return;
         }
 

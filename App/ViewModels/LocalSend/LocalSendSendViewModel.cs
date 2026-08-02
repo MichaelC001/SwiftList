@@ -153,6 +153,10 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         ProgressPercentage = 0;
         SetStatusKey("Settings_LocalSend_Sending");
 
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        long lastBytes = 0;
+        double currentSpeed = 0;
+
         try
         {
             LocalSendSendResult result;
@@ -165,7 +169,19 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                         {
                             var pct = args.TotalBytes > 0 ? (double)args.BytesSent / args.TotalBytes * 100.0 : 0;
                             ProgressPercentage = Math.Min(100.0, pct);
-                            StatusText = $"{args.FileName} ({args.FileIndex}/{args.TotalFiles})";
+
+                            var elapsedSec = stopwatch.Elapsed.TotalSeconds;
+                            if (elapsedSec >= 0.3 || lastBytes == 0)
+                            {
+                                var bytesDelta = args.BytesSent - lastBytes;
+                                currentSpeed = elapsedSec > 0 && bytesDelta > 0 ? bytesDelta / elapsedSec : currentSpeed;
+                                lastBytes = args.BytesSent;
+                                stopwatch.Restart();
+                            }
+
+                            var displayIdx = Math.Min(args.FileIndex + 1, args.TotalFiles);
+                            var speedText = currentSpeed > 0 ? $" - {FormatBytes((long)currentSpeed)}/s" : string.Empty;
+                            StatusText = $"{args.FileName} ({displayIdx}/{args.TotalFiles}){speedText}";
                         })),
                     _cts.Token);
             }
@@ -219,6 +235,14 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     {
         _cts?.Cancel();
         IsSending = false;
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{(double)bytes / 1024:F1} KB";
+        if (bytes < 1024 * 1024 * 1024) return $"{(double)bytes / (1024 * 1024):F1} MB";
+        return $"{(double)bytes / (1024 * 1024 * 1024):F2} GB";
     }
 
     public void Dispose()
