@@ -285,23 +285,25 @@ public partial class App : Application
 
         // LocalSend transfer service runs in App process
         Core.Services.LocalSend.LocalSendServiceManager.Instance.ApplySettings(settings);
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.FileReceived += OnLocalSendFileReceived;
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.ProgressChanged += OnLocalSendProgressChanged;
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.SessionCanceled += OnLocalSendSessionCanceled;
     }
 
-    private static void OnLocalSendFileReceived(object? sender, (string FileId, string Path) e)
-    {
-        var fileName = System.IO.Path.GetFileName(e.Path);
-        var title = TranslationManager.Instance["Settings_LocalSend_FileReceived"];
-        var text = string.Format(TranslationManager.Instance["Settings_LocalSend_FileReceivedDesc"], fileName);
+    private static Views.LocalSend.LocalSendProgressWindow? _activeLocalSendProgressWindow;
 
-        // CustomMessageBox.Show already dispatches to the UI thread when called from a background thread.
-        var result = MessageBox.Show(text, title, MessageBoxButton.OKCancel, MessageBoxImage.Information);
-        if (result == MessageBoxResult.OK)
-        {
-            try { Process.Start("explorer.exe", $"/select,\"{e.Path}\""); }
-            catch { }
-        }
-    }
+    private static void OnLocalSendProgressChanged(object? sender, Core.Services.LocalSend.LocalSendProgressArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>
+                                                                                                                            {
+                                                                                                                                if (_activeLocalSendProgressWindow == null || !_activeLocalSendProgressWindow.IsLoaded)
+                                                                                                                                {
+                                                                                                                                    _activeLocalSendProgressWindow = new Views.LocalSend.LocalSendProgressWindow();
+                                                                                                                                    _activeLocalSendProgressWindow.Closed += (_, _) => _activeLocalSendProgressWindow = null;
+                                                                                                                                    _activeLocalSendProgressWindow.Show();
+                                                                                                                                }
+
+                                                                                                                                _activeLocalSendProgressWindow.UpdateProgress(e);
+                                                                                                                            }));
+
+    private static void OnLocalSendSessionCanceled(object? sender, string sessionId) => Current.Dispatcher.BeginInvoke(new Action(() => _activeLocalSendProgressWindow?.HandleSessionCanceled(sessionId)));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
 

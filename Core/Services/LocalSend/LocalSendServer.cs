@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using SwiftList.Core.Services.LocalSend.Models;
 
@@ -49,7 +48,7 @@ public sealed class LocalSendServer : IDisposable
         {
             try
             {
-                var listener = TryCreateDualStackListener(p) ?? new TcpListener(IPAddress.Any, p);
+                var listener = LocalSendServerHelper.TryCreateDualStackListener(p) ?? new TcpListener(IPAddress.Any, p);
                 listener.Start();
                 _listener = listener;
                 ActualPort = p;
@@ -98,123 +97,193 @@ public sealed class LocalSendServer : IDisposable
         }
     }
 
-    internal async Task HandlePrepareUploadAsync(
-        Stream stream, string body, EndPoint? remoteEp)
+    internal void RegisterActiveSession(string sessionId, PrepareUploadRequestDto dto)
     {
-        if (!QuickSave)
-        {
-            await WriteResponseAsync(stream, 403).ConfigureAwait(false);
-            return;
-        }
-
-        var dto = JsonSerializer.Deserialize<PrepareUploadRequestDto>(body);
-        if (dto == null || dto.Files.Count == 0)
-        {
-            await WriteResponseAsync(stream, 400).ConfigureAwait(false);
-            return;
-        }
-
-        UploadRequested?.Invoke(this, dto);
-
-        var sessionId = Guid.NewGuid().ToString("N");
         _activeSessions[sessionId] = dto;
-
-        var fileTokens = new Dictionary<string, string>();
-        foreach (var kv in dto.Files)
-            fileTokens[kv.Key] = Guid.NewGuid().ToString("N");
-
-        var resp = new PrepareUploadResponseDto { SessionId = sessionId, Files = fileTokens };
-        await WriteResponseAsync(stream, 200, JsonSerializer.Serialize(resp)).ConfigureAwait(false);
+        UploadRequested?.Invoke(this, dto);
     }
+
+    public event EventHandler<LocalSendProgressArgs>? ProgressChanged;
+    public event EventHandler<string>? SessionCanceled;
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _canceledSessions = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<string, byte>> _sessionCompletedFiles = new();
+
+    public void CancelSession(string sessionId)
+    {
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            if (_activeSessions.TryGetValue(sessionId, out var prepareDto))
+            {
+                _ = Task.Run(() => LocalSendServerHelper.NotifySenderCanceledAsync(prepareDto.Info, sessionId));
+            }
+
+            if (_canceledSessions.TryAdd(sessionId, 0))
+            {
+                SessionCanceled?.Invoke(this, sessionId);
+            }
+        }
+    }
+
+    public bool IsSessionCanceled(string sessionId) => _canceledSessions.ContainsKey(sessionId);
 
     internal async Task HandleUploadAsync(
         Stream stream, Stream requestBody, string sessionId, string fileId, string token)
     {
-        var fileName = $"{fileId}.bin";
-        if (_activeSessions.TryGetValue(sessionId, out var prepareDto) &&
-            prepareDto.Files.TryGetValue(fileId, out var fileDto))
+        if (IsSessionCanceled(sessionId))
         {
-            fileName = fileDto.FileName;
+            return;
+        }
+
+        var fileName = $"{fileId}.bin";
+        var senderAlias = "LocalSend";
+        long totalBytes = 0;
+        var fileIndex = 1;
+        var totalFiles = 1;
+
+        if (_activeSessions.TryGetValue(sessionId, out var prepareDto))
+        {
+            senderAlias = prepareDto.Info.Alias;
+            totalFiles = prepareDto.Files.Count;
+            var keys = prepareDto.Files.Keys.ToList();
+            fileIndex = Math.Max(1, keys.IndexOf(fileId) + 1);
+
+            if (prepareDto.Files.TryGetValue(fileId, out var fileDto))
+            {
+                fileName = fileDto.FileName;
+                totalBytes = fileDto.Size;
+            }
         }
 
         if (!Directory.Exists(DownloadDirectory))
             Directory.CreateDirectory(DownloadDirectory);
 
-        var targetPath = Path.Combine(DownloadDirectory, Path.GetFileName(fileName));
+        var normalizedRelativePath = fileName.Replace('\\', '/').TrimStart('/');
+        var fullPathCandidate = Path.GetFullPath(Path.Combine(DownloadDirectory, normalizedRelativePath));
 
-        using (var dest = File.Create(targetPath))
+        var fullDownloadDir = Path.GetFullPath(DownloadDirectory);
+        if (!fullPathCandidate.StartsWith(fullDownloadDir, StringComparison.OrdinalIgnoreCase))
         {
-            await requestBody.CopyToAsync(dest).ConfigureAwait(false);
+            await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
+            return;
         }
 
-        Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath}");
+        var targetDir = Path.GetDirectoryName(fullPathCandidate) ?? fullDownloadDir;
+        if (!Directory.Exists(targetDir))
+            Directory.CreateDirectory(targetDir);
+
+        var safeFileName = Path.GetFileName(fullPathCandidate);
+        var targetPath = Path.Combine(targetDir, safeFileName);
+
+        if (File.Exists(targetPath))
+        {
+            var nameWithoutExt = Path.GetFileNameWithoutExtension(safeFileName);
+            var ext = Path.GetExtension(safeFileName);
+            var counter = 1;
+            do
+            {
+                targetPath = Path.Combine(targetDir, $"{nameWithoutExt} ({counter}){ext}");
+                counter++;
+            } while (File.Exists(targetPath));
+        }
+
+        var buffer = new byte[64 * 1024];
+        long bytesReadTotal = 0;
+        var isSuccess = false;
+
+        try
+        {
+            using (var dest = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 64 * 1024, useAsync: true))
+            {
+                int bytesRead;
+                while ((bytesRead = await requestBody.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+                {
+                    if (IsSessionCanceled(sessionId))
+                    {
+                        break;
+                    }
+
+                    await dest.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
+                    bytesReadTotal += bytesRead;
+                    ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
+                        sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, fileIndex, totalFiles));
+                }
+
+                await dest.FlushAsync().ConfigureAwait(false);
+            }
+
+            if (!IsSessionCanceled(sessionId) && (totalBytes == 0 || bytesReadTotal >= totalBytes))
+            {
+                isSuccess = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LocalSendServer] Error writing upload stream for {fileName}: {ex.Message}", LogLevel.Error);
+        }
+        finally
+        {
+            if (!isSuccess)
+            {
+                try
+                {
+                    if (File.Exists(targetPath))
+                    {
+                        File.Delete(targetPath);
+                        Logger.Log($"[LocalSendServer] Cleaned up partial/canceled file: {targetPath}");
+                    }
+                }
+                catch (Exception deleteEx)
+                {
+                    Logger.Log($"[LocalSendServer] Failed to delete partial file {targetPath}: {deleteEx.Message}", LogLevel.Warn);
+                }
+            }
+        }
+
+        if (!isSuccess)
+        {
+            if (IsSessionCanceled(sessionId))
+            {
+                // Give sender's /api/localsend/v2/cancel HTTP notification time to settle on the wire before releasing TCP stream
+                await Task.Delay(1500).ConfigureAwait(false);
+            }
+            else
+            {
+                await LocalSendServerHelper.WriteResponseAsync(stream, 500).ConfigureAwait(false);
+            }
+            return;
+        }
+
+        var completedSet = _sessionCompletedFiles.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, byte>());
+        completedSet[fileId] = 0;
+
+        var isAllDone = completedSet.Count >= totalFiles;
+        var displayIndex = isAllDone ? totalFiles : Math.Max(fileIndex, completedSet.Count);
+
+        Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{totalFiles})");
+        ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
+            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles, isFinished: true, isAllDone: isAllDone, savedPath: targetPath));
         FileReceived?.Invoke(this, (fileId, targetPath));
 
-        await WriteResponseAsync(stream, 200).ConfigureAwait(false);
+        await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }
 
     internal async Task HandleRegisterAsync(Stream stream, string body, EndPoint? remoteEp)
     {
         var dto = JsonSerializer.Deserialize<LocalSendDeviceInfo>(body);
-
-        if (dto != null && dto.Fingerprint == DeviceInfo.Fingerprint)
+        if (dto?.Fingerprint == DeviceInfo.Fingerprint)
         {
-            await WriteResponseAsync(stream, 412).ConfigureAwait(false);
+            await LocalSendServerHelper.WriteResponseAsync(stream, 412).ConfigureAwait(false);
             return;
         }
 
         if (dto != null && !string.IsNullOrEmpty(dto.Alias) && remoteEp is IPEndPoint ep)
         {
-            dto.IpAddress = ep.Address.AddressFamily == AddressFamily.InterNetworkV6
-                ? $"[{ep.Address}]" : ep.Address.ToString();
+            dto.IpAddress = ep.Address.AddressFamily == AddressFamily.InterNetworkV6 ? $"[{ep.Address}]" : ep.Address.ToString();
             DeviceRegistered?.Invoke(this, dto);
         }
 
-        await WriteResponseAsync(stream, 200, JsonSerializer.Serialize(DeviceInfo)).ConfigureAwait(false);
-    }
-
-    internal static async Task WriteResponseAsync(Stream stream, int status, string? json = null)
-    {
-        var statusText = status switch { 200 => "OK", 400 => "Bad Request", 403 => "Forbidden", 409 => "Conflict", 412 => "Precondition Failed", _ => "Internal Server Error" };
-        var sb = new StringBuilder();
-        sb.Append($"HTTP/1.1 {status} {statusText}\r\n");
-        sb.Append("Connection: close\r\n");
-
-        if (json != null)
-        {
-            var body = Encoding.UTF8.GetBytes(json);
-            sb.Append($"Content-Type: application/json\r\nContent-Length: {body.Length}\r\n\r\n");
-            var header = Encoding.UTF8.GetBytes(sb.ToString());
-            await stream.WriteAsync(header).ConfigureAwait(false);
-            await stream.WriteAsync(body).ConfigureAwait(false);
-        }
-        else
-        {
-            sb.Append("Content-Length: 0\r\n\r\n");
-            await stream.WriteAsync(Encoding.UTF8.GetBytes(sb.ToString())).ConfigureAwait(false);
-        }
-
-        await stream.FlushAsync().ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Tries to create a dual-stack TcpListener (IPv6Any + DualMode=true) that accepts
-    /// both IPv4 and IPv6 connections on a single socket. Returns null if IPv6 is
-    /// unavailable on this host (DualMode not supported), so the caller falls back to
-    /// IPv4-only.
-    /// </summary>
-    private static TcpListener? TryCreateDualStackListener(int port)
-    {
-        try
-        {
-            var listener = new TcpListener(IPAddress.IPv6Any, port);
-            listener.Server.DualMode = true;
-            return listener;
-        }
-        catch
-        {
-            return null;
-        }
+        await LocalSendServerHelper.WriteResponseAsync(stream, 200, JsonSerializer.Serialize(DeviceInfo)).ConfigureAwait(false);
     }
 
     public void Stop()

@@ -1,0 +1,126 @@
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace SwiftList.Core.Services.LocalSend;
+
+/// <summary>
+/// Helper methods for LocalSendServer to keep the main server class under 300 lines.
+/// Split out purely to adhere to the repository's per-file line limit; has no internal state of its own.
+/// </summary>
+internal static class LocalSendServerHelper
+{
+    /// <summary>
+    /// Tries to create a dual-stack TcpListener (IPv6Any + DualMode=true) that accepts
+    /// both IPv4 and IPv6 connections on a single socket. Returns null if IPv6 is
+    /// unavailable on this host (DualMode not supported).
+    /// </summary>
+    internal static TcpListener? TryCreateDualStackListener(int port)
+    {
+        try
+        {
+            var listener = new TcpListener(IPAddress.IPv6Any, port);
+            listener.Server.DualMode = true;
+            return listener;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Formats an IPAddress cleanly, unmapping IPv4-mapped IPv6 addresses (e.g. ::ffff:192.168.1.1) to standard IPv4.
+    /// </summary>
+    internal static string FormatIpAddress(IPAddress address)
+    {
+        if (address.IsIPv4MappedToIPv6)
+        {
+            return address.MapToIPv4().ToString();
+        }
+
+        return address.ToString();
+    }
+
+    /// <summary>
+    /// Writes an HTTP response line, headers, and optional JSON body to the network stream.
+    /// </summary>
+    internal static async Task WriteResponseAsync(Stream stream, int status, string? json = null)
+    {
+        var statusText = status switch
+        {
+            200 => "OK",
+            400 => "Bad Request",
+            403 => "Forbidden",
+            409 => "Conflict",
+            412 => "Precondition Failed",
+            _ => "Internal Server Error"
+        };
+
+        var sb = new StringBuilder();
+        sb.Append($"HTTP/1.1 {status} {statusText}\r\n");
+        sb.Append("Connection: close\r\n");
+
+        if (json != null)
+        {
+            var body = Encoding.UTF8.GetBytes(json);
+            sb.Append($"Content-Type: application/json\r\nContent-Length: {body.Length}\r\n\r\n");
+            var header = Encoding.UTF8.GetBytes(sb.ToString());
+            await stream.WriteAsync(header).ConfigureAwait(false);
+            await stream.WriteAsync(body).ConfigureAwait(false);
+        }
+        else
+        {
+            sb.Append("Content-Length: 0\r\n\r\n");
+            await stream.WriteAsync(Encoding.UTF8.GetBytes(sb.ToString())).ConfigureAwait(false);
+        }
+
+        await stream.FlushAsync().ConfigureAwait(false);
+    }
+
+    private static readonly HttpClient SharedClient = new(new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    })
+    { Timeout = TimeSpan.FromSeconds(3) };
+
+    /// <summary>
+    /// Sends an HTTP POST notification to the sender device informing them that the receiver has canceled the session.
+    /// Tries v2 cancel with sessionId first, then falls back to v1 cancel for maximum compatibility.
+    /// </summary>
+    internal static async Task<bool> NotifySenderCanceledAsync(Models.LocalSendDeviceInfo senderInfo, string sessionId)
+    {
+        if (string.IsNullOrEmpty(senderInfo.IpAddress) || senderInfo.Port <= 0 || string.IsNullOrEmpty(sessionId))
+            return false;
+
+        var cleanIp = senderInfo.IpAddress.Trim('[', ']');
+        var scheme = string.Equals(senderInfo.Protocol, "https", StringComparison.OrdinalIgnoreCase) ? "https" : "http";
+
+        // 1. Try v2 cancel endpoint with sessionId first
+        try
+        {
+            var urlV2 = $"{scheme}://{cleanIp}:{senderInfo.Port}/api/localsend/v2/cancel?sessionId={sessionId}";
+            var respV2 = await SharedClient.PostAsync(urlV2, null).ConfigureAwait(false);
+            Logger.Log($"[LocalSendServer] Notified sender v2 cancellation: {urlV2} -> {respV2.StatusCode}");
+            if (respV2.IsSuccessStatusCode) return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LocalSendServer] v2 cancel notification error: {ex.Message}", LogLevel.Warn);
+        }
+
+        // 2. Fallback to v1 cancel endpoint for maximum compatibility
+        try
+        {
+            var urlV1 = $"{scheme}://{cleanIp}:{senderInfo.Port}/api/localsend/v1/cancel";
+            var respV1 = await SharedClient.PostAsync(urlV1, null).ConfigureAwait(false);
+            Logger.Log($"[LocalSendServer] Notified sender v1 cancellation: {urlV1} -> {respV1.StatusCode}");
+            return respV1.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LocalSendServer] v1 cancel notification error: {ex.Message}", LogLevel.Warn);
+            return false;
+        }
+    }
+}

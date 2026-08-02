@@ -12,6 +12,12 @@ public sealed class LocalSendServiceManager : IDisposable
     /// <summary>Raised (on a thread-pool thread) when a file has been fully received and saved to disk.</summary>
     public event EventHandler<(string FileId, string Path)>? FileReceived;
 
+    /// <summary>Raised (on a thread-pool thread) when file transfer progress updates.</summary>
+    public event EventHandler<LocalSendProgressArgs>? ProgressChanged;
+
+    /// <summary>Raised (on a thread-pool thread) when a session is canceled.</summary>
+    public event EventHandler<string>? SessionCanceled;
+
     public void ApplySettings(UserSettings userSettings)
     {
         var settings = userSettings.LocalSend;
@@ -46,8 +52,12 @@ public sealed class LocalSendServiceManager : IDisposable
         _discoveryService.LocalInfo.Port = _server.ActualPort > 0 ? _server.ActualPort : settings.Port;
         _server.DeviceRegistered += (s, device) => _discoveryService?.AddDiscoveredDevice(device);
         _server.FileReceived += (s, e) => FileReceived?.Invoke(this, e);
+        _server.ProgressChanged += (s, e) => ProgressChanged?.Invoke(this, e);
+        _server.SessionCanceled += (s, e) => SessionCanceled?.Invoke(this, e);
         _discoveryService.Start(settings.Port);
     }
+
+    public void CancelSession(string sessionId) => _server?.CancelSession(sessionId);
 
     public void Stop()
     {

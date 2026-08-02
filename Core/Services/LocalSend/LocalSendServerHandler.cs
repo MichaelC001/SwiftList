@@ -47,11 +47,11 @@ internal static class LocalSendServerHandler
             var fp = query.GetValueOrDefault("fingerprint");
             if (!string.IsNullOrEmpty(fp) && fp == server.DeviceInfo.Fingerprint)
             {
-                await LocalSendServer.WriteResponseAsync(stream, 412).ConfigureAwait(false);
+                await LocalSendServerHelper.WriteResponseAsync(stream, 412).ConfigureAwait(false);
                 return;
             }
 
-            await LocalSendServer.WriteResponseAsync(
+            await LocalSendServerHelper.WriteResponseAsync(
                 stream, 200, System.Text.Json.JsonSerializer.Serialize(server.DeviceInfo))
                 .ConfigureAwait(false);
             return;
@@ -59,23 +59,24 @@ internal static class LocalSendServerHandler
 
         if (method != "POST")
         {
-            await LocalSendServer.WriteResponseAsync(stream, 404).ConfigureAwait(false);
+            await LocalSendServerHelper.WriteResponseAsync(stream, 404).ConfigureAwait(false);
+            return;
+        }
+
+        headers.TryGetValue("Content-Length", out var lenStr);
+        int.TryParse(lenStr ?? "0", out var contentLength);
+
+        if (IsUpload(path))
+        {
+            // For uploads (including 0-byte empty files), stream body directly.
+            await RouteUploadAsync(server, stream, path, query, contentLength, token).ConfigureAwait(false);
             return;
         }
 
         // Read body for POST
         var bodyText = string.Empty;
-        if (headers.TryGetValue("Content-Length", out var lenStr) &&
-            int.TryParse(lenStr, out var contentLength) && contentLength > 0)
+        if (contentLength > 0)
         {
-            if (IsUpload(path))
-            {
-                // For uploads, stream body directly; don't buffer it in memory.
-                await RouteUploadAsync(server, stream, path, query, contentLength, token)
-                    .ConfigureAwait(false);
-                return;
-            }
-
             var buf = new byte[Math.Min(contentLength, 4 * 1024 * 1024)];
             var totalRead = 0;
             while (totalRead < buf.Length)
@@ -102,16 +103,52 @@ internal static class LocalSendServerHandler
         }
         else if (IsPrepareUpload(path))
         {
-            await server.HandlePrepareUploadAsync(stream, body, remoteEp).ConfigureAwait(false);
+            await HandlePrepareUploadAsync(server, stream, body, remoteEp).ConfigureAwait(false);
         }
         else if (IsCancel(path))
         {
-            await LocalSendServer.WriteResponseAsync(stream, 200).ConfigureAwait(false);
+            query.TryGetValue("sessionId", out var sessionId);
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                server.CancelSession(sessionId);
+            }
+            await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
         }
         else
         {
-            await LocalSendServer.WriteResponseAsync(stream, 404).ConfigureAwait(false);
+            await LocalSendServerHelper.WriteResponseAsync(stream, 404).ConfigureAwait(false);
         }
+    }
+
+    private static async Task HandlePrepareUploadAsync(LocalSendServer server, Stream stream, string body, EndPoint? remoteEp)
+    {
+        if (!server.QuickSave)
+        {
+            await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
+            return;
+        }
+
+        var dto = System.Text.Json.JsonSerializer.Deserialize<Models.PrepareUploadRequestDto>(body);
+        if (dto == null || dto.Files.Count == 0)
+        {
+            await LocalSendServerHelper.WriteResponseAsync(stream, 400).ConfigureAwait(false);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(dto.Info.IpAddress) && remoteEp is IPEndPoint ep)
+        {
+            dto.Info.IpAddress = LocalSendServerHelper.FormatIpAddress(ep.Address);
+        }
+
+        var sessionId = Guid.NewGuid().ToString();
+        server.RegisterActiveSession(sessionId, dto);
+
+        var fileTokens = new Dictionary<string, string>();
+        foreach (var kv in dto.Files)
+            fileTokens[kv.Key] = Guid.NewGuid().ToString("N");
+
+        var resp = new Models.PrepareUploadResponseDto { SessionId = sessionId, Files = fileTokens };
+        await LocalSendServerHelper.WriteResponseAsync(stream, 200, System.Text.Json.JsonSerializer.Serialize(resp)).ConfigureAwait(false);
     }
 
     private static async Task RouteUploadAsync(
@@ -120,7 +157,7 @@ internal static class LocalSendServerHandler
     {
         if (!IsUpload(path))
         {
-            await LocalSendServer.WriteResponseAsync(stream, 404).ConfigureAwait(false);
+            await LocalSendServerHelper.WriteResponseAsync(stream, 404).ConfigureAwait(false);
             return;
         }
 
@@ -153,7 +190,8 @@ internal static class LocalSendServerHandler
         p.Equals("/api/localsend/v1/send", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsCancel(string p) =>
-        p.Equals("/api/localsend/v2/cancel", StringComparison.OrdinalIgnoreCase);
+        p.Equals("/api/localsend/v2/cancel", StringComparison.OrdinalIgnoreCase) ||
+        p.Equals("/api/localsend/v1/cancel", StringComparison.OrdinalIgnoreCase);
 
     private static Dictionary<string, string> ParseQuery(string raw)
     {

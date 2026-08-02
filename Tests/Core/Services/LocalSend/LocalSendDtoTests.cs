@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SwiftList.Core.Services.LocalSend.Models;
 
 namespace SwiftList.Core.Tests.Services.LocalSend;
