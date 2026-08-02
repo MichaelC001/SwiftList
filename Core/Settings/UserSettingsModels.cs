@@ -33,6 +33,18 @@ public class DefaultFileManagerSetting
     public string Parameter { get; set; } = string.Empty;
 }
 
+/// <summary>Settings for the LocalSend protocol v2 LAN transfer engine.</summary>
+public class LocalSendSettingsModel
+{
+    public bool Enabled { get; set; } = false;
+    public string DeviceAlias { get; set; } = Environment.MachineName;
+    public int Port { get; set; } = 53317;
+    public bool QuickSave { get; set; } = false;
+    public bool QuickSaveFromFavorites { get; set; } = true;
+    public string DownloadDirectory { get; set; } = string.Empty;
+    public bool EnableHttps { get; set; } = false;
+}
+
 /// <summary>Everything shown on the Hotkey Settings page, grouped under one object.</summary>
 public class HotkeyPageSettings
 {

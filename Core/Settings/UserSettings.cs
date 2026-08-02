@@ -58,6 +58,7 @@ public class UserSettings
     public PreviewWindowSettings PreviewWindow { get; set; } = new();
     public MainWindowSettings MainWindow { get; set; } = new();
     public QuickPanelSettings QuickPanel { get; set; } = new();
+    public LocalSendSettingsModel LocalSend { get; set; } = new();
 
     private static string GetDefaultSystemLanguage()
     {

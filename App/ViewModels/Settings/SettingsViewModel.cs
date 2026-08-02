@@ -38,6 +38,7 @@ public class SettingsViewModel : ViewModelBase
         History = new HistorySettingsViewModel(_userSettings);
         Favorites = new FavoritesSettingsViewModel(_userSettings);
         QuickPanel = new QuickPanel.QuickPanelSettingsViewModel(_userSettings);
+        LocalSend = new LocalSend.LocalSendSettingsViewModel(_userSettings);
         RefreshCommand = new RelayCommand(Refresh);
         ApplyCommand = new RelayCommand(Apply, () => CanApply);
 
@@ -78,6 +79,7 @@ public class SettingsViewModel : ViewModelBase
     public BlacklistSettingsViewModel Blacklist { get; }
     public HistorySettingsViewModel History { get; }
     public FavoritesSettingsViewModel Favorites { get; }
+    public LocalSend.LocalSendSettingsViewModel LocalSend { get; }
 
     /// <summary>
     /// The floating panel's own page. Its "tabs" are workspaces, which is not what a tab means in the
@@ -163,7 +165,9 @@ public class SettingsViewModel : ViewModelBase
         History.Save();
         Favorites.Save();
         QuickPanel.Save();
+        LocalSend.Apply();
         _userSettings.Save();
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.ApplySettings(_userSettings);
         App.HookClient?.SendMessage(new IpcMessage { Id = IpcMessageId.ReloadSettings });
         PluginManager.Instance.RefreshDisabledComponents();
         NetworkDrive.ResetPendingEdits();

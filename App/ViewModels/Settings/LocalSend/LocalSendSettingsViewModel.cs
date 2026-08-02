@@ -1,0 +1,113 @@
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows.Input;
+using SwiftList.App.Helpers;
+using SwiftList.Core;
+using SwiftList.Core.Services.LocalSend.Models;
+
+namespace SwiftList.App.ViewModels.Settings.LocalSend;
+
+public sealed class LocalSendSettingsViewModel : ViewModelBase
+{
+    private readonly UserSettings _userSettings;
+    private readonly ObservableCollection<LocalSendDeviceInfo> _discoveredDevices = new();
+
+    private bool _enabled;
+    private string _deviceAlias;
+    private int _port;
+    private bool _quickSave;
+    private string _downloadDirectory;
+    private bool _enableHttps;
+
+    public LocalSendSettingsViewModel(UserSettings userSettings)
+    {
+        _userSettings = userSettings;
+
+        _enabled = userSettings.LocalSend.Enabled;
+        _deviceAlias = userSettings.LocalSend.DeviceAlias;
+        _port = userSettings.LocalSend.Port;
+        _quickSave = userSettings.LocalSend.QuickSave;
+        _downloadDirectory = string.IsNullOrEmpty(userSettings.LocalSend.DownloadDirectory)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")
+            : userSettings.LocalSend.DownloadDirectory;
+        _enableHttps = userSettings.LocalSend.EnableHttps;
+
+        SelectDownloadDirectoryCommand = new RelayCommand(SelectDownloadDirectory);
+        RefreshDevicesCommand = new RelayCommand(RefreshDevices);
+
+        DiscoveredDevices = new ReadOnlyObservableCollection<LocalSendDeviceInfo>(_discoveredDevices);
+    }
+
+    public bool Enabled
+    {
+        get => _enabled;
+        set => SetProperty(ref _enabled, value);
+    }
+
+    public string DeviceAlias
+    {
+        get => _deviceAlias;
+        set => SetProperty(ref _deviceAlias, value);
+    }
+
+    public int Port
+    {
+        get => _port;
+        set => SetProperty(ref _port, value);
+    }
+
+    public bool QuickSave
+    {
+        get => _quickSave;
+        set => SetProperty(ref _quickSave, value);
+    }
+
+    public string DownloadDirectory
+    {
+        get => _downloadDirectory;
+        set => SetProperty(ref _downloadDirectory, value);
+    }
+
+    public bool EnableHttps
+    {
+        get => _enableHttps;
+        set => SetProperty(ref _enableHttps, value);
+    }
+
+    public bool IsServiceRunning => _userSettings.LocalSend.Enabled;
+
+    public void Apply()
+    {
+        _userSettings.LocalSend.Enabled = _enabled;
+        _userSettings.LocalSend.DeviceAlias = _deviceAlias;
+        _userSettings.LocalSend.Port = _port;
+        _userSettings.LocalSend.QuickSave = _quickSave;
+        _userSettings.LocalSend.DownloadDirectory = _downloadDirectory;
+        _userSettings.LocalSend.EnableHttps = _enableHttps;
+
+        OnPropertyChanged(nameof(IsServiceRunning));
+    }
+
+    public ReadOnlyObservableCollection<LocalSendDeviceInfo> DiscoveredDevices { get; }
+    public ICommand SelectDownloadDirectoryCommand { get; }
+    public ICommand RefreshDevicesCommand { get; }
+
+    private void SelectDownloadDirectory()
+    {
+        using var dialog = new FolderBrowserDialog
+        {
+            Description = "Select LocalSend Download Directory",
+            UseDescriptionForTitle = true,
+            SelectedPath = DownloadDirectory
+        };
+
+        if (dialog.ShowDialog() == DialogResult.OK)
+        {
+            DownloadDirectory = dialog.SelectedPath;
+        }
+    }
+
+    private void RefreshDevices() => _discoveredDevices.Clear();
+
+    public void AddDiscoveredDevice(LocalSendDeviceInfo device) => _discoveredDevices.Add(device);
+}

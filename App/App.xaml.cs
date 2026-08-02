@@ -282,6 +282,9 @@ public partial class App : Application
 
         // Background update check on startup
         UpdateCheckService.RunOnStartupAsync();
+
+        // LocalSend transfer service runs in App process
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.ApplySettings(settings);
     }
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
@@ -311,6 +314,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.Stop();
         HookClient?.Stop(); HookClient?.Dispose(); HookClient = null;
         AppPipeService.StopServer(); AppSearchPipeService.StopServer(); InlineSearchManager.Instance.Dispose(); CloseAllManagedWindows();
         if (_appMutex != null) { try { _appMutex.ReleaseMutex(); } catch { } _appMutex.Dispose(); }

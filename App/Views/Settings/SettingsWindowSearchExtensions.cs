@@ -307,6 +307,7 @@ internal static class SettingsWindowSearchExtensions
         "History" => window.PageHistory,
         "Favorites" => window.PageFavorites,
         "QuickPanel" => window.PageQuickPanel,
+        "LocalSend" => window.PageLocalSend,
         "About" => window.PageAbout,
         _ => null,
     };
