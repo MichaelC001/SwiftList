@@ -178,6 +178,15 @@ de ninguna configuración:
 Esto lo gestiona un plugin de alias incluido — ver **Configuración → Plugins** si alguna vez quieres comprobar que
 está habilitado.
 
+## Nombres de archivo en español: alias de acentos
+
+Los nombres de archivo que contienen caracteres con acentos o signos diacríticos en español (`á`, `é`, `í`, `ó`, `ú`, `ü`, `ñ`) se pueden buscar automáticamente utilizando letras ASCII simples, sin necesidad de configuración:
+
+- **ASCII sin acentos**: al escribir `cancion` se busca `Canción.mp3`, `nino` busca `Niño.txt` y `ciguena` busca `Cigüeña.png`.
+- **Resaltado completo**: los caracteres que coinciden (incluidos los caracteres con acento en el nombre original) se resaltan con precisión.
+
+Esto es gestionado por el complemento integrado `SpanishAlias`; consulte **Configuración → Complementos** para verificar que esté activado.
+
 ## Favoritos, no alias personalizados
 
 SwiftList no tiene un sistema genérico de "define tu propio alias/macro". Lo más parecido es

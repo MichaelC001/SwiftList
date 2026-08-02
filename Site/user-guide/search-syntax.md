@@ -174,6 +174,15 @@ required:
 This is handled by a bundled alias plugin — see **Settings → Plugins** if you ever want to check
 it's enabled.
 
+## Spanish filenames: accent aliasing
+
+Filenames containing Spanish accented characters (`á`, `é`, `í`, `ó`, `ú`, `ü`, `ñ`) are automatically searchable using plain ASCII letters, with no setup required:
+
+- **Unaccented ASCII**: typing `cancion` matches `Canción.mp3`, `nino` matches `Niño.txt`, and `ciguena` matches `Cigüeña.png`.
+- **Full highlighting**: matching characters (including accented characters in the original name) are highlighted accurately.
+
+This is handled by the bundled `SpanishAlias` plugin — see **Settings → Plugins** if you want to verify it is enabled.
+
 ## Favorites, not custom aliases
 
 SwiftList does not have a general-purpose "define your own alias/macro" system. The closest
