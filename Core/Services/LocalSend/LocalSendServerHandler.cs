@@ -143,6 +143,9 @@ internal static class LocalSendServerHandler
             dto.Info.IpAddress = LocalSendServerHelper.FormatIpAddress(ep.Address);
         }
 
+        var sessionId = Guid.NewGuid().ToString();
+        server.RegisterActiveSession(sessionId, dto);
+
         var isTextMessage = dto.Files.Count == 1 && dto.Files.Values.Any(f =>
             string.Equals(f.FileType, "text", StringComparison.OrdinalIgnoreCase) ||
             !string.IsNullOrEmpty(f.Preview) ||
@@ -157,14 +160,12 @@ internal static class LocalSendServerHandler
             customDir = res.CustomDir;
         }
 
-        if (!isAccepted)
+        if (!isAccepted || server.IsSessionCanceled(sessionId))
         {
             await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
             return;
         }
 
-        var sessionId = Guid.NewGuid().ToString();
-        server.RegisterActiveSession(sessionId, dto);
         server.RegisterCustomDirectory(sessionId, customDir);
 
         var fileTokens = new Dictionary<string, string>();
