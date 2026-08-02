@@ -41,6 +41,7 @@ public sealed class LocalSendServer : IDisposable
     public event EventHandler<LocalSendDeviceInfo>? DeviceRegistered;
 
     public int ActualPort { get; private set; }
+    public bool IsBusy => _activeSessions.Count > 0;
 
     public void Start(int port = 53317)
     {
@@ -118,6 +119,33 @@ public sealed class LocalSendServer : IDisposable
         {
             SessionCanceled?.Invoke(this, sessionId);
         }
+        UnregisterSession(sessionId);
+    }
+
+    public void CancelAllSessions()
+    {
+        var activeIds = _activeSessions.Keys.ToList();
+        if (activeIds.Count == 0)
+        {
+            SessionCanceled?.Invoke(this, string.Empty);
+        }
+        else
+        {
+            foreach (var id in activeIds)
+            {
+                CancelSession(id);
+            }
+        }
+    }
+
+    public void UnregisterSession(string sessionId)
+    {
+        if (string.IsNullOrEmpty(sessionId)) return;
+        _activeSessions.TryRemove(sessionId, out _);
+        _sessionCustomDirectories.TryRemove(sessionId, out _);
+        _sessionCompletedFiles.TryRemove(sessionId, out _);
+        _sessionTransferredBytes.TryRemove(sessionId, out _);
+        _canceledSessions.TryRemove(sessionId, out _);
     }
 
     public bool IsSessionCanceled(string sessionId) =>
@@ -254,6 +282,11 @@ public sealed class LocalSendServer : IDisposable
             FileReceived?.Invoke(this, (fileId, targetPath));
         }
 
+        if (isAllDone)
+        {
+            UnregisterSession(sessionId);
+        }
+
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }
 
@@ -264,15 +297,19 @@ public sealed class LocalSendServer : IDisposable
         if (!string.IsNullOrEmpty(customDir)) _sessionCustomDirectories[sessionId] = customDir;
     }
 
-    internal async Task<(bool Accepted, string? CustomDir)> RequestUserAcceptanceAsync(PrepareUploadRequestDto dto)
+    internal async Task<(bool Accepted, string? CustomDir)> RequestUserAcceptanceAsync(string sessionId, PrepareUploadRequestDto dto)
     {
         if (UploadRequested == null) return (false, null);
         var tcs = new TaskCompletionSource<(bool, string?)>(TaskCreationOptions.RunContinuationsAsynchronously);
         LocalSendUploadRequestArgs? args = null;
-        args = new LocalSendUploadRequestArgs(dto, accept => tcs.TrySetResult((accept, args?.CustomDownloadDirectory)));
+        args = new LocalSendUploadRequestArgs(sessionId, dto, accept => tcs.TrySetResult((accept, args?.CustomDownloadDirectory)));
         UploadRequested.Invoke(this, args);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-        using (cts.Token.Register(() => tcs.TrySetResult((false, null))))
+        using (cts.Token.Register(() =>
+        {
+            CancelSession(sessionId);
+            tcs.TrySetResult((false, null));
+        }))
         {
             return await tcs.Task.ConfigureAwait(false);
         }

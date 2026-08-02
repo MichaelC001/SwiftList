@@ -100,12 +100,14 @@ public sealed class PrepareUploadResponseDto
 
 public sealed class LocalSendUploadRequestArgs : EventArgs
 {
+    public string SessionId { get; }
     public PrepareUploadRequestDto Dto { get; }
     public string? CustomDownloadDirectory { get; set; }
     private readonly Action<bool> _respond;
 
-    public LocalSendUploadRequestArgs(PrepareUploadRequestDto dto, Action<bool> respond)
+    public LocalSendUploadRequestArgs(string sessionId, PrepareUploadRequestDto dto, Action<bool> respond)
     {
+        SessionId = sessionId;
         Dto = dto;
         _respond = respond;
     }

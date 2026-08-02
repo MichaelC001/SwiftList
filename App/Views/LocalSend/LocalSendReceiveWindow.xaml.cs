@@ -32,6 +32,7 @@ public partial class LocalSendReceiveWindow : Window
         InitializeComponent();
 
         _requestArgs = requestArgs;
+        _currentSessionId = requestArgs.SessionId;
 
         SystemMenuBlocker.Attach(this);
         AltTabExcluder.Attach(this);
@@ -91,6 +92,15 @@ public partial class LocalSendReceiveWindow : Window
         base.OnClosing(e);
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        if (!string.IsNullOrEmpty(_currentSessionId))
+        {
+            LocalSendServiceManager.Instance.UnregisterSession(_currentSessionId);
+        }
+    }
+
     private void BtnDecline_Click(object sender, RoutedEventArgs e)
     {
         _requestArgs.Respond(false);
@@ -99,6 +109,11 @@ public partial class LocalSendReceiveWindow : Window
 
     private void BtnAcceptDefault_Click(object sender, RoutedEventArgs e)
     {
+        if (_isCompleted || LocalSendServiceManager.Instance.IsSessionCanceled(_currentSessionId ?? string.Empty))
+        {
+            ShowSenderCanceledInStep1();
+            return;
+        }
         _requestArgs.Respond(true);
         SwitchToProgressStep();
     }
@@ -109,10 +124,25 @@ public partial class LocalSendReceiveWindow : Window
         var dialog = new OpenFolderDialog { Title = title };
         if (dialog.ShowDialog(this) == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
         {
+            if (_isCompleted || LocalSendServiceManager.Instance.IsSessionCanceled(_currentSessionId ?? string.Empty))
+            {
+                ShowSenderCanceledInStep1();
+                return;
+            }
             _requestArgs.CustomDownloadDirectory = dialog.FolderName;
             _requestArgs.Respond(true);
             SwitchToProgressStep();
         }
+    }
+
+    private void ShowSenderCanceledInStep1()
+    {
+        _isCompleted = true;
+        _requestArgs.Respond(false);
+        TxtSummary.Text = TranslationManager.Instance["Settings_LocalSend_SenderCanceled"];
+        BtnAcceptDefault.Visibility = Visibility.Collapsed;
+        BtnSaveTo.Visibility = Visibility.Collapsed;
+        BtnDecline.Content = TranslationManager.Instance["Common_Close"];
     }
 
     private void SwitchToProgressStep()
@@ -124,65 +154,70 @@ public partial class LocalSendReceiveWindow : Window
     }
 
     public void HandleProgressChanged(LocalSendProgressArgs args) => Dispatcher.BeginInvoke(new Action(() =>
-                                                                          {
-                                                                              _currentSessionId = args.SessionId;
-                                                                              var isAllDone = args.IsAllDone;
-                                                                              _isCompleted = isAllDone;
-
-                                                                              TxtFileProgress.Text = $"{args.FileName} ({args.CurrentFileIndex}/{args.TotalFiles})";
-
-                                                                              if (args.TotalBytes > 0)
-                                                                              {
-                                                                                  var percentage = (double)args.BytesTransferred / args.TotalBytes * 100.0;
-                                                                                  PbTransfer.Value = Math.Clamp(percentage, 0, 100);
-                                                                              }
-
-                                                                              if (!string.IsNullOrEmpty(args.SavedPath))
-                                                                                  _lastSavedPath = args.SavedPath;
-                                                                              if (!string.IsNullOrEmpty(args.RootSavedPath))
-                                                                                  _lastRootSavedPath = args.RootSavedPath;
-
-                                                                              if (isAllDone)
-                                                                              {
-                                                                                  TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_FileReceivedTitle"];
-                                                                                  TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
-                                                                                  BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
-                                                                                  PbTransfer.Value = 100;
-                                                                                  BtnOpenFolder.Visibility = Visibility.Visible;
-                                                                              }
-                                                                              else
-                                                                              {
-                                                                                  TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_Receiving"];
-                                                                                  BtnCloseProgress.Content = TranslationManager.Instance["Common_Cancel"];
-                                                                                  BtnOpenFolder.Visibility = Visibility.Collapsed;
-
-                                                                                  var elapsedSec = _stopwatch.Elapsed.TotalSeconds;
-                                                                                  if (elapsedSec >= 0.3 || _lastBytes == 0)
-                                                                                  {
-                                                                                      var bytesDelta = args.BytesTransferred - _lastBytes;
-                                                                                      var speedBytesPerSec = elapsedSec > 0 ? bytesDelta / elapsedSec : 0;
-                                                                                      TxtSpeed.Text = $"{LocalSendServerHelper.FormatBytes((long)Math.Max(0, speedBytesPerSec))}/s";
-
-                                                                                      _lastBytes = args.BytesTransferred;
-                                                                                      _stopwatch.Restart();
-                                                                                  }
-                                                                              }
-                                                                          }));
-
-    public void HandleSessionCanceled(string sessionId)
     {
-        if (string.Equals(_currentSessionId, sessionId, StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(_currentSessionId))
+        _currentSessionId = args.SessionId;
+        var isAllDone = args.IsAllDone;
+        _isCompleted = isAllDone;
+
+        TxtFileName.Text = args.FileName;
+        TxtFileName.ToolTip = args.FileName;
+
+        var completedCount = isAllDone ? args.TotalFiles : Math.Max(0, args.CurrentFileIndex - 1);
+        TxtCounter.Text = $"({completedCount}/{args.TotalFiles})";
+
+        if (args.TotalBytes > 0)
         {
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                _isCompleted = true;
-                TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-                TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-                BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
-                BtnOpenFolder.Visibility = Visibility.Collapsed;
-            }));
+            var percentage = (double)args.BytesTransferred / args.TotalBytes * 100.0;
+            PbTransfer.Value = Math.Clamp(percentage, 0, 100);
         }
-    }
+
+        if (!string.IsNullOrEmpty(args.SavedPath))
+            _lastSavedPath = args.SavedPath;
+        if (!string.IsNullOrEmpty(args.RootSavedPath))
+            _lastRootSavedPath = args.RootSavedPath;
+
+        if (isAllDone)
+        {
+            TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_FileReceivedTitle"];
+            TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
+            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
+            PbTransfer.Value = 100;
+            BtnOpenFolder.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_Receiving"];
+            BtnCloseProgress.Content = TranslationManager.Instance["Common_Cancel"];
+            BtnOpenFolder.Visibility = Visibility.Collapsed;
+
+            var elapsedSec = _stopwatch.Elapsed.TotalSeconds;
+            if (elapsedSec >= 0.3 || _lastBytes == 0)
+            {
+                var bytesDelta = args.BytesTransferred - _lastBytes;
+                var speedBytesPerSec = elapsedSec > 0 ? bytesDelta / elapsedSec : 0;
+                TxtSpeed.Text = $"{LocalSendServerHelper.FormatBytes((long)Math.Max(0, speedBytesPerSec))}/s";
+
+                _lastBytes = args.BytesTransferred;
+                _stopwatch.Restart();
+            }
+        }
+    }));
+
+    public void HandleSessionCanceled(string sessionId) => Dispatcher.BeginInvoke(new Action(() =>
+                                                                {
+                                                                    _isCompleted = true;
+                                                                    if (GridRequestStep.Visibility == Visibility.Visible)
+                                                                    {
+                                                                        ShowSenderCanceledInStep1();
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+                                                                        TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_SenderCanceled"];
+                                                                        BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
+                                                                        BtnOpenFolder.Visibility = Visibility.Collapsed;
+                                                                    }
+                                                                }));
 
     private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
     {
@@ -199,9 +234,12 @@ public partial class LocalSendReceiveWindow : Window
     {
         if (!_isCompleted && !string.IsNullOrEmpty(_currentSessionId))
         {
+            _isCompleted = true;
             TxtProgressStatus.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
             TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
             LocalSendServiceManager.Instance.CancelSession(_currentSessionId);
+            return;
         }
         Close();
     }

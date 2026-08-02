@@ -144,11 +144,22 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                                                                                      }
                                                                                  }));
 
+    private string _currentFileName = string.Empty;
+    private string _counterText = string.Empty;
+    private string _speedText = string.Empty;
+    private bool _hasSentOrCanceled;
+
+    public string CurrentFileName { get => _currentFileName; private set => SetProperty(ref _currentFileName, value); }
+    public string CounterText { get => _counterText; private set => SetProperty(ref _counterText, value); }
+    public string SpeedText { get => _speedText; private set => SetProperty(ref _speedText, value); }
+    public bool HasSentOrCanceled { get => _hasSentOrCanceled; private set => SetProperty(ref _hasSentOrCanceled, value); }
+
     private async void ExecuteSendAsync()
     {
         if (SelectedDevice == null) return;
 
         IsSending = true;
+        HasSentOrCanceled = true;
         _cts = new CancellationTokenSource();
         ProgressPercentage = 0;
         SetStatusKey("Settings_LocalSend_Sending");
@@ -179,9 +190,13 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                                 stopwatch.Restart();
                             }
 
-                            var displayIdx = Math.Min(args.FileIndex + 1, args.TotalFiles);
-                            var speedText = currentSpeed > 0 ? $" - {FormatBytes((long)currentSpeed)}/s" : string.Empty;
-                            StatusText = $"{args.FileName} ({displayIdx}/{args.TotalFiles}){speedText}";
+                            CurrentFileName = args.FileName;
+                            var completedCount = (args.TotalBytes > 0 && args.BytesSent >= args.TotalBytes)
+                                ? Math.Min(args.FileIndex + 1, args.TotalFiles)
+                                : Math.Max(0, args.FileIndex);
+                            CounterText = $"({completedCount}/{args.TotalFiles})";
+                            SpeedText = currentSpeed > 0 ? $"{FormatBytes((long)currentSpeed)}/s" : string.Empty;
+                            StatusText = $"{args.FileName} ({completedCount}/{args.TotalFiles})";
                         })),
                     _cts.Token);
             }

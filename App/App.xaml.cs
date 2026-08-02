@@ -1,24 +1,23 @@
 using System.Diagnostics;
 using System.Windows;
-using SwiftList.Core;
-using SwiftList.Core.Services;
-using SwiftList.Core.Services.LocalSend.Models;
 using SwiftList.App.Services;
-using SwiftList.App.ViewModels.Search;
-using Application = System.Windows.Application;
-using MessageBox = SwiftList.App.Views.Controls.Dialogs.CustomMessageBox;
 using SwiftList.App.Services.AppWindow;
 using SwiftList.App.Services.Pipe;
 using SwiftList.App.Services.Plugin;
 using SwiftList.App.Services.ShellIcons;
+using SwiftList.App.Services.ShellMenu.QuickNav;
 using SwiftList.App.Services.Theme;
 using SwiftList.App.Services.Update;
 using SwiftList.App.Services.UrlProtocol;
-using SwiftList.App.Services.ShellMenu.QuickNav;
-using SwiftList.PluginSdk.Abstractions.Plugins.WindowAdapters;
-using SwiftList.Core.Hook.Ipc;
+using SwiftList.App.ViewModels.Search;
 using SwiftList.App.ViewModels.Search.Mapping;
 using SwiftList.App.ViewModels.Settings.General;
+using SwiftList.Core;
+using SwiftList.Core.Hook.Ipc;
+using SwiftList.Core.Services;
+using SwiftList.PluginSdk.Abstractions.Plugins.WindowAdapters;
+using Application = System.Windows.Application;
+
 namespace SwiftList.App;
 
 public partial class App : Application
@@ -112,8 +111,8 @@ public partial class App : Application
             if (!UserSettings.Load().Hotkeys.QuickNavTriggerOnDoubleClick) return;
             if (Views.InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.IsPointInsideWindow(x, y)) return;
             var trk = InlineSearchManager.Instance.ExplorerTracker;
-            var proc = GetProcessNameOfWindow(trk.ActiveHwnd);
-            var cls = GetClassNameOfWindow(trk.ActiveHwnd);
+            var proc = Helpers.App.AppNativeHelper.GetProcessNameOfWindow(trk.ActiveHwnd);
+            var cls = Helpers.App.AppNativeHelper.GetClassNameOfWindow(trk.ActiveHwnd);
             if (QuickNavigationTriggerGate.CanShow(trk.ActiveHwnd, proc, cls, trk.IsDesktop, x, y, MouseTriggerType.DoubleClick))
                 Dispatcher.BeginInvoke(() => QuickNavigationMenu.Show(x, y));
         };
@@ -123,8 +122,8 @@ public partial class App : Application
             if (!UserSettings.Load().Hotkeys.QuickNavTriggerOnMiddleClick) return;
             if (Views.InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.IsPointInsideWindow(x, y)) return;
             var trk = InlineSearchManager.Instance.ExplorerTracker;
-            var proc = GetProcessNameOfWindow(trk.ActiveHwnd);
-            var cls = GetClassNameOfWindow(trk.ActiveHwnd);
+            var proc = Helpers.App.AppNativeHelper.GetProcessNameOfWindow(trk.ActiveHwnd);
+            var cls = Helpers.App.AppNativeHelper.GetClassNameOfWindow(trk.ActiveHwnd);
             if (QuickNavigationTriggerGate.CanShow(trk.ActiveHwnd, proc, cls, trk.IsDesktop, x, y, MouseTriggerType.MiddleClick)
                 || FileDialogQuickNavGate.CanShow(trk.ActiveHwnd, proc, cls, x, y))
                 Dispatcher.BeginInvoke(() => QuickNavigationMenu.Show(x, y));
@@ -152,9 +151,9 @@ public partial class App : Application
         _quickPanelManager = new Services.QuickPanel.QuickPanelManager();
 
         // Set up global exception handlers
-        AppDomain.CurrentDomain.UnhandledException += (s, args) => LogException("AppDomain UnhandledException", args.ExceptionObject as Exception);
-        DispatcherUnhandledException += (s, args) => { LogException("DispatcherUnhandledException", args.Exception); args.Handled = true; };
-        TaskScheduler.UnobservedTaskException += (s, args) => { LogException("TaskScheduler UnobservedTaskException", args.Exception); args.SetObserved(); };
+        AppDomain.CurrentDomain.UnhandledException += (s, args) => Helpers.App.AppCrashHandler.LogException("AppDomain UnhandledException", args.ExceptionObject as Exception);
+        DispatcherUnhandledException += (s, args) => { Helpers.App.AppCrashHandler.LogException("DispatcherUnhandledException", args.Exception); args.Handled = true; };
+        TaskScheduler.UnobservedTaskException += (s, args) => { Helpers.App.AppCrashHandler.LogException("TaskScheduler UnobservedTaskException", args.Exception); args.SetObserved(); };
 
         // Force load all plugins (actions and alias providers) on startup
         _ = PluginManager.Instance;
@@ -253,32 +252,21 @@ public partial class App : Application
             Logger.Log($"[App] Failed to initialize TranslationManager or ThemeManager: {ex.Message}", LogLevel.Error);
         }
 
-        // Start the activation named pipe server to listen to subsequent launches
-
         _ = AppPipeService.StartPipeServerAsync();
-        _ = AppSearchPipeService.StartPipeServerAsync(); // exposes the full window's search to external clients (see AppSearchPipeService)
+        _ = AppSearchPipeService.StartPipeServerAsync();
         AppStartupServiceBootstrapper.EnsureServiceStarted();
         UrlProtocolManager.EnsureRegistered();
         Logger.Log("Starting normal WPF GUI client mode.");
         base.OnStartup(e);
 
-        // After QuickSearchWindow is created (via StartupUri), start InlineSearchManager. base.OnStartup
-        // above does NOT create the StartupUri window synchronously -- that happens once the Dispatcher
-        // message loop actually starts, which is still later than this point -- hence deferring to
-        // DispatcherPriority.Loaded rather than running inline here.
         _ = Dispatcher.BeginInvoke(new Action(() =>
         {
-            if (Current.MainWindow is QuickSearchWindow quickSearchWindow)
+            if (Current.MainWindow is QuickSearchWindow)
             {
                 InlineSearchManager.Instance.Start();
                 Logger.Log("[App] InlineSearchManager started.");
             }
 
-            // This process won the single-instance mutex above, so if it was itself launched via a
-            // swiftlist:// link (rather than a second instance forwarding one through the pipe -- see
-            // the mutex branch above), route it here. Must run in this same deferred callback: routing
-            // to the quick/full search window needs MainWindow already set, which (see comment above)
-            // isn't guaranteed yet any earlier than this.
             if (e.Args.Length > 0 && UriRouter.IsSwiftListUri(e.Args[0]))
                 UriRouter.Route(e.Args[0]);
         }), System.Windows.Threading.DispatcherPriority.Loaded);
@@ -287,117 +275,10 @@ public partial class App : Application
         UpdateCheckService.RunOnStartupAsync();
 
         // LocalSend transfer service runs in App process
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.ApplySettings(settings);
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.ProgressChanged += OnLocalSendProgressChanged;
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.SessionCanceled += OnLocalSendSessionCanceled;
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.TextReceived += OnLocalSendTextReceived;
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.UploadRequested += OnLocalSendUploadRequested;
-        Core.Services.LocalSend.LocalSendServiceManager.Instance.SendRequested += OnLocalSendSendRequested;
+        Helpers.LocalSend.LocalSendAppEventHandler.Initialize(settings);
     }
-
-    private static Views.LocalSend.LocalSendReceiveWindow? _activeLocalSendReceiveWindow;
-    private static Core.Services.LocalSend.LocalSendProgressArgs? _pendingProgressArgs;
-    private static bool _isProgressDispatchPending;
-
-    private static void OnLocalSendProgressChanged(object? sender, Core.Services.LocalSend.LocalSendProgressArgs e)
-    {
-        _pendingProgressArgs = e;
-
-        if (e.IsAllDone || e.IsFinished || !_isProgressDispatchPending)
-        {
-            _isProgressDispatchPending = true;
-            Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
-            {
-                _isProgressDispatchPending = false;
-                var argsToUpdate = _pendingProgressArgs;
-                if (argsToUpdate == null) return;
-
-                if (_activeLocalSendReceiveWindow != null && _activeLocalSendReceiveWindow.IsLoaded)
-                {
-                    _activeLocalSendReceiveWindow.HandleProgressChanged(argsToUpdate);
-                }
-            }));
-        }
-    }
-
-    private static void OnLocalSendSessionCanceled(object? sender, string sessionId) => Current.Dispatcher.BeginInvoke(new Action(() => _activeLocalSendReceiveWindow?.HandleSessionCanceled(sessionId)));
-
-    private static void OnLocalSendTextReceived(object? sender, (string SenderAlias, string Text, bool IsLink) e) => Current.Dispatcher.BeginInvoke(new Action(() =>
-    {
-        if (e.IsLink)
-        {
-            var title = TranslationManager.Instance["Settings_LocalSend_LinkReceivedTitle"];
-            var openText = TranslationManager.Instance["Settings_LocalSend_OpenInBrowser"];
-            var cancelText = TranslationManager.Instance["Common_Close"];
-            var msg = $"{e.SenderAlias}:\n{e.Text}";
-
-            var result = MessageBox.ShowCustom(
-                msg, title, openText, cancelText, MessageBoxImage.Information);
-
-            if (result == MessageBoxResult.OK)
-            {
-                try { Process.Start(new ProcessStartInfo(e.Text) { UseShellExecute = true }); }
-                catch { }
-            }
-        }
-        else
-        {
-            var title = TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"];
-            var copyText = TranslationManager.Instance["Settings_LocalSend_CopyToClipboard"];
-            var cancelText = TranslationManager.Instance["Common_Close"];
-            var msg = $"{e.SenderAlias}:\n{e.Text}";
-
-            var result = MessageBox.ShowCustom(
-                msg, title, copyText, cancelText, MessageBoxImage.Information);
-
-            if (result == MessageBoxResult.OK)
-            {
-                try
-                {
-                    System.Windows.Clipboard.SetText(e.Text);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log($"[App] Failed to set clipboard text: {ex.Message}", LogLevel.Warn);
-                }
-            }
-        }
-    }));
-
-    private static void OnLocalSendSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => Current.Dispatcher.BeginInvoke(new Action(() =>
-    {
-        var sendWin = new Views.LocalSend.LocalSendSendWindow(e.Files, e.Text);
-        sendWin.Show();
-        sendWin.Activate();
-    }));
-
-    private static void OnLocalSendUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>
-    {
-        _activeLocalSendReceiveWindow = new Views.LocalSend.LocalSendReceiveWindow(e);
-        _activeLocalSendReceiveWindow.Closed += (_, _) => _activeLocalSendReceiveWindow = null;
-        _activeLocalSendReceiveWindow.ShowDialog();
-    }));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
-
-    private static string GetProcessNameOfWindow(IntPtr hwnd)
-    {
-        try { Core.Hook.ExplorerNativeHooks.GetWindowThreadProcessId(hwnd, out var pid); return pid != 0 ? Process.GetProcessById((int)pid).ProcessName : "Unknown"; }
-        catch { return "Unknown"; }
-    }
-
-    private static string GetClassNameOfWindow(IntPtr hwnd)
-    {
-        var sb = new System.Text.StringBuilder(256);
-        return hwnd != IntPtr.Zero && Core.Hook.ExplorerNativeHooks.GetClassName(hwnd, sb, sb.Capacity) > 0 ? sb.ToString() : "Unknown";
-    }
-
-    private static void LogException(string source, Exception? ex)
-    {
-        var details = ex != null ? ex.ToString() : "Null exception object";
-        Logger.Log($"CRITICAL CRASH ({source}):\n{details}", LogLevel.Error);
-        MessageBox.Show(string.Format(TranslationManager.Instance["Crash_Message"], source, ex?.Message, Logger.LogDir), TranslationManager.Instance["Crash_Title"], MessageBoxButton.OK, MessageBoxImage.Error);
-    }
 
     public static void ShowSettingsWindow(string? targetSection = null) => AppWindowManager.ShowSettingsWindow(targetSection);
     public static void ShowSearchWindow() => AppWindowManager.ShowSearchWindow();

@@ -75,6 +75,7 @@ public sealed class LocalSendServiceManager : IDisposable
     }
 
     public void CancelSession(string sessionId) => _server?.CancelSession(sessionId);
+    public void UnregisterSession(string sessionId) => _server?.UnregisterSession(sessionId);
     public bool IsSessionCanceled(string sessionId) => _server?.IsSessionCanceled(sessionId) == true;
 
     public void Stop()

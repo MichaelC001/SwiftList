@@ -108,9 +108,26 @@ internal static class LocalSendServerHandler
         else if (IsCancel(path))
         {
             query.TryGetValue("sessionId", out var sessionId);
+            if (string.IsNullOrEmpty(sessionId) && !string.IsNullOrEmpty(body))
+            {
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("sessionId", out var prop))
+                    {
+                        sessionId = prop.GetString();
+                    }
+                }
+                catch { }
+            }
+
             if (!string.IsNullOrEmpty(sessionId))
             {
                 server.CancelSession(sessionId);
+            }
+            else
+            {
+                server.CancelAllSessions();
             }
             await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
         }
@@ -128,6 +145,12 @@ internal static class LocalSendServerHandler
         if (!server.CheckPin(clientIp, requestPin, out var pinStatus, out var pinErrBody))
         {
             await LocalSendServerHelper.WriteResponseAsync(stream, pinStatus, pinErrBody).ConfigureAwait(false);
+            return;
+        }
+
+        if (server.IsBusy)
+        {
+            await LocalSendServerHelper.WriteResponseAsync(stream, 409).ConfigureAwait(false);
             return;
         }
 
@@ -155,13 +178,14 @@ internal static class LocalSendServerHandler
         string? customDir = null;
         if (!isAccepted)
         {
-            var res = await server.RequestUserAcceptanceAsync(dto).ConfigureAwait(false);
+            var res = await server.RequestUserAcceptanceAsync(sessionId, dto).ConfigureAwait(false);
             isAccepted = res.Accepted;
             customDir = res.CustomDir;
         }
 
         if (!isAccepted || server.IsSessionCanceled(sessionId))
         {
+            server.UnregisterSession(sessionId);
             await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
             return;
         }
