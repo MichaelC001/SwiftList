@@ -161,3 +161,22 @@ When interacting with this repository, performing code modification, compilation
     * Verify by building the site before and after (`npm run site:build` in `Site/`) and comparing the rendered output, not by reading the Markdown: the whole class of bug is invisible in the source. Count `<strong>`/`<em>` (must not move), literal `**` in the text (must not increase — the exclusion-rule pages legitimately contain some, as glob wildcards), and matches of "CJK, space, CJK".
     * (Incident: 1418 of these across 108 files in four locales, plus eight bold spans already broken by the `**[link]**` form, all shipped and live before anyone noticed.)
 
+17. **Mandatory All-Locale Synchronization for Site Documentation (`Site/`)**
+    * Whenever any Site documentation file (under `Site/`) is created, modified, or updated, **ALL 7 supported site locales must be updated and kept in sync simultaneously**:
+      1. `user-guide/` (Root / English `en-US`)
+      2. `zh-CN/` (Simplified Chinese)
+      3. `zh-HK/` (Traditional Chinese - Hong Kong)
+      4. `zh-TW/` (Traditional Chinese - Taiwan)
+      5. `ja-JP/` (Japanese)
+      6. `ko-KR/` (Korean)
+      7. `es-ES/` (Spanish)
+    * Never update only one locale (e.g. `zh-CN`) and leave the others behind. Every change, feature addition, or troubleshooting note in documentation must be translated and synchronized across all 7 locale directories.
+    * Always enforce Rule 16 (single un-wrapped lines for CJK/Japanese paragraphs) when editing Chinese or Japanese site pages.
+    * Always verify by running `npm run site:build` in `Site/` after making any documentation changes.
+
+18. **Mandatory All-Locale Synchronization for Plugin Translations (`Plugins/`)**
+    * Whenever a plugin translation key, string, or locale file (under `Plugins/<PluginName>/Resources/Translations/`) is added, updated, or modified, **ALL 7 supported plugin locales must be updated in sync**: `en-US`, `zh-CN`, `zh-HK`, `zh-TW`, `ja-JP`, `ko-KR`, `es-ES`.
+    * Never add or update a translation key in only `zh-CN` or `en-US` while leaving other locale JSON files missing the key.
+    * Combine with Rule 9: No hardcoded fallback strings in `.cs` code — when a new user-facing string is introduced in a plugin, add the translation key to all 7 locale JSON files simultaneously.
+
+
