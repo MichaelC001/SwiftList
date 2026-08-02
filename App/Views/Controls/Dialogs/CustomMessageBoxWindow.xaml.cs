@@ -124,4 +124,20 @@ public partial class CustomMessageBoxWindow : Window
         Result = MessageBoxResult.No;
         Close();
     }
+
+    public void SetCustomButtonTexts(string? okText, string? cancelText)
+    {
+        if (!string.IsNullOrEmpty(okText))
+        {
+            BtnOK.Content = okText;
+            BtnOK.Width = double.NaN;
+            BtnOK.Padding = new Thickness(14, 0, 14, 0);
+        }
+        if (!string.IsNullOrEmpty(cancelText))
+        {
+            BtnCancel.Content = cancelText;
+            BtnCancel.Width = double.NaN;
+            BtnCancel.Padding = new Thickness(14, 0, 14, 0);
+        }
+    }
 }

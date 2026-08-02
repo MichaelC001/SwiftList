@@ -39,11 +39,8 @@ public sealed class LocalSendServer : IDisposable
 
     public void Start(int port = 53317)
     {
-        if (_listener != null)
-            return;
-
+        if (_listener != null) return;
         _cts = new CancellationTokenSource();
-
         for (var p = port; p < port + 10; p++)
         {
             try
@@ -62,8 +59,7 @@ public sealed class LocalSendServer : IDisposable
             }
         }
 
-        if (_listener != null)
-            _listenTask = Task.Run(() => AcceptLoopAsync(_cts.Token));
+        if (_listener != null) _listenTask = Task.Run(() => AcceptLoopAsync(_cts.Token));
     }
 
     private async Task AcceptLoopAsync(CancellationToken token)
@@ -112,29 +108,24 @@ public sealed class LocalSendServer : IDisposable
 
     public void CancelSession(string sessionId)
     {
-        if (!string.IsNullOrEmpty(sessionId))
+        if (string.IsNullOrEmpty(sessionId)) return;
+        if (_activeSessions.TryGetValue(sessionId, out var prepareDto))
         {
-            if (_activeSessions.TryGetValue(sessionId, out var prepareDto))
-            {
-                _ = Task.Run(() => LocalSendServerHelper.NotifySenderCanceledAsync(prepareDto.Info, sessionId));
-            }
-
-            if (_canceledSessions.TryAdd(sessionId, 0))
-            {
-                SessionCanceled?.Invoke(this, sessionId);
-            }
+            _ = Task.Run(() => LocalSendServerHelper.NotifySenderCanceledAsync(prepareDto.Info, sessionId));
+        }
+        if (_canceledSessions.TryAdd(sessionId, 0))
+        {
+            SessionCanceled?.Invoke(this, sessionId);
         }
     }
 
-    public bool IsSessionCanceled(string sessionId) => _canceledSessions.ContainsKey(sessionId);
+    public bool IsSessionCanceled(string sessionId) =>
+        !string.IsNullOrEmpty(sessionId) && _canceledSessions.ContainsKey(sessionId);
 
     internal async Task HandleUploadAsync(
         Stream stream, Stream requestBody, string sessionId, string fileId, string token)
     {
-        if (IsSessionCanceled(sessionId))
-        {
-            return;
-        }
+        if (IsSessionCanceled(sessionId)) return;
 
         var fileName = $"{fileId}.bin";
         var senderAlias = "LocalSend";
@@ -201,10 +192,7 @@ public sealed class LocalSendServer : IDisposable
                 int bytesRead;
                 while ((bytesRead = await requestBody.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
                 {
-                    if (IsSessionCanceled(sessionId))
-                    {
-                        break;
-                    }
+                    if (IsSessionCanceled(sessionId)) break;
 
                     await dest.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
                     bytesReadTotal += bytesRead;
@@ -217,8 +205,11 @@ public sealed class LocalSendServer : IDisposable
                     var transferredDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
                     transferredDict[fileId] = bytesReadTotal;
 
-                    // ponytail: 30ms throttle prevents Dispatcher lag while keeping receiver progress aligned with socket speed.
-                    if (progressStopwatch.ElapsedMilliseconds >= 30 || bytesReadTotal >= totalBytes)
+                    var isText = prepareDto?.Files.TryGetValue(fileId, out var fileDto) == true &&
+                                 (fileDto.FileType?.Equals("text", StringComparison.OrdinalIgnoreCase) == true || !string.IsNullOrEmpty(fileDto.Preview));
+
+                    // ponytail: 30ms throttle prevents Dispatcher lag for binary files, while text messages skip progress window.
+                    if (!isText && (progressStopwatch.ElapsedMilliseconds >= 30 || bytesReadTotal >= totalBytes))
                     {
                         progressStopwatch.Restart();
                         var sessionTransferred = transferredDict.Values.Sum();
@@ -275,12 +266,20 @@ public sealed class LocalSendServer : IDisposable
         var finalSessionTotal = prepareDto?.Files.Values.Sum(f => f.Size) ?? totalBytes;
 
         Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{totalFiles})");
-        ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles,
-            isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
-            sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
-        FileReceived?.Invoke(this, (fileId, targetPath));
-        LocalSendServerHelper.CheckAndNotifyTextReceived(this, prepareDto, fileId, targetPath, senderAlias);
+
+        var isTextHandled = LocalSendServerHelper.CheckAndNotifyTextReceived(this, prepareDto, fileId, targetPath, senderAlias);
+        if (isTextHandled)
+        {
+            LocalSendServerHelper.TryDeleteFile(targetPath);
+        }
+        else
+        {
+            ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
+                sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles,
+                isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
+                sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
+            FileReceived?.Invoke(this, (fileId, targetPath));
+        }
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }

@@ -56,4 +56,27 @@ public static class CustomMessageBox
         OwnedDialog.ShowModal(win);
         return win.Result;
     }
+
+    public static MessageBoxResult ShowCustom(string messageBoxText, string caption, string okText, string cancelText, MessageBoxImage icon = MessageBoxImage.Information) =>
+        ShowCustom(null, messageBoxText, caption, okText, cancelText, icon);
+
+    public static MessageBoxResult ShowCustom(Window? owner, string messageBoxText, string caption, string okText, string cancelText, MessageBoxImage icon = MessageBoxImage.Information)
+    {
+        if (Application.Current == null)
+        {
+            return MessageBox.Show(messageBoxText, caption, MessageBoxButton.OKCancel, icon);
+        }
+
+        var action = new Func<MessageBoxResult>(() =>
+        {
+            var win = new CustomMessageBoxWindow(messageBoxText, caption, MessageBoxButton.OKCancel, icon);
+            win.SetCustomButtonTexts(okText, cancelText);
+            win.Owner = owner ?? OwnedDialog.ResolveOwner(win, skip: w => w is CustomMessageBoxWindow);
+            win.WindowStartupLocation = win.Owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen;
+            OwnedDialog.ShowModal(win);
+            return win.Result;
+        });
+
+        return Application.Current.Dispatcher.CheckAccess() ? action() : Application.Current.Dispatcher.Invoke(action);
+    }
 }
