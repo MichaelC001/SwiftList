@@ -42,4 +42,13 @@ public class LocalSendAliasGeneratorTests
 
         Assert.IsGreaterThan(1, results.Count);
     }
+
+    [TestMethod]
+    public void GetLocalDeviceHashtag_ReturnsValidHashtag()
+    {
+        var hashtag = LocalSendServerHelper.GetLocalDeviceHashtag();
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(hashtag));
+        StringAssert.StartsWith(hashtag, "#");
+    }
 }

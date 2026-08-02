@@ -44,15 +44,17 @@ public partial class LocalSendProgressWindow : Window
         if (isAllDone) _isCompleted = true;
 
         var displayIdx = isAllDone ? args.TotalFiles : args.CurrentFileIndex;
-        TxtSender.Text = $"设备: {args.SenderAlias}";
+        var deviceLabel = Services.TranslationManager.Instance["Settings_LocalSend_Device"];
+        TxtSender.Text = $"{deviceLabel}: {args.SenderAlias}";
         TxtFileCount.Text = $"{displayIdx}/{args.TotalFiles}";
         TxtFileName.Text = args.FileName;
 
         if (args.SessionTotalBytes > 0)
         {
             var percent = (double)args.SessionBytesTransferred / args.SessionTotalBytes * 100;
-            PbTransfer.Value = Math.Min(100, Math.Max(0, percent));
-            TxtSize.Text = $"{FormatBytes(args.SessionBytesTransferred)} / {FormatBytes(args.SessionTotalBytes)}";
+            PbTransfer.Value = isAllDone ? 100 : Math.Min(100, Math.Max(0, percent));
+            var displayTransferred = isAllDone ? args.SessionTotalBytes : args.SessionBytesTransferred;
+            TxtSize.Text = $"{FormatBytes(displayTransferred)} / {FormatBytes(args.SessionTotalBytes)}";
         }
         else
         {
@@ -67,20 +69,20 @@ public partial class LocalSendProgressWindow : Window
 
         if (isAllDone)
         {
-            TxtTitle.Text = "文件接收完成";
-            TxtSpeed.Text = "传输完成";
+            TxtTitle.Text = Services.TranslationManager.Instance["Settings_LocalSend_FileReceivedTitle"];
+            TxtSpeed.Text = Services.TranslationManager.Instance["Settings_LocalSend_Completed"];
             PbTransfer.Value = 100;
             BtnOpenFolder.Visibility = Visibility.Visible;
-            BtnClose.Content = "关闭";
+            BtnClose.Content = Services.TranslationManager.Instance["Common_Close"];
         }
         else
         {
-            TxtTitle.Text = "正在接收文件...";
+            TxtTitle.Text = Services.TranslationManager.Instance["Settings_LocalSend_Receiving"];
             BtnOpenFolder.Visibility = Visibility.Collapsed;
-            BtnClose.Content = "取消";
+            BtnClose.Content = Services.TranslationManager.Instance["Common_Cancel"];
 
             var elapsedSec = _stopwatch.Elapsed.TotalSeconds;
-            if (elapsedSec >= 0.5 || _lastBytes == 0)
+            if (elapsedSec >= 0.3 || _lastBytes == 0)
             {
                 var bytesDelta = args.BytesTransferred - _lastBytes;
                 var speedBytesPerSec = elapsedSec > 0 ? bytesDelta / elapsedSec : 0;
@@ -97,10 +99,10 @@ public partial class LocalSendProgressWindow : Window
         if (string.Equals(_currentSessionId, sessionId, StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(_currentSessionId))
         {
             _isCompleted = true;
-            TxtTitle.Text = "传输已取消";
-            TxtSpeed.Text = "发送方已取消传输";
+            TxtTitle.Text = Services.TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            TxtSpeed.Text = Services.TranslationManager.Instance["Settings_LocalSend_SenderCanceled"];
             BtnOpenFolder.Visibility = Visibility.Collapsed;
-            BtnClose.Content = "关闭";
+            BtnClose.Content = Services.TranslationManager.Instance["Common_Close"];
         }
     }
 

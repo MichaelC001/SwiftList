@@ -187,13 +187,14 @@ public sealed class LocalSendServer : IDisposable
             } while (File.Exists(targetPath));
         }
 
-        var buffer = new byte[64 * 1024];
+        var buffer = new byte[1024 * 1024];
         long bytesReadTotal = 0;
+        long lastFlushedBytes = 0;
         var isSuccess = false;
 
         try
         {
-            using (var dest = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 64 * 1024, useAsync: true))
+            using (var dest = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 1024 * 1024, useAsync: true))
             {
                 int bytesRead;
                 while ((bytesRead = await requestBody.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
@@ -205,7 +206,11 @@ public sealed class LocalSendServer : IDisposable
 
                     await dest.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
                     bytesReadTotal += bytesRead;
-
+                    if (bytesReadTotal >= lastFlushedBytes + (10 * 1024 * 1024))
+                    {
+                        await dest.FlushAsync().ConfigureAwait(false);
+                        lastFlushedBytes = bytesReadTotal;
+                    }
                     var transferredDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
                     transferredDict[fileId] = bytesReadTotal;
                     var sessionTransferred = transferredDict.Values.Sum();
@@ -230,21 +235,7 @@ public sealed class LocalSendServer : IDisposable
         }
         finally
         {
-            if (!isSuccess)
-            {
-                try
-                {
-                    if (File.Exists(targetPath))
-                    {
-                        File.Delete(targetPath);
-                        Logger.Log($"[LocalSendServer] Cleaned up partial/canceled file: {targetPath}");
-                    }
-                }
-                catch (Exception deleteEx)
-                {
-                    Logger.Log($"[LocalSendServer] Failed to delete partial file {targetPath}: {deleteEx.Message}", LogLevel.Warn);
-                }
-            }
+            if (!isSuccess) LocalSendServerHelper.TryDeleteFile(targetPath);
         }
 
         if (!isSuccess)

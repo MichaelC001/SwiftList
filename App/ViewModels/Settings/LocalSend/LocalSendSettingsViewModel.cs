@@ -76,6 +76,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
     }
 
     public bool IsServiceRunning => _userSettings.LocalSend.Enabled;
+    public string DeviceHashtag => Core.Services.LocalSend.LocalSendServerHelper.GetLocalDeviceHashtag();
 
     public void Apply()
     {
@@ -98,7 +99,6 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
     {
         var culture = Services.TranslationManager.Instance.CurrentCulture;
         DeviceAlias = Core.Services.LocalSend.LocalSendAliasGenerator.GenerateRandomAlias(culture);
-        Apply();
     }
 
     private void SelectDownloadDirectory()

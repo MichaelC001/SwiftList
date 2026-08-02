@@ -58,7 +58,7 @@
 
                     <!-- Header: Sender Info & File Index -->
                     <DockPanel Grid.Row="0" Margin="0,0,0,10">
-                        <TextBlock x:Name="TxtSender" Text="来自于设备" FontSize="13" FontWeight="SemiBold"
+                        <TextBlock x:Name="TxtSender" Text="" FontSize="13" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary2}" DockPanel.Dock="Left"/>
                         <TextBlock x:Name="TxtFileCount" Text="1/1" FontSize="12"
                                    Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right"/>
@@ -88,7 +88,7 @@
                     <Grid Margin="12,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <Button x:Name="BtnOpenFolder" Style="{StaticResource PrimarySettingsButton}" 
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_Browse]}" 
+                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_OpenFolder]}" 
                                     Width="110" Height="28" Margin="0,0,8,0" Click="BtnOpenFolder_Click" Visibility="Collapsed"/>
                             <Button x:Name="BtnClose" Style="{StaticResource SettingsButton}" 
                                     Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}" 

@@ -134,8 +134,17 @@
                             <ColumnDefinition Width="220"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_DeviceAlias]}"
-                                       FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_DeviceAlias]}"
+                                           FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
+                                <Border Margin="6,0,0,0" Padding="5,1,5,1" CornerRadius="3"
+                                        Background="{DynamicResource ControlBackground}"
+                                        BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DeviceHashtag}" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextSecondary}"/>
+                                </Border>
+                            </StackPanel>
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_DeviceAliasDesc]}"
                                        FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
                         </StackPanel>

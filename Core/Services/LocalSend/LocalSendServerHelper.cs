@@ -8,7 +8,7 @@ namespace SwiftList.Core.Services.LocalSend;
 /// Helper methods for LocalSendServer to keep the main server class under 300 lines.
 /// Split out purely to adhere to the repository's per-file line limit; has no internal state of its own.
 /// </summary>
-internal static class LocalSendServerHelper
+public static class LocalSendServerHelper
 {
     /// <summary>
     /// Tries to create a dual-stack TcpListener (IPv6Any + DualMode=true) that accepts
@@ -140,5 +140,44 @@ internal static class LocalSendServerHelper
         }
 
         await WriteResponseAsync(stream, 200, System.Text.Json.JsonSerializer.Serialize(server.DeviceInfo)).ConfigureAwait(false);
+    }
+
+    internal static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+                Logger.Log($"[LocalSendServer] Cleaned up partial/canceled file: {path}");
+            }
+        }
+        catch (Exception deleteEx)
+        {
+            Logger.Log($"[LocalSendServer] Failed to delete partial file {path}: {deleteEx.Message}", LogLevel.Warn);
+        }
+    }
+
+    public static string GetLocalDeviceHashtag()
+    {
+        try
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(ip))
+                {
+                    var ipStr = ip.ToString();
+                    var lastDot = ipStr.LastIndexOf('.');
+                    if (lastDot > 0 && lastDot < ipStr.Length - 1)
+                    {
+                        return $"#{ipStr[(lastDot + 1)..]}";
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return "#42";
     }
 }
