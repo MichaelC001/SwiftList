@@ -53,6 +53,8 @@
   "Settings_LocalSend_UploadRequestTitle": "檔案傳輸請求",
   "Settings_LocalSend_Accept": "接收",
   "Settings_LocalSend_Decline": "拒絕",
+  "Settings_LocalSend_AcceptDefault": "接受",
+  "Settings_LocalSend_SaveTo": "另存為...",
   "Settings_LocalSend_UploadRequestMsg": "{0} 請求向您傳送 {1} 個檔案 (共 {2})",
   "Settings_LocalSend_Port": "服務接聽埠",
   "Settings_LocalSend_PortDesc": "UDP/HTTP 傳輸服務通訊埠 (預設: 53317)",

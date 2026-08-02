@@ -53,6 +53,8 @@
   "Settings_LocalSend_UploadRequestTitle": "文件传输请求",
   "Settings_LocalSend_Accept": "接收",
   "Settings_LocalSend_Decline": "拒绝",
+  "Settings_LocalSend_AcceptDefault": "接受",
+  "Settings_LocalSend_SaveTo": "另存为...",
   "Settings_LocalSend_UploadRequestMsg": "{0} 请求向您发送 {1} 个文件 (共 {2})",
   "Settings_LocalSend_Port": "服务监听端口",
   "Settings_LocalSend_PortDesc": "UDP/HTTP 传输服务通信端口 (默认: 53317)",

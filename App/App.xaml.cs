@@ -376,36 +376,23 @@ public partial class App : Application
     }));
 
     private static void OnLocalSendUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>
-                                                                                                         {
-                                                                                                             var title = TranslationManager.Instance["Settings_LocalSend_UploadRequestTitle"];
-                                                                                                             var acceptText = TranslationManager.Instance["Settings_LocalSend_Accept"];
-                                                                                                             var declineText = TranslationManager.Instance["Settings_LocalSend_Decline"];
+    {
+        var win = new Views.LocalSend.LocalSendReceiveRequestWindow(e.Dto);
+        var res = win.ShowDialog();
 
-                                                                                                             var totalBytes = e.Dto.Files.Values.Sum(f => f.Size);
-                                                                                                             var sizeFormatted = Core.Services.LocalSend.LocalSendServerHelper.FormatBytes(totalBytes);
-                                                                                                             var format = TranslationManager.Instance["Settings_LocalSend_UploadRequestMsg"];
-                                                                                                             var msg = string.Format(format, e.Dto.Info.Alias, e.Dto.Files.Count, sizeFormatted);
-
-                                                                                                             var result = MessageBox.ShowCustom(
-                                                                                                                 msg, title, acceptText, declineText, MessageBoxImage.Question);
-
-                                                                                                             if (result == MessageBoxResult.OK)
-                                                                                                             {
-                                                                                                                 var folderDialog = new Microsoft.Win32.OpenFolderDialog
-                                                                                                                 {
-                                                                                                                     Title = title
-                                                                                                                 };
-
-                                                                                                                 if (folderDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(folderDialog.FolderName))
-                                                                                                                 {
-                                                                                                                     e.CustomDownloadDirectory = folderDialog.FolderName;
-                                                                                                                     e.Respond(true);
-                                                                                                                     return;
-                                                                                                                 }
-                                                                                                             }
-
-                                                                                                             e.Respond(false);
-                                                                                                         }));
+        if (res == true)
+        {
+            if (win.Result == Views.LocalSend.LocalSendReceiveResult.AcceptCustomDir && !string.IsNullOrWhiteSpace(win.CustomDirectory))
+            {
+                e.CustomDownloadDirectory = win.CustomDirectory;
+            }
+            e.Respond(true);
+        }
+        else
+        {
+            e.Respond(false);
+        }
+    }));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
 

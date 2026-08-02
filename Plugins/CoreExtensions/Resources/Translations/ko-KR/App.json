@@ -53,6 +53,8 @@
   "Settings_LocalSend_UploadRequestTitle": "파일 전송 요청",
   "Settings_LocalSend_Accept": "수락",
   "Settings_LocalSend_Decline": "거절",
+  "Settings_LocalSend_AcceptDefault": "수락",
+  "Settings_LocalSend_SaveTo": "다른 이름으로 저장...",
   "Settings_LocalSend_UploadRequestMsg": "{0} 님이 {1}개의 파일({2})을 전송하려고 합니다",
   "Settings_LocalSend_Port": "서비스 포트",
   "Settings_LocalSend_PortDesc": "UDP/HTTP 통신 포트 (기본값: 53317)",

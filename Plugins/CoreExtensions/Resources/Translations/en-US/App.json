@@ -53,6 +53,8 @@
   "Settings_LocalSend_UploadRequestTitle": "File Transfer Request",
   "Settings_LocalSend_Accept": "Accept",
   "Settings_LocalSend_Decline": "Decline",
+  "Settings_LocalSend_AcceptDefault": "Accept",
+  "Settings_LocalSend_SaveTo": "Save to...",
   "Settings_LocalSend_UploadRequestMsg": "{0} wants to send you {1} files ({2})",
   "Settings_LocalSend_Port": "Service Port",
   "Settings_LocalSend_PortDesc": "UDP/HTTP transmission port (default: 53317)",
