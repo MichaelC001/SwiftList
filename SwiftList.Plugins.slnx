@@ -22,4 +22,5 @@
   <Project Path="Plugins/WinRAR/WinRAR.csproj" />
   <Project Path="Plugins/Bandizip/Bandizip.csproj" />
   <Project Path="Plugins/WPS/WPS.csproj" />
+  <Project Path="Plugins/SpanishAlias/SpanishAlias.csproj" />
 </Solution>
