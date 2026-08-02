@@ -139,8 +139,20 @@
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_DeviceAliasDesc]}"
                                        FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
                         </StackPanel>
-                        <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
-                                 Text="{Binding DeviceAlias, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Grid Grid.Column="1">
+                            <TextBox Style="{StaticResource SettingsTextBox}"
+                                     Text="{Binding DeviceAlias, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="8,6,32,6"/>
+                            <Button Command="{Binding RandomizeAliasCommand}"
+                                    ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_RandomAlias]}"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Margin="0,0,4,0" Width="26" Height="26"
+                                    Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand">
+                                <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                           Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Button>
+                        </Grid>
                     </Grid>
 
                     <Grid Margin="0,0,0,12">

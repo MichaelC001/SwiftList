@@ -27,6 +27,7 @@
   "Settings_LocalSend_EnableDesc": "允許局域網內的裝置發現本機並進行檔案傳輸",
   "Settings_LocalSend_DeviceAlias": "本機裝置別名",
   "Settings_LocalSend_DeviceAliasDesc": "在局域網其他裝置上顯示的本機名稱",
+  "Settings_LocalSend_RandomAlias": "隨機生成別名",
   "Settings_LocalSend_Port": "服務監聽埠",
   "Settings_LocalSend_PortDesc": "UDP/HTTP 傳輸服務通訊埠 (預設: 53317)",
   "Settings_LocalSend_QuickSave": "自動接收傳輸檔案",

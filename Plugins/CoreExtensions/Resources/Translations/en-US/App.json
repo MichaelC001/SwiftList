@@ -27,6 +27,7 @@
   "Settings_LocalSend_EnableDesc": "Allow device discovery and file transfers over local network",
   "Settings_LocalSend_DeviceAlias": "Device Name",
   "Settings_LocalSend_DeviceAliasDesc": "The name shown to other devices on the network",
+  "Settings_LocalSend_RandomAlias": "Randomize device name",
   "Settings_LocalSend_Port": "Service Port",
   "Settings_LocalSend_PortDesc": "UDP/HTTP transmission port (default: 53317)",
   "Settings_LocalSend_QuickSave": "Auto Accept Files",

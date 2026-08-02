@@ -27,6 +27,7 @@
   "Settings_LocalSend_EnableDesc": "ローカルネットワークでのデバイス検出とファイル転送を許可します",
   "Settings_LocalSend_DeviceAlias": "デバイス名",
   "Settings_LocalSend_DeviceAliasDesc": "ネットワーク上の他のデバイスに表示される自機の名称",
+  "Settings_LocalSend_RandomAlias": "デバイス名をランダム生成",
   "Settings_LocalSend_Port": "サービスポート",
   "Settings_LocalSend_PortDesc": "UDP/HTTP 通信ポート (デフォルト: 53317)",
   "Settings_LocalSend_QuickSave": "ファイルを自動受信",

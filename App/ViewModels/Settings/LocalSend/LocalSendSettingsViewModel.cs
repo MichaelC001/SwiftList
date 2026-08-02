@@ -34,6 +34,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
         SelectDownloadDirectoryCommand = new RelayCommand(SelectDownloadDirectory);
         RefreshDevicesCommand = new RelayCommand(RefreshDevices);
+        RandomizeAliasCommand = new RelayCommand(RandomizeAlias);
 
         DiscoveredDevices = new ReadOnlyObservableCollection<LocalSendDeviceInfo>(_discoveredDevices);
     }
@@ -91,6 +92,13 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
     public ReadOnlyObservableCollection<LocalSendDeviceInfo> DiscoveredDevices { get; }
     public ICommand SelectDownloadDirectoryCommand { get; }
     public ICommand RefreshDevicesCommand { get; }
+    public ICommand RandomizeAliasCommand { get; }
+
+    private void RandomizeAlias()
+    {
+        DeviceAlias = Core.Services.LocalSend.LocalSendAliasGenerator.GenerateRandomAlias();
+        Apply();
+    }
 
     private void SelectDownloadDirectory()
     {
