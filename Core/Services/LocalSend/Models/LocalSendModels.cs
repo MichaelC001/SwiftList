@@ -41,6 +41,9 @@ public sealed class LocalSendDeviceInfo
     public string IpAddress { get; set; } = string.Empty;
 
     [JsonIgnore]
+    public bool Https => string.Equals(Protocol, "https", StringComparison.OrdinalIgnoreCase);
+
+    [JsonIgnore]
     public DateTime LastSeen { get; set; } = DateTime.UtcNow;
 }
 
@@ -108,4 +111,32 @@ public sealed class LocalSendUploadRequestArgs : EventArgs
     }
 
     public void Respond(bool accept) => _respond(accept);
+}
+
+public enum LocalSendSendResult
+{
+    Success,
+    Declined,
+    InvalidPin,
+    TooManyAttempts,
+    Canceled,
+    Error
+}
+
+public sealed class LocalSendSendProgressArgs
+{
+    public string FileName { get; }
+    public long BytesSent { get; }
+    public long TotalBytes { get; }
+    public int FileIndex { get; }
+    public int TotalFiles { get; }
+
+    public LocalSendSendProgressArgs(string fileName, long bytesSent, long totalBytes, int fileIndex, int totalFiles)
+    {
+        FileName = fileName;
+        BytesSent = bytesSent;
+        TotalBytes = totalBytes;
+        FileIndex = fileIndex;
+        TotalFiles = totalFiles;
+    }
 }

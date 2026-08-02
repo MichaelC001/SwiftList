@@ -9,6 +9,7 @@ public sealed class LocalSendServiceManager : IDisposable
     public static LocalSendServiceManager Instance { get; } = new();
 
     public bool IsRunning => _server != null || _discoveryService != null;
+    public LocalSendDiscoveryService? DiscoveryService => _discoveryService;
 
     /// <summary>Raised (on a thread-pool thread) when a file has been fully received and saved to disk.</summary>
     public event EventHandler<(string FileId, string Path)>? FileReceived;
@@ -78,6 +79,23 @@ public sealed class LocalSendServiceManager : IDisposable
         _server?.Stop();
         _server?.Dispose();
         _server = null;
+    }
+
+    public Task<LocalSendSendResult> SendFilesAsync(
+        LocalSendDeviceInfo targetDevice, IReadOnlyList<string> filePaths, string? pin = null,
+        Action<LocalSendSendProgressArgs>? onProgress = null, CancellationToken token = default)
+    {
+        using var client = new LocalSendClient();
+        var senderInfo = _server?.DeviceInfo ?? new LocalSendDeviceInfo { Alias = Environment.MachineName };
+        return client.SendFilesAsync(targetDevice.IpAddress, targetDevice.Port, targetDevice.Https, senderInfo, filePaths, pin, onProgress, token);
+    }
+
+    public Task<LocalSendSendResult> SendTextAsync(
+        LocalSendDeviceInfo targetDevice, string text, string? pin = null, CancellationToken token = default)
+    {
+        using var client = new LocalSendClient();
+        var senderInfo = _server?.DeviceInfo ?? new LocalSendDeviceInfo { Alias = Environment.MachineName };
+        return client.SendTextAsync(targetDevice.IpAddress, targetDevice.Port, targetDevice.Https, senderInfo, text, pin, token);
     }
 
     public void Dispose() => Stop();
