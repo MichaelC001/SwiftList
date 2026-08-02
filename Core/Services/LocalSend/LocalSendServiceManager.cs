@@ -74,6 +74,7 @@ public sealed class LocalSendServiceManager : IDisposable
     }
 
     public void CancelSession(string sessionId) => _server?.CancelSession(sessionId);
+    public bool IsSessionCanceled(string sessionId) => _server?.IsSessionCanceled(sessionId) == true;
 
     public void Stop()
     {
@@ -86,21 +87,23 @@ public sealed class LocalSendServiceManager : IDisposable
         _server = null;
     }
 
-    public Task<LocalSendSendResult> SendFilesAsync(
+    public async Task<(LocalSendSendResult Result, string? ErrorDetails)> SendFilesAsync(
         LocalSendDeviceInfo targetDevice, IReadOnlyList<string> filePaths, string? pin = null,
         Action<LocalSendSendProgressArgs>? onProgress = null, CancellationToken token = default)
     {
         using var client = new LocalSendClient();
         var senderInfo = _server?.DeviceInfo ?? new LocalSendDeviceInfo { Alias = Environment.MachineName };
-        return client.SendFilesAsync(targetDevice.IpAddress, targetDevice.Port, targetDevice.Https, senderInfo, filePaths, pin, onProgress, token);
+        var res = await client.SendFilesAsync(targetDevice.IpAddress, targetDevice.Port, targetDevice.Https, senderInfo, filePaths, pin, onProgress, token).ConfigureAwait(false);
+        return (res, client.LastError);
     }
 
-    public Task<LocalSendSendResult> SendTextAsync(
+    public async Task<(LocalSendSendResult Result, string? ErrorDetails)> SendTextAsync(
         LocalSendDeviceInfo targetDevice, string text, string? pin = null, CancellationToken token = default)
     {
         using var client = new LocalSendClient();
         var senderInfo = _server?.DeviceInfo ?? new LocalSendDeviceInfo { Alias = Environment.MachineName };
-        return client.SendTextAsync(targetDevice.IpAddress, targetDevice.Port, targetDevice.Https, senderInfo, text, pin, token);
+        var res = await client.SendTextAsync(targetDevice.IpAddress, targetDevice.Port, targetDevice.Https, senderInfo, text, pin, token).ConfigureAwait(false);
+        return (res, client.LastError);
     }
 
     public void Dispose() => Stop();

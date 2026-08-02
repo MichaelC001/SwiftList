@@ -31,14 +31,19 @@ public partial class LocalSendSendWindow : Window
             DragMove();
     }
 
-    private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
-
-    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    private void BtnClose_Click(object sender, RoutedEventArgs e)
     {
-        base.OnKeyDown(e);
-        if (e.Key == Key.Escape)
+        if (_vm.IsSending) return;
+        Close();
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (_vm.IsSending)
         {
-            Close();
+            e.Cancel = true;
+            return;
         }
+        base.OnClosing(e);
     }
 }

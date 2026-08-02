@@ -35,7 +35,8 @@ internal static class LocalSendSubnetScanner
     {
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromMilliseconds(1500) };
+            using var handler = new HttpClientHandler { UseProxy = false };
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(1500) };
             var resp = await client.GetAsync($"http://{ip}:{port}/api/localsend/v2/info").ConfigureAwait(false);
             if (resp.IsSuccessStatusCode)
             {

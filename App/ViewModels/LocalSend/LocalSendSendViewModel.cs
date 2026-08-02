@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using SwiftList.App.Helpers;
 using SwiftList.App.Services;
+using SwiftList.Core;
 using SwiftList.Core.Services.LocalSend;
 using SwiftList.Core.Services.LocalSend.Models;
 
@@ -30,6 +31,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         CancelCommand = new RelayCommand(ExecuteCancel);
 
         TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
+        LocalSendServiceManager.Instance.SessionCanceled += OnSessionCanceled;
 
         var discovery = LocalSendServiceManager.Instance.DiscoveryService;
         if (discovery != null)
@@ -38,6 +40,15 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             OnDiscoveredDevicesChanged(this, EventArgs.Empty);
         }
     }
+
+    private void OnSessionCanceled(object? sender, string sessionId) => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                                                                             {
+                                                                                 if (IsSending)
+                                                                                 {
+                                                                                     _cts?.Cancel();
+                                                                                     HandleResult(LocalSendSendResult.Declined, null);
+                                                                                 }
+                                                                             }));
 
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(nameof(StatusText));
 
@@ -140,14 +151,15 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         IsSending = true;
         _cts = new CancellationTokenSource();
         ProgressPercentage = 0;
-        SetStatusKey("Settings_LocalSend_Receiving");
+        SetStatusKey("Settings_LocalSend_Sending");
 
         try
         {
             LocalSendSendResult result;
+            string? errDetails;
             if (TargetFiles.Count > 0)
             {
-                result = await LocalSendServiceManager.Instance.SendFilesAsync(
+                (result, errDetails) = await LocalSendServiceManager.Instance.SendFilesAsync(
                     SelectedDevice, TargetFiles.ToList(), Pin,
                     args => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
@@ -159,15 +171,20 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             }
             else
             {
-                result = await LocalSendServiceManager.Instance.SendTextAsync(
+                (result, errDetails) = await LocalSendServiceManager.Instance.SendTextAsync(
                     SelectedDevice, TextToSend, Pin, _cts.Token);
             }
 
-            HandleResult(result);
+            HandleResult(result, errDetails);
         }
-        catch
+        catch (OperationCanceledException) when (_cts?.IsCancellationRequested == true)
         {
             SetStatusKey("Settings_LocalSend_Canceled");
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LocalSendSendViewModel] Send error: {ex.Message}", LogLevel.Error);
+            StatusText = $"{TranslationManager.Instance["Settings_LocalSend_ConnectionError"]} ({ex.Message})";
         }
         finally
         {
@@ -175,18 +192,27 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void HandleResult(LocalSendSendResult result)
+    private void HandleResult(LocalSendSendResult result, string? errDetails)
     {
-        var key = result switch
+        switch (result)
         {
-            LocalSendSendResult.Success => "Settings_LocalSend_Completed",
-            LocalSendSendResult.Declined => "Settings_LocalSend_Declined",
-            LocalSendSendResult.InvalidPin => "Settings_LocalSend_InvalidPin",
-            LocalSendSendResult.TooManyAttempts => "Settings_LocalSend_Canceled",
-            LocalSendSendResult.Canceled => "Settings_LocalSend_Canceled",
-            _ => "Settings_LocalSend_ConnectionError"
-        };
-        SetStatusKey(key);
+            case LocalSendSendResult.Success:
+                SetStatusKey("Settings_LocalSend_Completed");
+                break;
+            case LocalSendSendResult.Declined:
+                SetStatusKey("Settings_LocalSend_Declined");
+                break;
+            case LocalSendSendResult.InvalidPin:
+                SetStatusKey("Settings_LocalSend_InvalidPin");
+                break;
+            case LocalSendSendResult.Canceled:
+                SetStatusKey("Settings_LocalSend_Canceled");
+                break;
+            default:
+                var suffix = string.IsNullOrEmpty(errDetails) ? result.ToString() : errDetails;
+                StatusText = $"{TranslationManager.Instance["Settings_LocalSend_ConnectionError"]} ({suffix})";
+                break;
+        }
     }
 
     private void ExecuteCancel()
@@ -198,6 +224,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         TranslationManager.Instance.PropertyChanged -= OnLanguageChanged;
+        LocalSendServiceManager.Instance.SessionCanceled -= OnSessionCanceled;
         var discovery = LocalSendServiceManager.Instance.DiscoveryService;
         discovery?.DeviceListChanged -= OnDiscoveredDevicesChanged;
         _cts?.Dispose();

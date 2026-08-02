@@ -34,6 +34,7 @@
   "Settings_LocalSend_RandomAlias": "Nombre aleatorio",
   "Settings_LocalSend_Device": "Dispositivo",
   "Settings_LocalSend_Receiving": "Recibiendo archivos...",
+  "Settings_LocalSend_Sending": "Enviando...",
   "Settings_LocalSend_Completed": "Transferencia completada",
   "Settings_LocalSend_FileReceivedTitle": "Archivo recibido",
   "Settings_LocalSend_Canceled": "Transferencia cancelada",

@@ -34,6 +34,7 @@
   "Settings_LocalSend_RandomAlias": "デバイス名をランダム生成",
   "Settings_LocalSend_Device": "デバイス",
   "Settings_LocalSend_Receiving": "文件を受信中...",
+  "Settings_LocalSend_Sending": "送信中...",
   "Settings_LocalSend_Completed": "転送完了",
   "Settings_LocalSend_FileReceivedTitle": "ファイル受信完了",
   "Settings_LocalSend_Canceled": "転送がキャンセルされました",

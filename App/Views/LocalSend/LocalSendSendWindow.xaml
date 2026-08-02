@@ -4,12 +4,12 @@
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
         Title="LocalSend"
-        Width="460" MinHeight="300" SizeToContent="Height"
+        Width="460" MinWidth="420" MinHeight="280" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
         Topmost="True">
 
@@ -72,31 +72,27 @@
                                        FontSize="13" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <Button Content="&#xE8BB;" Style="{StaticResource CloseButton}"
-                                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Click="BtnClose_Click"/>
                     </Grid>
                 </Border>
 
+                <!-- Content Area -->
                 <Grid Grid.Row="1" Margin="16,14,16,14">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,12">
                         <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Device]}"
-                                   FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,6"/>
-                        <ListBox ItemsSource="{Binding DiscoveredDevices}"
-                                 SelectedItem="{Binding SelectedDevice}"
-                                 ItemContainerStyle="{StaticResource SidebarItemStyle}"
-                                 MaxHeight="150"
-                                 Background="Transparent" BorderThickness="0"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                   FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <ListBox ItemsSource="{Binding DiscoveredDevices}" SelectedItem="{Binding SelectedDevice}"
+                                 ItemContainerStyle="{StaticResource SidebarItemStyle}" MaxHeight="140" MinHeight="70"
+                                 Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <DockPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Alias}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                    <DockPanel Margin="4,2">
+                                        <TextBlock Text="{Binding Alias}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" DockPanel.Dock="Left"/>
                                         <TextBlock Text="{Binding IpAddress}" FontSize="11" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" DockPanel.Dock="Right" VerticalAlignment="Center"/>
                                     </DockPanel>
                                 </DataTemplate>
@@ -126,6 +122,33 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Send]}"
                                 Command="{Binding SendCommand}" Style="{StaticResource PrimarySettingsButton}" IsDefault="True" Width="85" Height="30"/>
+
+                        <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Close]}"
+                                Click="BtnClose_Click" Margin="8,0,0,0" Width="80" Height="30">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SettingsButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSending}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}"
+                                Command="{Binding CancelCommand}" Margin="8,0,0,0" Width="80" Height="30">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SettingsButton}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSending}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                 </Border>
             </Grid>

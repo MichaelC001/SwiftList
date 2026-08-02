@@ -217,10 +217,14 @@ public sealed class LocalSendServer : IDisposable
 
         if (!isSuccess)
         {
+            if (!IsSessionCanceled(sessionId))
+            {
+                await Task.Delay(150).ConfigureAwait(false);
+            }
+
             if (IsSessionCanceled(sessionId))
             {
-                // Give sender's /api/localsend/v2/cancel HTTP notification time to settle on the wire before releasing TCP stream
-                await Task.Delay(1500).ConfigureAwait(false);
+                SessionCanceled?.Invoke(this, sessionId);
             }
             else
             {

@@ -34,6 +34,7 @@
   "Settings_LocalSend_RandomAlias": "Randomize device name",
   "Settings_LocalSend_Device": "Device",
   "Settings_LocalSend_Receiving": "Receiving files...",
+  "Settings_LocalSend_Sending": "Sending...",
   "Settings_LocalSend_Completed": "Transfer Completed",
   "Settings_LocalSend_FileReceivedTitle": "File Received",
   "Settings_LocalSend_Canceled": "Transfer Canceled",
