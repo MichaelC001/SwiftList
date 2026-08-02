@@ -82,7 +82,7 @@ internal static class TreeBuilderDiffExtensions
                 // so this child's own record is in _indexById before another worker can dequeue it.
                 builder.FlushRecords(batch);
                 var physicalChildPath = Path.Combine(current.Path, child.Name);
-                builder.EnqueueDirectory(physicalChildPath, logicalFullPath, child.Id, current.Depth + 1, ignoreRules);
+                builder.EnqueueDirectory(physicalChildPath, logicalFullPath, child.Id, current.Depth + 1, ignoreRules, current.Ancestors);
             }
 
             if (Interlocked.Increment(ref builder._countSinceProgress) >= TreeBuilder.ProgressBatchSize)
@@ -153,7 +153,7 @@ internal static class TreeBuilderDiffExtensions
             if (isDirectory && builder._filter.ShouldDescend(logicalFullPath, record.Attributes, current.Depth + 1, ignoreRules))
             {
                 builder.FlushRecords(batch);
-                builder.EnqueueDirectory(entry, logicalFullPath, record.Id, current.Depth + 1, ignoreRules);
+                builder.EnqueueDirectory(entry, logicalFullPath, record.Id, current.Depth + 1, ignoreRules, current.Ancestors);
             }
 
             if (Interlocked.Increment(ref builder._countSinceProgress) >= TreeBuilder.ProgressBatchSize)

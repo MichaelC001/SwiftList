@@ -186,7 +186,7 @@ internal sealed class TreeBuilder
                 // happens, silently leaving it un-Listed forever. Flush now so the child's own record is
                 // registered before anyone else can possibly touch it.
                 FlushRecords(batch);
-                EnqueueDirectory(child, logicalFullPath, record.Id, current.Depth + 1, ignoreRules);
+                EnqueueDirectory(child, logicalFullPath, record.Id, current.Depth + 1, ignoreRules, current.Ancestors);
             }
 
             if (Interlocked.Increment(ref _countSinceProgress) >= ProgressBatchSize)
@@ -225,8 +225,49 @@ internal sealed class TreeBuilder
 
     // parentId here is this directory's OWN id (becomes WorkItem.LocalId), not its parent's -- matches the
     // naming TryCreateRecord's callers already use when they pass record.Id through as this parameter.
-    internal void EnqueueDirectory(string path, string logicalPath, UInt128 parentId, int depth, NetworkIgnoreRuleSet ignoreRules)
+    internal void EnqueueDirectory(string path, string logicalPath, UInt128 parentId, int depth, NetworkIgnoreRuleSet ignoreRules, AncestorNode? parentAncestors = null)
     {
+        if (depth > 128)
+        {
+            Interlocked.Increment(ref _reparseSkipped);
+            Interlocked.Increment(ref _skippedItems);
+            return;
+        }
+
+        var normalizedPath = PathHelpers.NormalizePath(path, true).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        if (parentAncestors != null)
+        {
+            if (parentAncestors.Contains(normalizedPath))
+            {
+                Interlocked.Increment(ref _reparseSkipped);
+                Interlocked.Increment(ref _skippedItems);
+                return;
+            }
+
+            try
+            {
+                var resolvedTarget = Directory.ResolveLinkTarget(path, returnFinalTarget: true);
+                if (resolvedTarget != null && parentAncestors.Contains(resolvedTarget.FullName))
+                {
+                    Interlocked.Increment(ref _reparseSkipped);
+                    Interlocked.Increment(ref _skippedItems);
+                    return;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        var nextAncestors = new AncestorNode(normalizedPath, parentAncestors);
+        if (nextAncestors.HasSegmentCycle())
+        {
+            Interlocked.Increment(ref _reparseSkipped);
+            Interlocked.Increment(ref _skippedItems);
+            return;
+        }
+
         // Last-resort guard against processing the same directory twice in one run: a corrupted diff
         // baseline (e.g. a duplicate row left by some earlier bug) could otherwise get a directory enqueued
         // more than once, and each duplicate walks or copies its entire subtree again -- compounding into
@@ -242,7 +283,7 @@ internal sealed class TreeBuilder
         Interlocked.Increment(ref _pendingDirectories);
         try
         {
-            _pending.Writer.WriteAsync(new WorkItem(path, logicalPath, parentId, depth, ignoreRules), _token)
+            _pending.Writer.WriteAsync(new WorkItem(path, logicalPath, parentId, depth, ignoreRules, nextAncestors), _token)
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();

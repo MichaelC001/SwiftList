@@ -34,6 +34,23 @@ public sealed class TreeBuilderTests
         Assert.AreEqual(2, builder._indexedDirs);
     }
 
+    [TestMethod]
+    public void EnqueueDirectory_AncestorLoopDetected_IncrementsReparseSkippedAndReturns()
+    {
+        using var dir = new TempDirectory();
+        var builder = new TreeBuilder(
+            new FileRecordStore(), dir.Path, dir.Path,
+            new WalkOptions([], [], [], MaxDepth: 0, WorkerCount: 1, UseIgnoreFiles: false),
+            CancellationToken.None, (_, _) => { });
+
+        var parentAncestors = new AncestorNode(dir.Path, null);
+        // Attempt to enqueue the exact same path that is already in parentAncestors
+        builder.EnqueueDirectory(dir.Path, dir.Path, parentId: 2, depth: 1, NetworkIgnoreRuleSet.Empty, parentAncestors);
+
+        Assert.AreEqual(1, builder._reparseSkipped);
+        Assert.AreEqual(1, builder._skippedItems);
+    }
+
     private sealed class TempDirectory : IDisposable
     {
         public string Path { get; } = Directory.CreateTempSubdirectory("swiftlist-tests-").FullName;

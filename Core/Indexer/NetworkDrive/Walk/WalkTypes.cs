@@ -19,4 +19,4 @@ internal enum WalkRecordResult
     InvalidName
 }
 
-internal readonly record struct WorkItem(string Path, string LogicalPath, UInt128 LocalId, int Depth, NetworkIgnoreRuleSet IgnoreRules);
+internal readonly record struct WorkItem(string Path, string LogicalPath, UInt128 LocalId, int Depth, NetworkIgnoreRuleSet IgnoreRules, AncestorNode? Ancestors = null);
