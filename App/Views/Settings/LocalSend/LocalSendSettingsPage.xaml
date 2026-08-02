@@ -193,6 +193,35 @@
 
                     <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="120"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_ReceivePin]}"
+                                       FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_ReceivePinDesc]}"
+                                       FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <TextBox Grid.Column="1" Style="{StaticResource SettingsTextBox}"
+                                 Text="{Binding ReceivePin, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+
+                    <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
+
+                    <DockPanel Margin="0,0,0,12">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_EnableHttps]}"
+                                       FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_EnableHttpsDesc]}"
+                                       FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox DockPanel.Dock="Right" IsChecked="{Binding EnableHttps}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    </DockPanel>
+
+                    <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
+
                     <DockPanel Margin="0,0,0,12">
                         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_QuickSave]}"

@@ -43,6 +43,7 @@ public class LocalSendSettingsModel
     public bool QuickSaveFromFavorites { get; set; } = true;
     public string DownloadDirectory { get; set; } = string.Empty;
     public bool EnableHttps { get; set; } = false;
+    public string? ReceivePin { get; set; }
 }
 
 /// <summary>Everything shown on the Hotkey Settings page, grouped under one object.</summary>

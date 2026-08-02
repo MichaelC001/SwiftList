@@ -103,7 +103,7 @@ internal static class LocalSendServerHandler
         }
         else if (IsPrepareUpload(path))
         {
-            await HandlePrepareUploadAsync(server, stream, body, remoteEp).ConfigureAwait(false);
+            await HandlePrepareUploadAsync(server, stream, query, body, remoteEp).ConfigureAwait(false);
         }
         else if (IsCancel(path))
         {
@@ -120,8 +120,17 @@ internal static class LocalSendServerHandler
         }
     }
 
-    private static async Task HandlePrepareUploadAsync(LocalSendServer server, Stream stream, string body, EndPoint? remoteEp)
+    private static async Task HandlePrepareUploadAsync(
+        LocalSendServer server, Stream stream, Dictionary<string, string> query, string body, EndPoint? remoteEp)
     {
+        var clientIp = remoteEp is IPEndPoint epIp ? LocalSendServerHelper.FormatIpAddress(epIp.Address) : string.Empty;
+        query.TryGetValue("pin", out var requestPin);
+        if (!server.CheckPin(clientIp, requestPin, out var pinStatus, out var pinErrBody))
+        {
+            await LocalSendServerHelper.WriteResponseAsync(stream, pinStatus, pinErrBody).ConfigureAwait(false);
+            return;
+        }
+
         var dto = System.Text.Json.JsonSerializer.Deserialize<Models.PrepareUploadRequestDto>(body);
         if (dto == null || dto.Files.Count == 0)
         {

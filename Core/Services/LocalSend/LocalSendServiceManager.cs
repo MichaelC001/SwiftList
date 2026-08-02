@@ -52,6 +52,7 @@ public sealed class LocalSendServiceManager : IDisposable
         _server.DeviceInfo.Port = settings.Port;
         _server.DownloadDirectory = downloadDir;
         _server.QuickSave = settings.QuickSave;
+        _server.ReceivePin = settings.ReceivePin;
         _server.Start(settings.Port);
 
         _discoveryService = new LocalSendDiscoveryService();

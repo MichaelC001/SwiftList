@@ -29,6 +29,11 @@ public sealed class LocalSendServer : IDisposable
     public string DownloadDirectory { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
     public bool QuickSave { get; set; } = false;
+    public string? ReceivePin { get; set; }
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> _pinAttempts = new();
+
+    internal bool CheckPin(string clientIp, string? requestPin, out int statusCode, out string? jsonBody)
+        => LocalSendServerHelper.CheckPin(ReceivePin, _pinAttempts, clientIp, requestPin, out statusCode, out jsonBody);
 
     public event EventHandler<LocalSendUploadRequestArgs>? UploadRequested;
     public event EventHandler<(string FileId, string Path)>? FileReceived;

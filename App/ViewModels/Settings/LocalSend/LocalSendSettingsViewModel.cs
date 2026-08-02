@@ -18,6 +18,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
     private bool _quickSave;
     private string _downloadDirectory;
     private bool _enableHttps;
+    private string _receivePin = string.Empty;
 
     public LocalSendSettingsViewModel(UserSettings userSettings)
     {
@@ -31,6 +32,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")
             : userSettings.LocalSend.DownloadDirectory;
         _enableHttps = userSettings.LocalSend.EnableHttps;
+        _receivePin = userSettings.LocalSend.ReceivePin ?? string.Empty;
 
         SelectDownloadDirectoryCommand = new RelayCommand(SelectDownloadDirectory);
         RefreshDevicesCommand = new RelayCommand(RefreshDevices);
@@ -75,6 +77,12 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
         set => SetProperty(ref _enableHttps, value);
     }
 
+    public string ReceivePin
+    {
+        get => _receivePin;
+        set => SetProperty(ref _receivePin, value);
+    }
+
     public bool IsServiceRunning => _userSettings.LocalSend.Enabled;
     public string DeviceHashtag => Core.Services.LocalSend.LocalSendServerHelper.GetLocalDeviceHashtag();
 
@@ -86,6 +94,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
         _userSettings.LocalSend.QuickSave = _quickSave;
         _userSettings.LocalSend.DownloadDirectory = _downloadDirectory;
         _userSettings.LocalSend.EnableHttps = _enableHttps;
+        _userSettings.LocalSend.ReceivePin = _receivePin;
 
         OnPropertyChanged(nameof(IsServiceRunning));
     }

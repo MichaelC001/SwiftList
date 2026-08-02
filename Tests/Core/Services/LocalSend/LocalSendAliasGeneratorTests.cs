@@ -105,4 +105,47 @@ public class LocalSendAliasGeneratorTests
         var (accepted, _) = await server.RequestUserAcceptanceAsync(dto);
         Assert.IsTrue(accepted);
     }
+
+    [TestMethod]
+    public void CheckPin_ValidPin_ReturnsTrue()
+    {
+        using var server = new LocalSendServer();
+        server.ReceivePin = "1234";
+
+        var ok = server.CheckPin("192.168.1.50", "1234", out var status, out var errBody);
+
+        Assert.IsTrue(ok);
+        Assert.AreEqual(200, status);
+        Assert.IsNull(errBody);
+    }
+
+    [TestMethod]
+    public void CheckPin_InvalidPin_Returns401()
+    {
+        using var server = new LocalSendServer();
+        server.ReceivePin = "1234";
+
+        var ok = server.CheckPin("192.168.1.50", "9999", out var status, out var errBody);
+
+        Assert.IsFalse(ok);
+        Assert.AreEqual(401, status);
+        Assert.IsNotNull(errBody);
+        StringAssert.Contains(errBody, "Invalid pin");
+    }
+
+    [TestMethod]
+    public void CheckPin_MultipleFailures_Triggers429()
+    {
+        using var server = new LocalSendServer();
+        server.ReceivePin = "1234";
+
+        server.CheckPin("192.168.1.50", "0001", out _, out _);
+        server.CheckPin("192.168.1.50", "0002", out _, out _);
+        var ok = server.CheckPin("192.168.1.50", "0003", out var status, out var errBody);
+
+        Assert.IsFalse(ok);
+        Assert.AreEqual(429, status);
+        Assert.IsNotNull(errBody);
+        StringAssert.Contains(errBody, "Too many attempts");
+    }
 }

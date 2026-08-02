@@ -262,4 +262,46 @@ public static class LocalSendServerHelper
 
         return targetPath;
     }
+
+    internal static bool CheckPin(
+        string? configuredPin,
+        System.Collections.Concurrent.ConcurrentDictionary<string, int> pinAttempts,
+        string clientIp,
+        string? requestPin,
+        out int statusCode,
+        out string? jsonResponseBody)
+    {
+        statusCode = 200;
+        jsonResponseBody = null;
+
+        if (string.IsNullOrEmpty(configuredPin)) return true;
+
+        var attempts = pinAttempts.TryGetValue(clientIp, out var val) ? val : 0;
+        if (attempts >= 3)
+        {
+            statusCode = 429;
+            jsonResponseBody = "{\"message\":\"Too many attempts.\"}";
+            return false;
+        }
+
+        if (requestPin != configuredPin)
+        {
+            if (!string.IsNullOrEmpty(requestPin))
+            {
+                var newAttempts = pinAttempts.AddOrUpdate(clientIp, 1, (k, old) => old + 1);
+                if (newAttempts >= 3)
+                {
+                    statusCode = 429;
+                    jsonResponseBody = "{\"message\":\"Too many attempts.\"}";
+                    return false;
+                }
+            }
+
+            statusCode = 401;
+            jsonResponseBody = "{\"message\":\"Invalid pin.\"}";
+            return false;
+        }
+
+        return true;
+    }
 }
