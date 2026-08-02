@@ -15,7 +15,8 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     private string _textToSend = string.Empty;
     private bool _isSending;
     private double _progressPercentage;
-    private string _statusText = string.Empty;
+    private string? _statusKey;
+    private string? _customStatusText;
     private CancellationTokenSource? _cts;
 
     public LocalSendSendViewModel(IEnumerable<string>? initialFiles = null, string? initialText = null)
@@ -28,6 +29,8 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         SendCommand = new RelayCommand(ExecuteSendAsync, () => !IsSending && SelectedDevice != null && (TargetFiles.Count > 0 || !string.IsNullOrWhiteSpace(TextToSend)));
         CancelCommand = new RelayCommand(ExecuteCancel);
 
+        TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
+
         var discovery = LocalSendServiceManager.Instance.DiscoveryService;
         if (discovery != null)
         {
@@ -36,14 +39,24 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(nameof(StatusText));
+
     public ObservableCollection<string> TargetFiles { get; }
     public ReadOnlyObservableCollection<LocalSendDeviceInfo> DiscoveredDevices { get; }
 
     public LocalSendDeviceInfo? SelectedDevice
     {
         get => _selectedDevice;
-        set => SetProperty(ref _selectedDevice, value);
+        set
+        {
+            if (SetProperty(ref _selectedDevice, value))
+            {
+                OnPropertyChanged(nameof(HasSelectedDevice));
+            }
+        }
     }
+
+    public bool HasSelectedDevice => SelectedDevice != null;
 
     public string Pin
     {
@@ -60,7 +73,13 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     public bool IsSending
     {
         get => _isSending;
-        private set => SetProperty(ref _isSending, value);
+        private set
+        {
+            if (SetProperty(ref _isSending, value))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
     }
 
     public double ProgressPercentage
@@ -71,14 +90,33 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
     public string StatusText
     {
-        get => _statusText;
-        private set => SetProperty(ref _statusText, value);
+        get
+        {
+            if (!string.IsNullOrEmpty(_customStatusText))
+                return _customStatusText;
+            if (!string.IsNullOrEmpty(_statusKey))
+                return TranslationManager.Instance[_statusKey];
+            return string.Empty;
+        }
+        private set
+        {
+            _statusKey = null;
+            _customStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public void SetStatusKey(string key)
+    {
+        _customStatusText = null;
+        _statusKey = key;
+        OnPropertyChanged(nameof(StatusText));
     }
 
     public ICommand SendCommand { get; }
     public ICommand CancelCommand { get; }
 
-    private void OnDiscoveredDevicesChanged(object? sender, EventArgs e) => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+    private void OnDiscoveredDevicesChanged(object? sender, EventArgs e) => System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                                                                                  {
                                                                                      _discoveredDevices.Clear();
                                                                                      var discovery = LocalSendServiceManager.Instance.DiscoveryService;
@@ -102,7 +140,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         IsSending = true;
         _cts = new CancellationTokenSource();
         ProgressPercentage = 0;
-        StatusText = TranslationManager.Instance["Settings_LocalSend_Receiving"];
+        SetStatusKey("Settings_LocalSend_Receiving");
 
         try
         {
@@ -129,7 +167,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
         catch
         {
-            StatusText = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            SetStatusKey("Settings_LocalSend_Canceled");
         }
         finally
         {
@@ -137,15 +175,19 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void HandleResult(LocalSendSendResult result) => StatusText = result switch
+    private void HandleResult(LocalSendSendResult result)
     {
-        LocalSendSendResult.Success => TranslationManager.Instance["Settings_LocalSend_Completed"],
-        LocalSendSendResult.Declined => TranslationManager.Instance["Settings_LocalSend_SenderCanceled"],
-        LocalSendSendResult.InvalidPin => TranslationManager.Instance["Settings_LocalSend_ReceivePin"],
-        LocalSendSendResult.TooManyAttempts => TranslationManager.Instance["Settings_LocalSend_Canceled"],
-        LocalSendSendResult.Canceled => TranslationManager.Instance["Settings_LocalSend_Canceled"],
-        _ => TranslationManager.Instance["Settings_LocalSend_Canceled"]
-    };
+        var key = result switch
+        {
+            LocalSendSendResult.Success => "Settings_LocalSend_Completed",
+            LocalSendSendResult.Declined => "Settings_LocalSend_Declined",
+            LocalSendSendResult.InvalidPin => "Settings_LocalSend_InvalidPin",
+            LocalSendSendResult.TooManyAttempts => "Settings_LocalSend_Canceled",
+            LocalSendSendResult.Canceled => "Settings_LocalSend_Canceled",
+            _ => "Settings_LocalSend_ConnectionError"
+        };
+        SetStatusKey(key);
+    }
 
     private void ExecuteCancel()
     {
@@ -155,6 +197,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        TranslationManager.Instance.PropertyChanged -= OnLanguageChanged;
         var discovery = LocalSendServiceManager.Instance.DiscoveryService;
         discovery?.DeviceListChanged -= OnDiscoveredDevicesChanged;
         _cts?.Dispose();

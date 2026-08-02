@@ -15,6 +15,7 @@ public partial class CustomMessageBoxWindow : Window
         InitializeComponent();
 
         SystemMenuBlocker.Attach(this);
+        AltTabExcluder.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
 
@@ -23,6 +24,15 @@ public partial class CustomMessageBoxWindow : Window
 
         SetupIcon(icon);
         SetupButtons(button);
+    }
+
+    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.Escape)
+        {
+            Close();
+        }
     }
 
     private void SetupButtons(MessageBoxButton button)

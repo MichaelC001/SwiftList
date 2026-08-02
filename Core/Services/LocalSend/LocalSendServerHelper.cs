@@ -43,6 +43,24 @@ public static class LocalSendServerHelper
     }
 
     /// <summary>
+    /// Cleans an IP address string by stripping brackets and unmapping IPv4-mapped IPv6 prefixes.
+    /// </summary>
+    internal static string CleanIpAddress(string ip)
+    {
+        if (string.IsNullOrWhiteSpace(ip)) return ip;
+        var trimmed = ip.Trim('[', ']');
+        if (trimmed.StartsWith("::ffff:", StringComparison.OrdinalIgnoreCase))
+        {
+            trimmed = trimmed.Substring(7);
+        }
+        if (IPAddress.TryParse(trimmed, out var parsed))
+        {
+            return FormatIpAddress(parsed);
+        }
+        return trimmed;
+    }
+
+    /// <summary>
     /// Writes an HTTP response line, headers, and optional JSON body to the network stream.
     /// </summary>
     internal static async Task WriteResponseAsync(Stream stream, int status, string? json = null)

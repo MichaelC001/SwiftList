@@ -15,6 +15,7 @@ public partial class LocalSendSendWindow : Window
         InitializeComponent();
 
         SystemMenuBlocker.Attach(this);
+        AltTabExcluder.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
 
@@ -31,4 +32,13 @@ public partial class LocalSendSendWindow : Window
     }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
+
+    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.Escape)
+        {
+            Close();
+        }
+    }
 }

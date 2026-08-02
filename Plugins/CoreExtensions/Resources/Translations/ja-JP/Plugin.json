@@ -38,6 +38,7 @@
   "Action_LocateFolder": "フォルダーの場所を開く",
   "Action_Cut": "切り取り",
   "Action_CopyPath": "パスをクリップボードにコピー",
+  "Action_LocalSend": "他のデバイスへ送信...",
   "Action_Copy": "コピー",
   "Action_Paste": "貼り付け",
   "Action_Delete": "削除",

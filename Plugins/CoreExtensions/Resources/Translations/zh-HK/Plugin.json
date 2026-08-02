@@ -38,6 +38,7 @@
   "Action_LocateFolder": "開啟所在資料夾",
   "Action_Cut": "剪下",
   "Action_CopyPath": "複製路徑至剪貼簿",
+  "Action_LocalSend": "傳送至其他裝置...",
   "Action_Copy": "複製",
   "Action_Paste": "貼上",
   "Action_Delete": "刪除",

@@ -38,6 +38,7 @@
   "Action_LocateFolder": "打开所在文件夹",
   "Action_Cut": "剪切",
   "Action_CopyPath": "复制路径至剪贴板",
+  "Action_LocalSend": "发送到其他设备...",
   "Action_Copy": "复制",
   "Action_Paste": "粘贴",
   "Action_Delete": "删除",

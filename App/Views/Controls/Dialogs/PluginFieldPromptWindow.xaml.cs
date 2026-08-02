@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using SwiftList.App.Services;
 using SwiftList.App.ViewModels.Settings.Plugins;
 using SwiftList.Core;
 using SwiftList.PluginSdk.Abstractions;
@@ -19,11 +20,26 @@ public partial class PluginFieldPromptWindow : Window
     {
         InitializeComponent();
         SystemMenuBlocker.Attach(this);
+        AltTabExcluder.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
 
         TxtTitle.Text = string.IsNullOrEmpty(title) ? "SwiftList" : title;
         FieldsControl.ItemsSource = fieldViewModels;
+
+        TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
+        Closed += (_, _) => TranslationManager.Instance.PropertyChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (FieldsControl.ItemsSource is IEnumerable<PluginConfigFieldViewModel> fields)
+        {
+            foreach (var f in fields)
+            {
+                f.NotifyLanguageChanged();
+            }
+        }
     }
 
     private bool _isSaved;

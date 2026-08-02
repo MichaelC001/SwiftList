@@ -172,10 +172,7 @@ public sealed class LocalSendDiscoveryService : IDisposable
 
                 if (device != null && !string.IsNullOrEmpty(device.Alias) && device.Fingerprint != LocalInfo.Fingerprint)
                 {
-                    var rawIp = result.RemoteEndPoint.Address.ToString();
-                    device.IpAddress = result.RemoteEndPoint.Address.AddressFamily == AddressFamily.InterNetworkV6
-                        ? $"[{rawIp}]"
-                        : rawIp;
+                    device.IpAddress = LocalSendServerHelper.FormatIpAddress(result.RemoteEndPoint.Address);
                     device.LastSeen = DateTime.UtcNow;
 
                     AddDiscoveredDevice(device);
@@ -202,6 +199,7 @@ public sealed class LocalSendDiscoveryService : IDisposable
         if (device == null || string.IsNullOrEmpty(device.Alias) || device.Fingerprint == LocalInfo.Fingerprint)
             return;
 
+        device.IpAddress = LocalSendServerHelper.CleanIpAddress(device.IpAddress);
         var key = $"{device.IpAddress}:{device.Port}";
         var isNew = !_discoveredDevices.ContainsKey(key);
         device.LastSeen = DateTime.UtcNow;

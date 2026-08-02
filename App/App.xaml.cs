@@ -164,6 +164,8 @@ public partial class App : Application
         {
             PluginSdk.Services.TranslationService.LookupFunc = key => TranslationManager.Instance[key];
             PluginSdk.Services.TranslationService.CurrentCultureFunc = () => TranslationManager.Instance.CurrentCulture;
+            PluginSdk.Services.LocalSendTransferService.OpenSendWindowFunc = (files, text) =>
+                Core.Services.LocalSend.LocalSendServiceManager.Instance.OpenSendWindow(files, text);
             PluginSdk.Services.SearchRefreshService.RefreshMatchingFunc = queryMatches =>
                 // Callers may invoke this from a background thread (e.g. after an async fetch
                 // completes), so marshal onto the UI thread here rather than requiring every caller
@@ -290,6 +292,7 @@ public partial class App : Application
         Core.Services.LocalSend.LocalSendServiceManager.Instance.SessionCanceled += OnLocalSendSessionCanceled;
         Core.Services.LocalSend.LocalSendServiceManager.Instance.TextReceived += OnLocalSendTextReceived;
         Core.Services.LocalSend.LocalSendServiceManager.Instance.UploadRequested += OnLocalSendUploadRequested;
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.SendRequested += OnLocalSendSendRequested;
     }
 
     private static Views.LocalSend.LocalSendProgressWindow? _activeLocalSendProgressWindow;
@@ -363,6 +366,13 @@ public partial class App : Application
                 }
             }
         }
+    }));
+
+    private static void OnLocalSendSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => Current.Dispatcher.BeginInvoke(new Action(() =>
+    {
+        var sendWin = new Views.LocalSend.LocalSendSendWindow(e.Files, e.Text);
+        sendWin.Show();
+        sendWin.Activate();
     }));
 
     private static void OnLocalSendUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>

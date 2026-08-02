@@ -22,13 +22,14 @@ public sealed class LocalSendClient : IDisposable
     {
         try
         {
+            var cleanIp = LocalSendServerHelper.CleanIpAddress(ip);
             var scheme = https ? "https" : "http";
-            var url = $"{scheme}://{ip}:{port}/api/localsend/v2/info";
+            var url = $"{scheme}://{cleanIp}:{port}/api/localsend/v2/info";
             var response = await _httpClient.GetAsync(url, token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
             var json = await response.Content.ReadAsStringAsync(token).ConfigureAwait(false);
             var device = JsonSerializer.Deserialize<LocalSendDeviceInfo>(json);
-            device?.IpAddress = ip;
+            device?.IpAddress = cleanIp;
             return device;
         }
         catch { return null; }
@@ -54,7 +55,7 @@ public sealed class LocalSendClient : IDisposable
             }
         };
 
-        var (result, _, _) = await PrepareUploadAsync(targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
+        var (result, _, _, _) = await PrepareUploadAsync(targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
         return result;
     }
 
@@ -85,19 +86,20 @@ public sealed class LocalSendClient : IDisposable
         if (filesDict.Count == 0) return LocalSendSendResult.Error;
 
         var prepareDto = new PrepareUploadRequestDto { Info = senderInfo, Files = filesDict };
-        var (prepResult, sessionId, tokens) = await PrepareUploadAsync(targetIp, targetPort, https, prepareDto, pin, token).ConfigureAwait(false);
+        var (prepResult, sessionId, tokens, usedHttps) = await PrepareUploadAsync(targetIp, targetPort, https, prepareDto, pin, token).ConfigureAwait(false);
         if (prepResult != LocalSendSendResult.Success || string.IsNullOrEmpty(sessionId) || tokens == null)
             return prepResult;
 
-        var scheme = https ? "https" : "http";
+        var scheme = usedHttps ? "https" : "http";
         var totalFiles = filesDict.Count;
         var currentIndex = 0;
+        var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
 
         foreach (var kvp in filesDict)
         {
             if (token.IsCancellationRequested)
             {
-                await CancelSessionAsync(targetIp, targetPort, https, sessionId, token).ConfigureAwait(false);
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
                 return LocalSendSendResult.Canceled;
             }
 
@@ -107,7 +109,7 @@ public sealed class LocalSendClient : IDisposable
             if (!tokens.TryGetValue(fileId, out var fileToken) || !pathMap.TryGetValue(fileId, out var filePath))
                 continue;
 
-            var uploadUrl = $"{scheme}://{targetIp}:{targetPort}/api/localsend/v2/upload?sessionId={sessionId}&fileId={fileId}&token={fileToken}&fileName={Uri.EscapeDataString(fileDto.FileName)}";
+            var uploadUrl = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/upload?sessionId={sessionId}&fileId={fileId}&token={fileToken}&fileName={Uri.EscapeDataString(fileDto.FileName)}";
 
             try
             {
@@ -118,18 +120,18 @@ public sealed class LocalSendClient : IDisposable
                 var resp = await _httpClient.PostAsync(uploadUrl, content, token).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    await CancelSessionAsync(targetIp, targetPort, https, sessionId, token).ConfigureAwait(false);
+                    await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
                     return LocalSendSendResult.Error;
                 }
             }
             catch (OperationCanceledException)
             {
-                await CancelSessionAsync(targetIp, targetPort, https, sessionId, token).ConfigureAwait(false);
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
                 return LocalSendSendResult.Canceled;
             }
             catch
             {
-                await CancelSessionAsync(targetIp, targetPort, https, sessionId, token).ConfigureAwait(false);
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, token).ConfigureAwait(false);
                 return LocalSendSendResult.Error;
             }
         }
@@ -141,37 +143,53 @@ public sealed class LocalSendClient : IDisposable
     {
         try
         {
+            var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
             var scheme = https ? "https" : "http";
-            var url = $"{scheme}://{targetIp}:{targetPort}/api/localsend/v2/cancel?sessionId={sessionId}";
+            var url = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/cancel?sessionId={sessionId}";
             await _httpClient.PostAsync(url, null, token).ConfigureAwait(false);
         }
         catch { }
     }
 
-    private async Task<(LocalSendSendResult Result, string? SessionId, Dictionary<string, string>? Tokens)> PrepareUploadAsync(
+    private async Task<(LocalSendSendResult Result, string? SessionId, Dictionary<string, string>? Tokens, bool UsedHttps)> PrepareUploadAsync(
         string targetIp, int targetPort, bool https, PrepareUploadRequestDto dto, string? pin, CancellationToken token)
     {
-        try
+        var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
+        var schemesToTry = new[] { https, !https };
+
+        foreach (var tryHttps in schemesToTry)
         {
-            var scheme = https ? "https" : "http";
-            var pinQuery = string.IsNullOrEmpty(pin) ? string.Empty : $"?pin={Uri.EscapeDataString(pin)}";
-            var prepareUrl = $"{scheme}://{targetIp}:{targetPort}/api/localsend/v2/prepare-upload{pinQuery}";
-            var json = JsonSerializer.Serialize(dto);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            try
+            {
+                var scheme = tryHttps ? "https" : "http";
+                var pinQuery = string.IsNullOrEmpty(pin) ? string.Empty : $"?pin={Uri.EscapeDataString(pin)}";
+                var prepareUrl = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/prepare-upload{pinQuery}";
+                var json = JsonSerializer.Serialize(dto);
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var resp = await _httpClient.PostAsync(prepareUrl, content, token).ConfigureAwait(false);
-            if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden) return (LocalSendSendResult.Declined, null, null);
-            if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized) return (LocalSendSendResult.InvalidPin, null, null);
-            if ((int)resp.StatusCode == 429) return (LocalSendSendResult.TooManyAttempts, null, null);
-            if (!resp.IsSuccessStatusCode) return (LocalSendSendResult.Error, null, null);
+                var resp = await _httpClient.PostAsync(prepareUrl, content, token).ConfigureAwait(false);
+                if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden) return (LocalSendSendResult.Declined, null, null, tryHttps);
+                if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized) return (LocalSendSendResult.InvalidPin, null, null, tryHttps);
+                if ((int)resp.StatusCode == 429) return (LocalSendSendResult.TooManyAttempts, null, null, tryHttps);
+                if (!resp.IsSuccessStatusCode) continue;
 
-            var respJson = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-            var respDto = JsonSerializer.Deserialize<PrepareUploadResponseDto>(respJson);
-            if (respDto == null || string.IsNullOrEmpty(respDto.SessionId)) return (LocalSendSendResult.Error, null, null);
+                var respJson = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
+                var respDto = JsonSerializer.Deserialize<PrepareUploadResponseDto>(respJson);
+                if (respDto == null || string.IsNullOrEmpty(respDto.SessionId)) continue;
 
-            return (LocalSendSendResult.Success, respDto.SessionId, respDto.Files);
+                return (LocalSendSendResult.Success, respDto.SessionId, respDto.Files, tryHttps);
+            }
+            catch (OperationCanceledException)
+            {
+                return (LocalSendSendResult.Canceled, null, null, https);
+            }
+            catch
+            {
+                // Scheme mismatch or network error, fallback to alternate scheme
+            }
         }
-        catch { return (LocalSendSendResult.Error, null, null); }
+
+        return (LocalSendSendResult.Error, null, null, https);
     }
 
     private static string GetFileType(string extension) => extension.ToLowerInvariant() switch

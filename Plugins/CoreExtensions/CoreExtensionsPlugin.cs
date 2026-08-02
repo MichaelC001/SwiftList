@@ -24,7 +24,8 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
             new OpenCommandPromptAction(),
             new OpenAdminCommandPromptAction(),
             new TouchAction(),
-            new MkdirAction()
+            new MkdirAction(),
+            new LocalSendAction()
         };
 
     public IEnumerable<IDynamicActionProvider> GetDynamicActionProviders() => new IDynamicActionProvider[]

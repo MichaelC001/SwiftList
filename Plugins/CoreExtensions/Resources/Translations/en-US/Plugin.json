@@ -38,6 +38,7 @@
   "Action_LocateFolder": "Open Folder Location",
   "Action_Cut": "Cut",
   "Action_CopyPath": "Copy Path to Clipboard",
+  "Action_LocalSend": "Send to other devices...",
   "Action_Copy": "Copy",
   "Action_Paste": "Paste",
   "Action_Delete": "Delete",

@@ -26,6 +26,11 @@ public sealed class LocalSendServiceManager : IDisposable
     /// <summary>Raised (on a thread-pool thread) when an upload request requires user confirmation.</summary>
     public event EventHandler<LocalSendUploadRequestArgs>? UploadRequested;
 
+    /// <summary>Raised when a request to open the LocalSend send UI is initiated.</summary>
+    public event EventHandler<(IReadOnlyList<string>? Files, string? Text)>? SendRequested;
+
+    public void OpenSendWindow(IReadOnlyList<string>? files, string? text) => SendRequested?.Invoke(this, (files, text));
+
     public void ApplySettings(UserSettings userSettings)
     {
         var settings = userSettings.LocalSend;

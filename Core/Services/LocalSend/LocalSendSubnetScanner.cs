@@ -43,7 +43,7 @@ internal static class LocalSendSubnetScanner
                 var device = JsonSerializer.Deserialize<LocalSendDeviceInfo>(json);
                 if (device != null && !string.IsNullOrEmpty(device.Alias) && device.Fingerprint != localInfo.Fingerprint)
                 {
-                    device.IpAddress = ip;
+                    device.IpAddress = LocalSendServerHelper.CleanIpAddress(ip);
                     discovery.AddDiscoveredDevice(device);
                     discovery.RegisterWithAnnouncingDevice(ip, port);
                 }

@@ -24,6 +24,14 @@ public class PluginConfigFieldViewModel : ViewModelBase
     public ConfigFieldType FieldType => SchemaField.FieldType;
     public List<string>? Choices => SchemaField.Choices?.Select(c => TranslationService.Get(c)).ToList();
 
+    public void NotifyLanguageChanged()
+    {
+        OnPropertyChanged(nameof(Label));
+        OnPropertyChanged(nameof(Description));
+        OnPropertyChanged(nameof(GroupName));
+        OnPropertyChanged(nameof(Choices));
+    }
+
     public bool IsBoolean => FieldType == ConfigFieldType.Boolean;
     public bool IsText => FieldType == ConfigFieldType.Text;
     public bool IsInteger => FieldType == ConfigFieldType.Integer;

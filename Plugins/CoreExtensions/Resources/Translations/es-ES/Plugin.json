@@ -38,6 +38,7 @@
   "Action_LocateFolder": "Abrir Ubicación de la Carpeta",
   "Action_Cut": "Cortar",
   "Action_CopyPath": "Copiar Ruta al Portapapeles",
+  "Action_LocalSend": "Enviar a otros dispositivos...",
   "Action_Copy": "Copiar",
   "Action_Paste": "Pegar",
   "Action_Delete": "Eliminar",

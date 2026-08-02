@@ -3,14 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
-        Title="LocalSend Sender"
-        Width="480" MinHeight="320" SizeToContent="Height"
+        Title="LocalSend"
+        Width="460" MinHeight="300" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="NoResize"
-        ShowInTaskbar="True"
+        ShowInTaskbar="False"
         Topmost="True">
 
     <Window.Resources>
@@ -19,39 +19,66 @@
                 <ResourceDictionary Source="pack://application:,,,/SwiftList.App;component/Resources/Styles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/SwiftList.App;component/Resources/Styles/Windows/SearchWindow.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="ThemeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="Padding" Value="8,0"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border x:Name="border" CornerRadius="6" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+                                </Trigger>
+                                <Trigger Property="IsFocused" Value="true">
+                                    <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border CornerRadius="10" Background="{DynamicResource ContentBg}"
+    <Border CornerRadius="12" Background="{DynamicResource ContentBg}"
             BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1" Margin="8">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.2" Color="{DynamicResource ShadowColor}"/>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="3" Opacity="0.25" Color="{DynamicResource ShadowColor}"/>
         </Border.Effect>
-        <Border CornerRadius="10" helpers:RoundedClip.IsEnabled="True">
+        <Border CornerRadius="12" helpers:RoundedClip.IsEnabled="True">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="38"/>
+                    <RowDefinition Height="40"/>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="52"/>
+                    <RowDefinition Height="54"/>
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0" Background="{DynamicResource HeaderBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1"
                         MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                            <Image x:Name="TitleBarLogo" Width="16" Height="16" Margin="0,0,8,0"/>
-                            <TextBlock Text="LocalSend Send" 
-                                       FontSize="12.5" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimary2}" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                            <Image x:Name="TitleBarLogo" Width="18" Height="18" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_SendWindowTitle]}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource TitleBarCloseButton}"
-                                HorizontalAlignment="Right" Click="BtnClose_Click"/>
+                        <Button Content="&#xE8BB;" Style="{StaticResource CloseButton}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" Click="BtnClose_Click"/>
                     </Grid>
                 </Border>
 
-                <Grid Grid.Row="1" Margin="20,16,20,16">
+                <Grid Grid.Row="1" Margin="16,14,16,14">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -59,32 +86,46 @@
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,12">
                         <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Device]}"
-                                   FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"/>
-                        <ComboBox ItemsSource="{Binding DiscoveredDevices}"
-                                  SelectedItem="{Binding SelectedDevice}"
-                                  DisplayMemberPath="Alias"
-                                  Height="32"/>
+                                   FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource TextSecondary}" Margin="2,0,0,6"/>
+                        <ListBox ItemsSource="{Binding DiscoveredDevices}"
+                                 SelectedItem="{Binding SelectedDevice}"
+                                 ItemContainerStyle="{StaticResource SidebarItemStyle}"
+                                 MaxHeight="150"
+                                 Background="Transparent" BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Alias}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding IpAddress}" FontSize="11" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" DockPanel.Dock="Right" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="1" Margin="0,0,0,12">
-                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_ReceivePin]}"
-                                   FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"/>
-                        <TextBox Text="{Binding Pin, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource SettingsTextBox}" Height="30"/>
-                    </StackPanel>
+                    <Grid Grid.Row="1" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="120"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_TargetPin]}"
+                                   FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding Pin, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding HasSelectedDevice}"
+                                 Style="{StaticResource ThemeTextBoxStyle}" Height="28"/>
+                    </Grid>
 
-                    <StackPanel Grid.Row="2" Margin="0,0,0,12">
-                        <TextBlock Text="{Binding StatusText}" FontSize="12.5" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
-                        <ProgressBar Value="{Binding ProgressPercentage}" Maximum="100" Height="8"/>
+                    <StackPanel Grid.Row="2" Margin="0,4,0,0">
+                        <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <ProgressBar Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" Height="6"/>
                     </StackPanel>
                 </Grid>
 
                 <Border Grid.Row="2" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Accept]}"
-                                Command="{Binding SendCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0" Width="90" Height="30"/>
-                        <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Close]}"
-                                Click="BtnClose_Click" Style="{StaticResource SecondaryButtonStyle}" Width="80" Height="30"/>
+                        <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Send]}"
+                                Command="{Binding SendCommand}" Style="{StaticResource PrimarySettingsButton}" IsDefault="True" Width="85" Height="30"/>
                     </StackPanel>
                 </Border>
             </Grid>
