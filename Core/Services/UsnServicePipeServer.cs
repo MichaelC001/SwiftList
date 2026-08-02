@@ -117,6 +117,12 @@ public sealed class UsnServicePipeServer : IDisposable
                         continue;
                     }
 
+                    if (request.Id == SearchRequestId.SubscribeDirectoryChanges)
+                    {
+                        await DirectoryChangeSubscription.ServeAsync(pipe, _engine, request.Directories, token).ConfigureAwait(false);
+                        continue;
+                    }
+
                     if (request.Id == SearchRequestId.LaunchHook)
                     {
                         var hookResponse = HookLaunchRequestHandler.Handle(pipe, request.RequestElevation);

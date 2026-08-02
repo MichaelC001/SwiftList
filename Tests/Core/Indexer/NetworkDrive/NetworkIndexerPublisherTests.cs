@@ -22,13 +22,15 @@ public sealed class NetworkIndexerPublisherTests
         public readonly List<string> WatchersEnsured = new();
         public readonly List<(string Drive, string Reason)> QueuedRefreshes = new();
         public int StatusesChangedCount;
+        public readonly List<(string Drive, IReadOnlyCollection<string>? Directories)> DirectoryChanges = new();
 
         public NetworkIndexerPublisher CreatePublisher() => new(
             Gate, Statuses, Indexes,
             drive => WatchersEnsured.Add(drive),
             () => Statuses.Values.ToList(),
             _ => StatusesChangedCount++,
-            (drive, reason) => QueuedRefreshes.Add((drive, reason)));
+            (drive, reason) => QueuedRefreshes.Add((drive, reason)),
+            (drive, directories) => DirectoryChanges.Add((drive, directories)));
     }
 
     [TestMethod]

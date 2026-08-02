@@ -46,6 +46,9 @@ public static class SearchRequestBinarySerializer
             case SearchRequestId.LaunchHook:
                 payloadSize += 1;
                 break;
+            case SearchRequestId.SubscribeDirectoryChanges:
+                payloadSize += CalculateStringListSize(msg.Directories);
+                break;
         }
 
         var totalSize = 12 + payloadSize; // Magic(4) + Version(4) + Length(4) + Payload
@@ -104,6 +107,9 @@ public static class SearchRequestBinarySerializer
                     break;
                 case SearchRequestId.LaunchHook:
                     span[offset++] = (byte)(msg.RequestElevation ? 1 : 0);
+                    break;
+                case SearchRequestId.SubscribeDirectoryChanges:
+                    WriteStringList(span, ref offset, msg.Directories);
                     break;
             }
 
@@ -189,6 +195,9 @@ public static class SearchRequestBinarySerializer
                 break;
             case SearchRequestId.LaunchHook:
                 msg.RequestElevation = payload[offset++] != 0;
+                break;
+            case SearchRequestId.SubscribeDirectoryChanges:
+                msg.Directories = ReadStringList(payload, ref offset);
                 break;
         }
 

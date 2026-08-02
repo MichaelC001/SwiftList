@@ -11,6 +11,13 @@ public static class UserNetworkDriveSearch
         remove => NetworkIndexer.StatusesChanged -= value;
     }
 
+    /// <summary>Where a network, WSL or folder index just changed -- see NetworkIndexer.</summary>
+    public static event Action<string, IReadOnlyCollection<string>?>? DirectoriesChanged
+    {
+        add => NetworkIndexer.DirectoriesChanged += value;
+        remove => NetworkIndexer.DirectoriesChanged -= value;
+    }
+
     public static void Configure()
     {
         var settings = UserSettings.Load();

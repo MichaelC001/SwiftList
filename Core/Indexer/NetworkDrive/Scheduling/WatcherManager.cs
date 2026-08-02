@@ -103,16 +103,17 @@ internal class WatcherManager : IDisposable
         _publishDebounce.Schedule(drive, () => _onIncrementalUpdate(drive, index, TakePendingDirectories(drive)));
     }
 
-    // Null once the set outgrows what a subscriber is willing to carry: at that point it is a bulk
-    // operation across the share, and "somewhere, unknown" is both honest and cheaper than a list
-    // nobody can act on.
+    // Past this a burst is bulk activity across the share rather than something a subscriber could be
+    // told precisely, and "somewhere, unknown" is both honest and cheaper than a list nobody can act on.
+    private const int MaxPendingDirectories = 64;
+
     private IReadOnlyCollection<string>? TakePendingDirectories(string drive)
     {
         lock (_pendingDirectories)
         {
             if (!_pendingDirectories.Remove(drive, out var pending))
                 return Array.Empty<string>();
-            return pending.Count > Usn.DriveChangedDirectories.Capacity ? null : pending;
+            return pending.Count > MaxPendingDirectories ? null : pending;
         }
     }
 

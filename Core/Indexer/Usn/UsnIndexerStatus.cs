@@ -26,18 +26,6 @@ public partial class UsnIndexer
         public int Files { get; set; }
         public int Dirs { get; set; }
         public string CachePath { get; set; } = string.Empty;
-        // Bumped once per applied change batch on this drive, so a subscriber can tell "this drive's
-        // index just moved" from "this status arrived for some other reason". Files/Dirs cannot answer
-        // that: editing a file in place changes its size and timestamps in the index without changing
-        // either count. Monotonic per process, meaningless across restarts -- only differences matter.
-        public long Revision { get; set; }
-
-        /// <summary>Where the revisions above changed things -- see <see cref="DriveChangedDirectories"/>.</summary>
-        /// <remarks>
-        /// A revision says the drive moved; this says where, so a subscriber watching one directory is
-        /// not woken by every unrelated write on the volume it happens to sit on.
-        /// </remarks>
-        public DriveChangedDirectories ChangedDirectories { get; set; } = new();
     }
 
     public IndexerStatus SnapshotStatus()
@@ -61,32 +49,39 @@ public partial class UsnIndexer
                     State = d.State,
                     Files = d.Files,
                     Dirs = d.Dirs,
-                    CachePath = d.CachePath,
-                    Revision = d.Revision,
-                    // Copied, not shared: the live one keeps being appended to under LockObj while a
-                    // subscriber is still reading the status it was handed.
-                    ChangedDirectories = d.ChangedDirectories.Clone()
+                    CachePath = d.CachePath
                 }).ToList()
             };
         }
     }
 
     /// <summary>
-    /// Marks this drive's index as having moved, and says where. <paramref name="changedDirectories"/>
-    /// null means the batch could not be pinned to directories -- see
-    /// <see cref="DriveChangedDirectories.RecordUnknown"/>.
+    /// Raised for every applied change batch: which drive, and the directories it landed in.
+    /// <c>null</c> directories means the batch could not be pinned down and anything on that drive may
+    /// have moved.
     /// </summary>
-    /// <remarks>Caller holds <see cref="LockObj"/>, which is what keeps the two writes one step.</remarks>
-    internal void RecordDriveChange(string drive, IReadOnlyCollection<string>? changedDirectories)
-    {
-        var item = Status.Drives.FirstOrDefault(d => d.Drive.Equals(drive, StringComparison.OrdinalIgnoreCase));
-        if (item == null)
-            return;
+    /// <remarks>
+    /// Raised, not recorded into the status. A batch is small and constant -- measured at roughly 3000
+    /// a second on an ordinary working C:, one or two USN records each -- so anything carried out with
+    /// the status is carried 3000 times a second to every subscriber, and no history small enough to
+    /// send covers the window between two of them. Whoever cares about a particular directory says so
+    /// once and hears back only when it is touched; see SearchRequestId.SubscribeDirectoryChanges.
+    ///
+    /// Raised on whichever thread applied the batch, outside LockObj, and must not block: the next
+    /// batch is typically microseconds behind it.
+    /// </remarks>
+    public event Action<string, IReadOnlyCollection<string>?>? DirectoriesChanged;
 
-        item.Revision++;
-        if (changedDirectories == null)
-            item.ChangedDirectories.RecordUnknown(item.Revision);
-        else
-            item.ChangedDirectories.Record(item.Revision, changedDirectories);
+    internal void RaiseDirectoriesChanged(string drive, IReadOnlyCollection<string>? changedDirectories)
+    {
+        try
+        {
+            DirectoriesChanged?.Invoke(drive, changedDirectories);
+        }
+        catch (Exception ex)
+        {
+            // A subscriber that throws must not take the indexer's apply loop down with it.
+            Logger.Log($"[UsnIndexer] A directory-change subscriber threw: {ex.Message}", LogLevel.Error);
+        }
     }
 }

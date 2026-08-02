@@ -22,11 +22,8 @@ internal static class PipeResponseStatusSerializer
             size += 1; // Enabled
             size += PipeResponseBinarySerializer.GetStringByteCount(drive.Kind) + 5;
             size += PipeResponseBinarySerializer.GetStringByteCount(drive.State) + 5;
-            size += 16; // Files(4) + Dirs(4) + Revision(8)
+            size += 8; // Files(4) + Dirs(4)
             size += PipeResponseBinarySerializer.GetStringByteCount(drive.CachePath) + 5;
-            size += 12; // ChangedDirectories: CoveredFromRevision(8) + entry count(4)
-            foreach (var entry in drive.ChangedDirectories.Entries)
-                size += 8 + PipeResponseBinarySerializer.GetStringByteCount(entry.Directory) + 5;
         }
         return size;
     }
@@ -60,22 +57,7 @@ internal static class PipeResponseStatusSerializer
             offset += 4;
             BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset), drive.Dirs);
             offset += 4;
-            BinaryPrimitives.WriteInt64LittleEndian(span.Slice(offset), drive.Revision);
-            offset += 8;
             PipeResponseBinarySerializer.WriteString(span, ref offset, drive.CachePath);
-
-            // Carried per drive so a subscriber can tell a revision that touched what it watches from
-            // one that touched anything else on the same volume -- see DriveChangedDirectories.
-            BinaryPrimitives.WriteInt64LittleEndian(span.Slice(offset), drive.ChangedDirectories.CoveredFromRevision);
-            offset += 8;
-            BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset), drive.ChangedDirectories.Entries.Count);
-            offset += 4;
-            foreach (var entry in drive.ChangedDirectories.Entries)
-            {
-                BinaryPrimitives.WriteInt64LittleEndian(span.Slice(offset), entry.Revision);
-                offset += 8;
-                PipeResponseBinarySerializer.WriteString(span, ref offset, entry.Directory);
-            }
         }
     }
 
@@ -109,21 +91,7 @@ internal static class PipeResponseStatusSerializer
             offset += 4;
             var dirs = BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(offset));
             offset += 4;
-            var revision = BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(offset));
-            offset += 8;
             var cachePath = PipeResponseBinarySerializer.ReadString(payload, ref offset);
-
-            var coveredFrom = BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(offset));
-            offset += 8;
-            var changedCount = BinaryPrimitives.ReadInt32LittleEndian(payload.AsSpan(offset));
-            offset += 4;
-            var changed = new List<DriveChangedDirectories.Entry>(changedCount);
-            for (var c = 0; c < changedCount; c++)
-            {
-                var entryRevision = BinaryPrimitives.ReadInt64LittleEndian(payload.AsSpan(offset));
-                offset += 8;
-                changed.Add(new DriveChangedDirectories.Entry(entryRevision, PipeResponseBinarySerializer.ReadString(payload, ref offset)));
-            }
 
             status.Drives.Add(new UsnIndexer.DriveIndexStatus
             {
@@ -133,9 +101,7 @@ internal static class PipeResponseStatusSerializer
                 State = state,
                 Files = files,
                 Dirs = dirs,
-                Revision = revision,
                 CachePath = cachePath,
-                ChangedDirectories = DriveChangedDirectories.Restore(coveredFrom, changed)
             });
         }
         return status;

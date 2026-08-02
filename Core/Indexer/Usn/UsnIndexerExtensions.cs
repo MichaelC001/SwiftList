@@ -104,8 +104,10 @@ public static class UsnIndexerExtensions
         {
             indexer.UpdateTotalsFromRuntime();
             indexer.UpdateDriveCounts(drive);
-            indexer.RecordDriveChange(drive, changedDirectories);
         }
+        // Outside the lock: a subscriber matching this against its own watch list has no business
+        // holding up the next batch, which is typically microseconds away.
+        indexer.RaiseDirectoriesChanged(drive, changedDirectories);
         SearchCoordinator.ClearCaches();
 
         // Stat outside any lock: a write-heavy burst (build, bulk copy) can touch hundreds of distinct
@@ -218,9 +220,9 @@ public static class UsnIndexerExtensions
         {
             indexer.UpdateTotalsFromRuntime();
             indexer.UpdateDriveCounts(drive);
-            indexer.RecordDriveChange(drive, changedDirectories);
             isRebuilding = MarkMissedIfRebuilding(indexer, drive);
         }
+        indexer.RaiseDirectoriesChanged(drive, changedDirectories);
         SearchCoordinator.ClearCaches();
         // While this drive is being rebuilt, its FolderDriveMonitor stays alive (mirroring
         // NetworkIndexerPublisher/WatcherManager's own approach for network/WSL/folder-index drives)

@@ -36,6 +36,13 @@ public class SearchEngine : IDisposable
         _idleTimer = new Timer(OnIdleTimerTick, null, IdleTrimAfterMs, IdleTrimAfterMs);
     }
 
+    /// <summary>Every applied change batch: which drive, and where in it -- see UsnIndexer.</summary>
+    public event Action<string, IReadOnlyCollection<string>?> DirectoriesChanged
+    {
+        add => _indexer.DirectoriesChanged += value;
+        remove => _indexer.DirectoriesChanged -= value;
+    }
+
     public event Action<UsnIndexer.IndexerStatus> StatusChanged
     {
         add => _indexer.StatusChanged += value;

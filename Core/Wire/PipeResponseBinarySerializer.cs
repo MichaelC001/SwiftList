@@ -12,13 +12,19 @@ public enum PipeResponseKind : byte
     MachineSettings = 4,
     FileMetadata = 5,
     RecentFiles = 6,
-    HookLaunched = 7
+    HookLaunched = 7,
+    // Pushed, unprompted, on a SubscribeDirectoryChanges connection: the watched directories that a
+    // change just landed under. Carries only what the subscriber asked about, so it is a few paths on
+    // the rare occasion one is touched, not a running commentary on the volume.
+    DirectoriesChanged = 8
 }
 public readonly struct PipeResponse
 {
     public PipeResponseKind Kind { get; init; }
     public string Message { get; init; }
     public UsnIndexer.IndexerStatus? Status { get; init; }
+    /// <summary>Which of the subscriber's watched directories a change landed under.</summary>
+    public List<string>? ChangedDirectories { get; init; }
     public MachineSettings? MachineSettings { get; init; }
     public Dictionary<string, FileMetadataEntry>? FileMetadata { get; init; }
     public List<SearchResult>? RecentFiles { get; init; }
@@ -38,6 +44,8 @@ public static class PipeResponseBinarySerializer
         => WriteAsync(stream, new PipeResponse { Kind = PipeResponseKind.Error, Message = message }, token);
     public static Task WriteStatusAsync(Stream stream, UsnIndexer.IndexerStatus status, CancellationToken token = default)
         => WriteAsync(stream, new PipeResponse { Kind = PipeResponseKind.Status, Status = status }, token);
+    public static Task WriteDirectoriesChangedAsync(Stream stream, List<string> directories, CancellationToken token = default)
+        => WriteAsync(stream, new PipeResponse { Kind = PipeResponseKind.DirectoriesChanged, ChangedDirectories = directories }, token);
     public static Task WriteMachineSettingsAsync(Stream stream, MachineSettings settings, CancellationToken token = default)
         => WriteAsync(stream, new PipeResponse { Kind = PipeResponseKind.MachineSettings, MachineSettings = settings }, token);
     public static Task WriteFileMetadataAsync(Stream stream, Dictionary<string, FileMetadataEntry> metadata, CancellationToken token = default)
@@ -71,6 +79,7 @@ public static class PipeResponseBinarySerializer
             PipeResponseKind.FileMetadata => new PipeResponse { Kind = kind, FileMetadata = ReadFileMetadata(payload, ref offset) },
             PipeResponseKind.RecentFiles => new PipeResponse { Kind = kind, RecentFiles = RecentFilesResponseCodec.ReadRecentFiles(payload, ref offset) },
             PipeResponseKind.HookLaunched => new PipeResponse { Kind = kind, Pid = ReadInt32(payload, ref offset) },
+            PipeResponseKind.DirectoriesChanged => new PipeResponse { Kind = kind, ChangedDirectories = ReadDirectories(payload, ref offset) },
             _ => throw new InvalidDataException($"Unknown pipe response kind: {kind}.")
         };
     }
@@ -97,6 +106,11 @@ public static class PipeResponseBinarySerializer
                 break;
             case PipeResponseKind.HookLaunched:
                 payloadSize += 4;
+                break;
+            case PipeResponseKind.DirectoriesChanged:
+                payloadSize += 4; // count
+                foreach (var directory in response.ChangedDirectories ?? new List<string>())
+                    payloadSize += GetStringByteCount(directory) + 5;
                 break;
         }
         var totalSize = 12 + payloadSize; // Magic(4) + Version(4) + Length(4) + Payload
@@ -128,6 +142,13 @@ public static class PipeResponseBinarySerializer
                     BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset), response.Pid);
                     offset += 4;
                     break;
+                case PipeResponseKind.DirectoriesChanged:
+                    var changed = response.ChangedDirectories ?? new List<string>();
+                    BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset), changed.Count);
+                    offset += 4;
+                    foreach (var directory in changed)
+                        WriteString(span, ref offset, directory);
+                    break;
             }
 
             var actualPayloadSize = offset - 12;
@@ -142,6 +163,15 @@ public static class PipeResponseBinarySerializer
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
+    }
+
+    private static List<string> ReadDirectories(byte[] payload, ref int offset)
+    {
+        var count = ReadInt32(payload, ref offset);
+        var directories = new List<string>(count);
+        for (var i = 0; i < count; i++)
+            directories.Add(ReadString(payload, ref offset));
+        return directories;
     }
 
     internal static int GetStringByteCount(string? str) => Encoding.UTF8.GetByteCount(str ?? string.Empty);

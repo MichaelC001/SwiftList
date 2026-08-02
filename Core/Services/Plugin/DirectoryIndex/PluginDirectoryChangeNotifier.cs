@@ -63,7 +63,7 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
             {
                 // Network drives, WSL distros and folder indexes all publish through here when their
                 // index takes an update (scan, checkpoint, watcher-driven incremental publish).
-                UserNetworkDriveSearch.StatusesChanged += OnNetworkStatuses;
+                UserNetworkDriveSearch.DirectoriesChanged += OnNetworkDirectoriesChanged;
                 _subscribedToNetwork = true;
             }
             if (_localStatusCts == null)
@@ -81,54 +81,36 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
         {
             if (_subscribedToNetwork)
             {
-                UserNetworkDriveSearch.StatusesChanged -= OnNetworkStatuses;
+                UserNetworkDriveSearch.DirectoriesChanged -= OnNetworkDirectoriesChanged;
                 _subscribedToNetwork = false;
             }
             _localStatusCts?.Cancel();
             _localStatusCts?.Dispose();
             _localStatusCts = null;
-            _lastLocalRevisions.Clear();
-            _lastNetworkRevisions.Clear();
         }
     }
 
-    // Network shares, WSL distros and folder indexes, all through the same shape as a local drive: a
-    // status arrives here for progress, a state change or an error just as often as for the index
-    // taking content in, and only the revision tells those apart. Reporting on every status meant a
-    // scan that publishes its progress a hundred times re-listed every plugin's directories a hundred
-    // times over.
-    private void OnNetworkStatuses(IReadOnlyList<NetworkIndexStatus> statuses)
+    // Network shares, WSL distros and folder indexes, the same shape as a local drive but without the
+    // pipe in between: these indexes are built and held in THIS process, so their changes arrive as a
+    // plain event and are matched here rather than over a subscription.
+    private void OnNetworkDirectoriesChanged(string drive, IReadOnlyCollection<string>? changedDirectories)
     {
-        foreach (var status in statuses)
-        {
-            if (string.IsNullOrEmpty(status.Drive))
-                continue;
-
-            long previousRevision;
-            lock (_gate)
-            {
-                var known = _lastNetworkRevisions.TryGetValue(status.Drive, out previousRevision);
-                _lastNetworkRevisions[status.Drive] = status.Revision;
-                if (!known || previousRevision == status.Revision)
-                    continue;
-            }
-
-            foreach (var pluginId in PluginsForChange(status.Drive, status.ChangedDirectories, previousRevision, _registrations()))
-                Report(pluginId);
-        }
+        var registrations = _registrations();
+        var watched = registrations.Select(r => r.Path).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        OnWatchedDirectoriesChanged(WatchedDirectoryMatcher.Match(watched, changedDirectories));
     }
 
-    // The elevated service publishes a status update after every applied change batch (see
-    // UsnIndexerExtensions.ApplyUsnRecords/ApplyFolderChange), which is the only signal this process
-    // gets that a local drive's index moved. Which drive moved is read from its revision, bumped by
-    // exactly those two; WHERE it moved comes from the directories carried alongside it.
+    // Holds the subscription open, re-establishing it whenever the service goes away (an upgrade, a
+    // manual restart). The watch list is sent with the subscribe, so this re-reads the registrations
+    // each time round rather than capturing them once.
     private async Task WatchLocalIndexAsync(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
         {
             try
             {
-                await SearchStatusStream.SubscribeAsync(OnLocalStatus, token).ConfigureAwait(false);
+                var watched = _registrations().Select(r => r.Path).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                await DirectoryChangeStream.SubscribeAsync(watched, OnWatchedDirectoriesChanged, token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -152,73 +134,22 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
         }
     }
 
-    // The revision half of the status only says the volume changed, and matching that against a
-    // registered directory can only ask "does this directory sit on that drive" -- true of everything
-    // on C:, so a temp file or a log line used to wake every plugin watching anything there, and each
-    // paid a full re-listing for it. The directories carried with the revision are what turn that back
-    // into a question with an answer.
-    private void OnLocalStatus(Indexer.Usn.UsnIndexer.IndexerStatus status)
+    // One message per hit, and only for directories this process actually asked about. The matching
+    // happens on the service's side now (see SearchRequestId.SubscribeDirectoryChanges): changes arrive
+    // there at roughly 3000 batches a second on an ordinary working C:, and no summary small enough to
+    // ship with a status covers the window between two of them -- which is why every change used to
+    // read as "somewhere on this drive" and re-list every plugin's directories.
+    private void OnWatchedDirectoriesChanged(IReadOnlyList<string> changed)
     {
-        if (status.Drives == null)
-            return;
-
-        foreach (var drive in status.Drives)
-        {
-            if (string.IsNullOrEmpty(drive.Drive))
-                continue;
-
-            long previousRevision;
-            lock (_gate)
-            {
-                // First sight of a drive is not a change: it is this subscription starting up, and
-                // re-listing every plugin's directories for that would be a refresh nobody asked for.
-                var known = _lastLocalRevisions.TryGetValue(drive.Drive, out previousRevision);
-                _lastLocalRevisions[drive.Drive] = drive.Revision;
-                if (!known || previousRevision == drive.Revision)
-                    continue;
-            }
-
-            ReportLocalChange(drive, previousRevision);
-        }
-    }
-
-    private void ReportLocalChange(Indexer.Usn.UsnIndexer.DriveIndexStatus drive, long previousRevision)
-    {
-        foreach (var pluginId in PluginsForChange(drive.Drive, drive.ChangedDirectories, previousRevision, _registrations()))
-            Report(pluginId);
-    }
-
-    /// <summary>
-    /// The plugins a revision move actually concerns, from the directories it moved in. One rule for
-    /// every index behind it -- local drive, network share, WSL distro or folder index.
-    /// </summary>
-    /// <remarks>
-    /// Falls back to the whole source when the change list cannot account for everything since
-    /// <paramref name="previousRevision"/> -- a batch too wide to enumerate, a rescan that replaced a
-    /// whole tree, or entries that have since fallen off the end. Losing precision there costs a
-    /// refresh nobody needed; assuming nothing happened would cost a plugin the change it was watching
-    /// for, so the imprecise answer is the safe one.
-    /// </remarks>
-    internal static IEnumerable<string> PluginsForChange(
-        string sourceKey,
-        DriveChangedDirectories changed,
-        long previousRevision,
-        IReadOnlyList<(string PluginId, string Path)> registrations)
-    {
-        if (!changed.Covers(previousRevision))
-        {
-            foreach (var pluginId in PluginsUnderSource(sourceKey, registrations))
-                yield return pluginId;
-            yield break;
-        }
-
+        var registrations = _registrations();
         var reported = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var directory in changed.DirectoriesAfter(previousRevision))
+
+        foreach (var directory in changed)
         {
             foreach (var (pluginId, path) in registrations)
             {
-                if (SourceTouchesPath(directory, path) && reported.Add(pluginId))
-                    yield return pluginId;
+                if (WatchedDirectoryMatcher.Touches(directory, path) && reported.Add(pluginId))
+                    Report(pluginId);
             }
         }
     }

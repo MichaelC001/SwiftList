@@ -21,7 +21,18 @@ public enum SearchRequestId : byte
     CancelDriveIndex = 16,
     // Streams a directory's entries out of the index (DirectoryFilter = the directory, Query = the
     // filename filter, Recursive = descend). Streaming, like Search/SearchDir -- not a Process() case.
-    EnumerateDir = 17
+    EnumerateDir = 17,
+
+    // Asks to be told when anything under one of Directories changes, and nothing else. Streaming, and
+    // deliberately its own subscription rather than a field on SubscribeStatus: a connection parked in
+    // a streaming loop cannot accept another request, so the two have to be separate connections.
+    //
+    // The matching happens on the service's side on purpose. Changes arrive there in the thousands per
+    // second (measured: ~3000 batches/s on an ordinary working C:), and the alternative -- shipping the
+    // changed directories out with every status and letting each client sift them -- costs a broadcast
+    // per change and cannot even be made correct, since no history small enough to send covers the
+    // window between two of them. A watch list is a handful of paths sent once; a hit is rare.
+    SubscribeDirectoryChanges = 18
 }
 
 public struct SearchRequestMessage

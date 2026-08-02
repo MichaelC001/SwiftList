@@ -5,6 +5,12 @@ public sealed class NetworkIndexer : IDisposable
 {
     public event Action<IReadOnlyList<NetworkIndexStatus>>? StatusesChanged;
 
+    /// <summary>
+    /// A network, WSL or folder index took content in, and where -- null directories meaning a whole
+    /// tree was replaced. The in-process counterpart of UsnIndexer.DirectoriesChanged.
+    /// </summary>
+    public event Action<string, IReadOnlyCollection<string>?>? DirectoriesChanged;
+
     private readonly object _gate = new();
     internal object Gate => _gate;
     internal readonly Dictionary<string, NetworkIndex> _indexes = new(StringComparer.OrdinalIgnoreCase);
@@ -23,7 +29,8 @@ public sealed class NetworkIndexer : IDisposable
             drive => _watcherManager?.EnsureWatcher(drive),
             GetStatuses,
             statuses => StatusesChanged?.Invoke(statuses),
-            (drive, reason) => _scheduler?.QueueRefreshDrive(drive, reason));
+            (drive, reason) => _scheduler?.QueueRefreshDrive(drive, reason),
+            (drive, changedDirectories) => DirectoriesChanged?.Invoke(drive, changedDirectories));
 
         _watcherManager = new WatcherManager(
             (drive, reason) => _scheduler?.QueueRefreshDrive(drive, reason),
