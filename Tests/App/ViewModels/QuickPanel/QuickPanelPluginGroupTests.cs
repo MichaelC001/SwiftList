@@ -1,6 +1,5 @@
 using SwiftList.App.Helpers;
 using SwiftList.App.ViewModels.QuickPanel;
-using SwiftList.Core;
 using SwiftList.PluginSdk.Abstractions;
 
 namespace SwiftList.App.Tests.ViewModels.QuickPanel;

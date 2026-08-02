@@ -40,12 +40,10 @@ public class ProcessNameResolverTests
     }
 
     [TestMethod]
-    public void ReportsFailureForProcessIdZero()
-    {
+    public void ReportsFailureForProcessIdZero() =>
         // GetWindowThreadProcessId yields 0 for a dead or invalid window, and the callers pass that straight
         // through -- it must not be treated as a real process id.
         Assert.IsFalse(ProcessNameResolver.TryGetImagePath(0, out _));
-    }
 
     [TestMethod]
     public void FallsBackToTheGivenValueForAProcessThatIsNotRunning()
@@ -56,12 +54,10 @@ public class ProcessNameResolverTests
     }
 
     [TestMethod]
-    public void DefaultsToUnknownSoCallersNeverSeeNull()
-    {
+    public void DefaultsToUnknownSoCallersNeverSeeNull() =>
         // ExplorerTracker.GetProcessName has always answered "Unknown" rather than null or empty; adapters
         // null-check the value but the tracker's own logging does not.
         Assert.AreEqual("Unknown", ProcessNameResolver.GetNameWithoutExtension(FindUnusedProcessId()));
-    }
 
     [TestMethod]
     public void RepeatedLookupsOfTheSameProcessHitTheCache()

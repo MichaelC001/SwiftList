@@ -21,12 +21,10 @@ public sealed class QuickNavigationTriggerGateTests
     }
 
     [TestMethod]
-    public void TheViewLeftBehindByHiddenIconsCountsToo()
-    {
+    public void TheViewLeftBehindByHiddenIconsCountsToo() =>
         // SHELLDLL_DefView is what remains once its SysListView32 child is hidden. Reaching it means the
         // cursor got past the icons without landing on one, which is the case this whole fix is about.
         Assert.IsTrue(QuickNavigationTriggerGate.IsDesktopBackgroundClass("SHELLDLL_DefView"));
-    }
 
     [TestMethod]
     public void ClassNamesAreMatchedRegardlessOfCase()
@@ -38,13 +36,11 @@ public sealed class QuickNavigationTriggerGateTests
     }
 
     [TestMethod]
-    public void TheIconListItselfIsNotBackground()
-    {
+    public void TheIconListItselfIsNotBackground() =>
         // The load-bearing exclusion. SysListView32 is where icons live, so a click reaching it has to
         // go on to the hit test rather than being waved through as empty space: treating it as
         // background would pop the menu over every icon on the desktop.
         Assert.IsFalse(QuickNavigationTriggerGate.IsDesktopBackgroundClass("SysListView32"));
-    }
 
     [TestMethod]
     public void OrdinaryWindowsAreNotBackground()

@@ -1,5 +1,3 @@
-using SwiftList.Plugins.QuickLookBridge;
-
 namespace SwiftList.Plugins.QuickLookBridge.Tests;
 
 // CanPreview for an existing path additionally depends on QuickLookPipeClient.IsAvailable(), which is

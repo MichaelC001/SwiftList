@@ -1,4 +1,3 @@
-using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.Plugins.OneCommander.Automation;
 
 using SwiftList.PluginSdk.Abstractions.Plugins.WindowAdapters;

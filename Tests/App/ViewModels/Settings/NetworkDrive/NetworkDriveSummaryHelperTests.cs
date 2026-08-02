@@ -1,4 +1,3 @@
-using SwiftList.Core.Indexer.NetworkDrive;
 using SwiftList.Core.Services.Search;
 using SwiftList.App.ViewModels.Settings.NetworkDrive;
 

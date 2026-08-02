@@ -45,10 +45,8 @@ public sealed class ArgQuotingTests
     }
 
     [TestMethod]
-    public void Quote_SingleTrailingBackslashWithNoSpace_LeftAsIs()
-    {
+    public void Quote_SingleTrailingBackslashWithNoSpace_LeftAsIs() =>
         // No whitespace/quote anywhere -> the no-quoting-needed fast path returns the value verbatim,
         // trailing backslash and all (only relevant once quoting is actually triggered).
         Assert.AreEqual(@"C:\dir\", ArgQuoting.Quote(@"C:\dir\"));
-    }
 }

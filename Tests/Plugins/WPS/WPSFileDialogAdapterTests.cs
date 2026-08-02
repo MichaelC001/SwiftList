@@ -1,5 +1,4 @@
 using SwiftList.PluginSdk.Abstractions.Plugins.WindowAdapters;
-using SwiftList.Plugins.WPS;
 
 namespace SwiftList.Plugins.WPS.Tests;
 
@@ -21,11 +20,9 @@ public sealed class WPSFileDialogAdapterTests
     }
 
     [TestMethod]
-    public void AWPSProcessWithNoLiveWindowIsRejected()
-    {
+    public void AWPSProcessWithNoLiveWindowIsRejected() =>
         // Right process, dead handle. Has to come back false rather than throwing out of the Hook process.
         Assert.IsFalse(Adapter().CanHandle(IntPtr.Zero, "", "wps"));
-    }
 
     [TestMethod]
     public void TheCurrentPathIsAlwaysUnknown()
@@ -38,12 +35,10 @@ public sealed class WPSFileDialogAdapterTests
     }
 
     [TestMethod]
-    public void ThePickedPathIsPassedThroughAsIs()
-    {
+    public void ThePickedPathIsPassedThroughAsIs() =>
         // Unlike the archive-tool adapters, whose destination field can only hold a folder, this one is an
         // Open/Save file-name box: a picked file must arrive here as that file, not as its parent folder.
         Assert.IsFalse(Adapter().TargetIsFolderOnly);
-    }
 
     [TestMethod]
     public void AnEmptyTargetIsRefusedBeforeAnyWindowWork()
@@ -65,18 +60,14 @@ public sealed class WPSFileDialogAdapterTests
     }
 
     [TestMethod]
-    public void TheComponentIsNamedForTheApplicationItIntegratesWith()
-    {
+    public void TheComponentIsNamedForTheApplicationItIntegratesWith() =>
         // Shown in Settings -> Plugins, and it is what the user looks for when deciding whether to turn
         // this off.
         Assert.AreEqual("WPS", Adapter().Name);
-    }
 
     [TestMethod]
-    public void TheAdapterIsDiscoverableAsAFileDialogAdapter()
-    {
+    public void TheAdapterIsDiscoverableAsAFileDialogAdapter() =>
         // How it reaches FileDialogAdapterRegistry at all: the loaders scan for the interface rather than
         // taking any registration from the plugin itself.
         Assert.IsInstanceOfType<IFileDialogAdapter>(Adapter());
-    }
 }

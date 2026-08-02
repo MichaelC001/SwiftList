@@ -1,6 +1,5 @@
 using System.IO;
 using System.Windows;
-using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
 
 using SwiftList.PluginSdk.Abstractions.Plugins.Preview;

@@ -54,10 +54,7 @@ public class TextHighlighterTests
     }
 
     [TestMethod]
-    public void DoesNotMarkADriveTheResultIsNotOn()
-    {
-        Assert.AreEqual("Report", Marked(@"Z:\Projects\Report", "t: report"));
-    }
+    public void DoesNotMarkADriveTheResultIsNotOn() => Assert.AreEqual("Report", Marked(@"Z:\Projects\Report", "t: report"));
 
     [TestMethod]
     public void APathQueryMarksBothItsPartsWhereTheyLand()

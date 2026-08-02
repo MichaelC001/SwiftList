@@ -1,6 +1,4 @@
-﻿using SwiftList.Plugins.WPS;
-
-namespace SwiftList.Plugins.WPS.Tests;
+﻿namespace SwiftList.Plugins.WPS.Tests;
 
 // The name matching that decides whether a window is even worth a UI Automation call. Everything past
 // this point needs a live WPS dialog, so this is the part that can be pinned.

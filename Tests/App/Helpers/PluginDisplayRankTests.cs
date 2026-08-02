@@ -9,29 +9,21 @@ namespace SwiftList.App.Tests.Helpers;
 public sealed class PluginDisplayRankTests
 {
     [TestMethod]
-    public void ConfigurablePluginsRankAheadOfSwitchableOnes()
-    {
-        Assert.IsLessThan(
+    public void ConfigurablePluginsRankAheadOfSwitchableOnes() => Assert.IsLessThan(
             PluginLoaderHelper.DisplayRank(hasConfigFields: false, hasAnyToggleableComponent: true),
             PluginLoaderHelper.DisplayRank(hasConfigFields: true, hasAnyToggleableComponent: false));
-    }
 
     [TestMethod]
-    public void SwitchablePluginsRankAheadOfInertOnes()
-    {
-        Assert.IsLessThan(
+    public void SwitchablePluginsRankAheadOfInertOnes() => Assert.IsLessThan(
             PluginLoaderHelper.DisplayRank(hasConfigFields: false, hasAnyToggleableComponent: false),
             PluginLoaderHelper.DisplayRank(hasConfigFields: false, hasAnyToggleableComponent: true));
-    }
 
     [TestMethod]
-    public void ConfigWinsWhetherOrNotThereAreAlsoSwitches()
-    {
+    public void ConfigWinsWhetherOrNotThereAreAlsoSwitches() =>
         // Config is the stronger signal, so having switches as well must not move a plugin anywhere.
         Assert.AreEqual(
             PluginLoaderHelper.DisplayRank(hasConfigFields: true, hasAnyToggleableComponent: false),
             PluginLoaderHelper.DisplayRank(hasConfigFields: true, hasAnyToggleableComponent: true));
-    }
 
     [TestMethod]
     public void ASingleToggleableComponentStillCountsAsSwitchable()

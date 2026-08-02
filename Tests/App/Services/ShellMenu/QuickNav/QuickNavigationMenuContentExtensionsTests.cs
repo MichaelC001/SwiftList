@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using SwiftList.App.Helpers.Visuals;
 using SwiftList.App.Services.ShellMenu.QuickNav;
-using SwiftList.App.Tests;
 
 namespace SwiftList.App.Tests.Services.ShellMenu.QuickNav;
 

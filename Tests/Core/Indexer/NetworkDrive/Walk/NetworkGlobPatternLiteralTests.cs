@@ -48,30 +48,24 @@ public sealed class NetworkGlobPatternLiteralTests
     }
 
     [TestMethod]
-    public void ALiteralSpanningAWildcard_IsNotJoinedAcrossIt()
-    {
+    public void ALiteralSpanningAWildcard_IsNotJoinedAcrossIt() =>
         // "ab" and "cd" are separate runs; treating "abcd" as required would reject the very thing the
         // pattern exists to match.
         Matches("abc*cde", "abccde", "abcXXXcde");
-    }
 
     [TestMethod]
-    public void ALiteralSpanningASeparator_IsNotJoinedAcrossIt()
-    {
+    public void ALiteralSpanningASeparator_IsNotJoinedAcrossIt() =>
         // A glob containing a separator is root-relative and therefore anchored (see GlobToRegex's
         // hasSlash branch), which is why ExclusionRuleSet tests one against the path relative to the
         // drive root as well as against the full path. Joining "build" and "output" into one required
         // literal would reject these before the regex ever got to decide.
         Matches("build/output", @"build\output", "build/output", @"c:\build\output");
-    }
 
     [TestMethod]
-    public void TheLiteralIsMatchedCaseInsensitively()
-    {
+    public void TheLiteralIsMatchedCaseInsensitively() =>
         // The compiled regex ignores case, so the prefilter has to as well or it would reject matches
         // the pattern accepts.
         Matches("node_modules", @"c:\app\NODE_MODULES", @"c:\app\Node_Modules");
-    }
 
     [TestMethod]
     public void APatternWithNoUsefulLiteral_StillWorks()
@@ -90,12 +84,10 @@ public sealed class NetworkGlobPatternLiteralTests
     }
 
     [TestMethod]
-    public void ContainingTheLiteralIsNotEnoughOnItsOwn()
-    {
+    public void ContainingTheLiteralIsNotEnoughOnItsOwn() =>
         // The prefilter only ever rejects. A text that has the literal still has to satisfy the whole
         // pattern, or the prefilter would have turned into the answer.
         DoesNotMatch("build/output", @"c:\build\other", @"c:\output\build");
-    }
 
     [TestMethod]
     public void AnEmptyPattern_KeepsItsOldMeaning()

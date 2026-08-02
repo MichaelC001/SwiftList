@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using SwiftList.App.Services.AppWindow;
 using SwiftList.App.Services.ShellMenu.ActionFlyout;
-using SwiftList.App.Tests;
 
 namespace SwiftList.App.Tests.Services.ShellMenu.ActionFlyout;
 

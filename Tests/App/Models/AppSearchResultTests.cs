@@ -1,5 +1,4 @@
 using System.Reflection;
-using SwiftList.App;
 using SwiftList.App.ViewModels.Search.Mapping;
 using SwiftList.Core;
 

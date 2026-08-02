@@ -1,6 +1,5 @@
 using System.IO;
 using System.Runtime.InteropServices;
-using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
 using SwiftList.Plugins.Files.Automation;
 

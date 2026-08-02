@@ -21,7 +21,7 @@ public sealed class StreamingResultAccumulatorTests
 
     private static List<SearchResult> Arrivals(params string[] paths) => paths.Select(Result).ToList();
 
-    private static List<string> Paths(IEnumerable<SwiftList.App.AppSearchResult> rows) =>
+    private static List<string> Paths(IEnumerable<AppSearchResult> rows) =>
         rows.Select(r => r.FullPath).ToList();
 
     [TestMethod]

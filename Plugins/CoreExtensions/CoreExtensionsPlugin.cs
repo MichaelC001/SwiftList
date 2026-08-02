@@ -1,5 +1,4 @@
 using SwiftList.Plugins.CoreExtensions.Actions;
-using SwiftList.Plugins.CoreExtensions.Shell;
 using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;

@@ -107,14 +107,11 @@ public partial class MediaPreviewControl : UserControl, IDisposable, IReusablePr
     // Reading the MP4/MOV rotation matrix is file I/O (see Mp4RotationReader), so it's kept off the UI
     // thread; the _currentPath re-check on return guards against the control having been reused for a
     // different file (IReusablePreview) by the time this completes, same pattern ShowFailure already uses.
-    private void ApplyRotation(string path)
-    {
-        Task.Run(() => Mp4RotationReader.GetRotationDegrees(path)).ContinueWith(t =>
-        {
-            if (_currentPath != path || t.Status != TaskStatus.RanToCompletion) return;
-            Player.LayoutTransform = t.Result == 0 ? Transform.Identity : new RotateTransform(t.Result);
-        }, TaskScheduler.FromCurrentSynchronizationContext());
-    }
+    private void ApplyRotation(string path) => Task.Run(() => Mp4RotationReader.GetRotationDegrees(path)).ContinueWith(t =>
+                                                    {
+                                                        if (_currentPath != path || t.Status != TaskStatus.RanToCompletion) return;
+                                                        Player.LayoutTransform = t.Result == 0 ? Transform.Identity : new RotateTransform(t.Result);
+                                                    }, TaskScheduler.FromCurrentSynchronizationContext());
 
     private void Player_MediaEnded(object sender, RoutedEventArgs e)
     {

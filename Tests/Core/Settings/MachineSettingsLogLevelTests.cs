@@ -1,5 +1,3 @@
-using SwiftList.Core;
-
 namespace SwiftList.Core.Tests.Settings;
 
 // The service's own log level, which is the only one it has: it runs as LocalSystem and cannot read the

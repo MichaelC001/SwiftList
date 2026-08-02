@@ -1,4 +1,3 @@
-using System.IO;
 using SwiftList.Plugins.CoreExtensions.Providers.QuickPanel;
 
 namespace SwiftList.Plugins.CoreExtensions.Tests.Providers.QuickPanel;

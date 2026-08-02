@@ -1,8 +1,6 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
 using SwiftList.PluginSdk;
 
 namespace SwiftList.Plugins.QuickLookBridge;

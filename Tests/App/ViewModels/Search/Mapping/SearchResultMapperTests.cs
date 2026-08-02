@@ -176,7 +176,7 @@ public sealed class DirectorySelfExclusionTests
         }
     }
 
-    private static SearchResult Result(string path) => new() { Name = System.IO.Path.GetFileName(path), Path = path };
+    private static SearchResult Result(string path) => new() { Name = Path.GetFileName(path), Path = path };
 
     [TestMethod]
     public void RemoveQueriedDirectoryItself_DriveRootQuery_RemovesMatchingEntry()

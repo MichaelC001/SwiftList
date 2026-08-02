@@ -1,5 +1,3 @@
-using SwiftList.Plugins.WindowSwitcher;
-
 namespace SwiftList.Plugins.WindowSwitcher.Tests;
 
 [TestClass]
@@ -49,10 +47,10 @@ public sealed class WindowSwitcherInstantProviderFuzzyMatchTests
 {
     [TestInitialize]
     public void WireFuzzyMatch() =>
-        SwiftList.PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (pattern, text) => text.Contains(pattern, StringComparison.OrdinalIgnoreCase);
+        PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (pattern, text) => text.Contains(pattern, StringComparison.OrdinalIgnoreCase);
 
     [TestCleanup]
-    public void Reset() => SwiftList.PluginSdk.Services.FuzzyMatchService.IsMatchFunc = null;
+    public void Reset() => PluginSdk.Services.FuzzyMatchService.IsMatchFunc = null;
 
     [TestMethod]
     public void GetMatchTier_TitleOnlyMatchesViaFuzzyFallback_ReturnsTierThree()
@@ -60,7 +58,7 @@ public sealed class WindowSwitcherInstantProviderFuzzyMatchTests
         // Neither the title, process name, nor PID literally contain "daili" -- only the wired fuzzy
         // matcher (standing in for the host's real pinyin transliteration, e.g. matching "daili" against
         // a title containing "代理") recognizes it.
-        SwiftList.PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (pattern, text) => pattern == "daili" && text.Contains("代理");
+        PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (pattern, text) => pattern == "daili" && text.Contains("代理");
 
         var tier = WindowSwitcherInstantProvider.GetMatchTier("设置 - 代理", "chrome", "1234", "daili");
 
@@ -70,7 +68,7 @@ public sealed class WindowSwitcherInstantProviderFuzzyMatchTests
     [TestMethod]
     public void GetMatchTier_ProcessNameOnlyMatchesViaFuzzyFallback_ReturnsTierThree()
     {
-        SwiftList.PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (pattern, text) => pattern == "daili" && text.Contains("代理");
+        PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (pattern, text) => pattern == "daili" && text.Contains("代理");
 
         var tier = WindowSwitcherInstantProvider.GetMatchTier("Untitled", "代理", "1234", "daili");
 
@@ -82,7 +80,7 @@ public sealed class WindowSwitcherInstantProviderFuzzyMatchTests
     {
         // If a literal tier already matched, the fuzzy fallback must never even run -- returning false
         // here would still be correct only because it's never reached; this pins tier 0, not 3.
-        SwiftList.PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (_, _) => false;
+        PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (_, _) => false;
 
         var tier = WindowSwitcherInstantProvider.GetMatchTier("Untitled - Notepad", "notepad", "1234", "notepad");
 
@@ -92,7 +90,7 @@ public sealed class WindowSwitcherInstantProviderFuzzyMatchTests
     [TestMethod]
     public void GetMatchTier_NothingMatchesAtAnyTier_ReturnsNull()
     {
-        SwiftList.PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (_, _) => false;
+        PluginSdk.Services.FuzzyMatchService.IsMatchFunc = (_, _) => false;
 
         var tier = WindowSwitcherInstantProvider.GetMatchTier("Untitled", "notepad", "1234", "calculator");
 

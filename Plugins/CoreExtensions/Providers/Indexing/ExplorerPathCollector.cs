@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using System.Text;
-using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
 
 using SwiftList.PluginSdk.Abstractions.Plugins.WindowAdapters;

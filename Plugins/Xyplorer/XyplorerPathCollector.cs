@@ -1,5 +1,4 @@
 using System.IO;
-using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.Plugins.Xyplorer.Win32;
 
 using SwiftList.PluginSdk.Abstractions.Plugins.WindowAdapters;

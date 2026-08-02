@@ -1,5 +1,3 @@
-using SwiftList.Plugins.BrowserData;
-
 namespace SwiftList.Plugins.BrowserData.Tests;
 
 [TestClass]

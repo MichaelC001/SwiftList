@@ -144,22 +144,18 @@ public sealed class AliasHighlightTests
     }
 
     [TestMethod]
-    public void FullReadingMatch_LightsOnlyTheCharactersTyped()
-    {
+    public void FullReadingMatch_LightsOnlyTheCharactersTyped() =>
         // "jiating" is 甲乙 and stops there. The spelling the provider supplies for matching carries
         // boundary characters and appears nowhere in the candidate, so treating it as ordinary query
         // text used to drag a subsequence across the rest of the name and light 丙丁 as well.
         CollectionAssert.AreEqual(new[] { 0, 1 }, Lit("甲乙丙丁", "jiating"));
-    }
 
     [TestMethod]
-    public void InitialsMatch_LightsOnlyTheCharactersThoseInitialsCameFrom()
-    {
+    public void InitialsMatch_LightsOnlyTheCharactersThoseInitialsCameFrom() =>
         // "tqg" are the initials of 乙丙丁. The same three letters also exist as a scattered
         // subsequence of the full readings (the "g" of ting, then qin's q... ) which lit characters the
         // query never described until the search stopped being allowed to scatter.
         CollectionAssert.AreEqual(new[] { 1, 2, 3 }, Lit("甲乙丙丁", "tqg"));
-    }
 
     [TestMethod]
     public void CrossBoundaryLetters_MatchNothingAndLightNothing()

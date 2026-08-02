@@ -21,16 +21,10 @@ public sealed class ActionMenuBuilderTests
     }
 
     [TestMethod]
-    public void BuildStaticGroupId_MatchingBuiltinLabel_ReturnsBuiltinSentinel()
-    {
-        Assert.AreEqual("__builtin__", ActionMenuBuilder.BuildStaticGroupId("Common", "Common"));
-    }
+    public void BuildStaticGroupId_MatchingBuiltinLabel_ReturnsBuiltinSentinel() => Assert.AreEqual("__builtin__", ActionMenuBuilder.BuildStaticGroupId("Common", "Common"));
 
     [TestMethod]
-    public void BuildStaticGroupId_CustomGroup_ReturnsStaticPrefixedId()
-    {
-        Assert.AreEqual("static::Archive", ActionMenuBuilder.BuildStaticGroupId("Archive", "Common"));
-    }
+    public void BuildStaticGroupId_CustomGroup_ReturnsStaticPrefixedId() => Assert.AreEqual("static::Archive", ActionMenuBuilder.BuildStaticGroupId("Archive", "Common"));
 
     [TestMethod]
     public void BuildDynamicGroupId_IsStableAcrossCalls()

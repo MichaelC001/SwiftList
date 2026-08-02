@@ -22,7 +22,7 @@ public class LocateInExplorerAction : ISearchResultAction
 
     public bool CanExecute(IReadOnlyList<ISearchResult> results) => results.Count > 0 && results.All(r =>
         r != null && !string.IsNullOrEmpty(r.FullPath)
-        && SwiftList.PluginSdk.Helpers.PathExistenceCache.Exists(r.FullPath));
+        && PathExistenceCache.Exists(r.FullPath));
 
     public void Execute(IReadOnlyList<ISearchResult> results, IPluginSearchWindow view)
     {

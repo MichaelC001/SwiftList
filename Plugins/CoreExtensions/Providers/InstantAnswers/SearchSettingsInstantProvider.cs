@@ -16,8 +16,7 @@ public class SearchSettingsInstantProvider : IInstantResultProvider
     private const string DefaultTriggerWord = "set";
     private const int MaxFilteredResults = 8;
 
-    static SearchSettingsInstantProvider()
-    {
+    static SearchSettingsInstantProvider() =>
         // Invalidate the cached trigger word as soon as the host reports this plugin's settings were
         // saved, so a changed trigger applies to the very next keystroke instead of requiring a restart.
         PluginSettingsService.SettingChanged += (pluginId, key) =>
@@ -25,7 +24,6 @@ public class SearchSettingsInstantProvider : IInstantResultProvider
             if (string.Equals(pluginId, PluginId, StringComparison.OrdinalIgnoreCase))
                 _cachedTrigger = null;
         };
-    }
 
     private static string? _cachedTrigger;
 

@@ -1,6 +1,5 @@
 using System.Windows.Controls;
 using SwiftList.App.Services.ShellMenu.QuickNav.RightClickActions;
-using SwiftList.App.Tests;
 
 namespace SwiftList.App.Tests.Services.ShellMenu.QuickNav.RightClickActions;
 
@@ -32,7 +31,7 @@ public sealed class PluginContextMenuBuilderTests
     [StaTestMethod]
     public void GetActiveMenuState_NonItemsControlRoot_ReturnsEmptyItemList()
     {
-        var (parent, items, highlightedIndex) = PluginContextMenuBuilder.GetActiveMenuState(new System.Windows.Controls.Label(), null);
+        var (parent, items, highlightedIndex) = PluginContextMenuBuilder.GetActiveMenuState(new Label(), null);
 
         Assert.IsEmpty(items);
         Assert.AreEqual(-1, highlightedIndex);

@@ -64,7 +64,7 @@ public sealed class SearchResultsReconcilerTests
     public void Replace_NoSelectableResults_SelectsNull()
     {
         var results = new ObservableRangeCollection<AppSearchResult>();
-        AppSearchResult? selected = Result(@"C:\placeholder");
+        var selected = Result(@"C:\placeholder");
 
         SearchResultsReconciler.Replace(results, new[] { Result("__NO_RESULTS__", kind: "Empty") }, null, s => selected = s);
 

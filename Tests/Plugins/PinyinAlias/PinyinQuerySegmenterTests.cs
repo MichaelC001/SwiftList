@@ -19,18 +19,13 @@ public sealed class PinyinQuerySegmenterTests
     }
 
     [TestMethod]
-    public void Segment_MultiSyllableQuery_ProducesTheDelimitedForm()
-    {
-        CollectionAssert.Contains(PinyinQuerySegmenter.Segment("zhengshu"), Sep("zheng", "shu"));
-    }
+    public void Segment_MultiSyllableQuery_ProducesTheDelimitedForm() => CollectionAssert.Contains(PinyinQuerySegmenter.Segment("zhengshu"), Sep("zheng", "shu"));
 
     [TestMethod]
-    public void Segment_HalfTypedLastSyllable_StillSegments()
-    {
+    public void Segment_HalfTypedLastSyllable_StillSegments() =>
         // Search-as-you-type: "zhengsh" is on the way to "zhengshu" and has to keep matching, so the
         // final piece is allowed to be a prefix of a syllable rather than a whole one.
         CollectionAssert.Contains(PinyinQuerySegmenter.Segment("zhengsh"), Sep("zheng", "sh"));
-    }
 
     [TestMethod]
     public void Segment_AmbiguousQuery_ReturnsBothReadings()
@@ -57,12 +52,10 @@ public sealed class PinyinQuerySegmenterTests
     }
 
     [TestMethod]
-    public void Segment_SingleSyllableThatIsAlsoTwoWholeOnes_StillSplits()
-    {
+    public void Segment_SingleSyllableThatIsAlsoTwoWholeOnes_StillSplits() =>
         // The other side of the same rule: "xian" is a syllable, but "xi" + "an" are both whole
         // syllables too, so 西安 stays reachable.
         CollectionAssert.Contains(PinyinQuerySegmenter.Segment("xian"), Sep("xi", "an"));
-    }
 
     [TestMethod]
     public void Segment_NotASyllableSequence_ReturnsNothing()

@@ -88,7 +88,7 @@ public sealed class TextPreviewProviderTests
     {
         // Extension match short-circuits before the binary sniff runs -- unchanged from before this fix,
         // a .cs/.json/etc. file is trusted by extension alone.
-        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"swiftlist-tests-{Guid.NewGuid():N}.cs");
+        var path = Path.Combine(Path.GetTempPath(), $"swiftlist-tests-{Guid.NewGuid():N}.cs");
         File.WriteAllBytes(path, new byte[] { 0x00, 0x00, 0x00 });
         try
         {

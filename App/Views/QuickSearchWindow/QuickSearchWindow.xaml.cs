@@ -48,10 +48,7 @@ public partial class QuickSearchWindow : Window, ISearchWindow, IHasVisibleConte
         _controller = new QuickSearchWindowController(this);
         // Mirrors the flag onto the logo. Subscribed rather than set from ToggleStayOpen alone, because
         // the flag also clears itself on the next real hide (see the controller's FinishHide).
-        _controller.StayOpenChanged += stayOpen =>
-        {
-            SearchBox?.IsStayOpen = stayOpen;
-        };
+        _controller.StayOpenChanged += stayOpen => SearchBox?.IsStayOpen = stayOpen;
         _inputHandler = new QuickSearchWindowInputHandler(this);
         _layoutManager = new QuickSearchWindowLayoutManager(this);
         _resultExecutor = new QuickSearchWindowResultExecutor(this);

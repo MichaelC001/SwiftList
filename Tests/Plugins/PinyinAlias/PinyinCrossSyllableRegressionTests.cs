@@ -61,11 +61,9 @@ public sealed class PinyinCrossSyllableRegressionTests
     }
 
     [TestMethod]
-    public void HalfTypedMultiSyllableQuery_StillMatches()
-    {
+    public void HalfTypedMultiSyllableQuery_StillMatches() =>
         // Search-as-you-type passes through this on the way to "zhengshu".
         Assert.IsTrue(Matches("zhengsh", "管理用户证书"));
-    }
 
     [TestMethod]
     public void SingleSyllableQuery_StillMatches()
@@ -84,10 +82,8 @@ public sealed class PinyinCrossSyllableRegressionTests
     }
 
     [TestMethod]
-    public void DigitsFollowedByPinyin_StillMatch()
-    {
+    public void DigitsFollowedByPinyin_StillMatch() =>
         // The boundary is only placed between two adjacent transliterated characters, so a name mixing
         // digits with CJK keeps its alias unsplit and stays reachable by typing what you can see.
         Assert.IsTrue(Matches("01ji", "第01集"));
-    }
 }

@@ -263,9 +263,9 @@ public static class VirtualFileExtractor
         public int pointlX;
         public int pointlY;
         public uint dwFileAttributes;
-        public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
-        public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
-        public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
+        public FILETIME ftCreationTime;
+        public FILETIME ftLastAccessTime;
+        public FILETIME ftLastWriteTime;
         public uint nFileSizeHigh;
         public uint nFileSizeLow;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxPath)]

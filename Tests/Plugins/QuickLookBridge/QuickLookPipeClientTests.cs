@@ -1,5 +1,3 @@
-using SwiftList.Plugins.QuickLookBridge;
-
 namespace SwiftList.Plugins.QuickLookBridge.Tests;
 
 // Whether QuickLook is actually installed/running can't be controlled from a unit test, so these only

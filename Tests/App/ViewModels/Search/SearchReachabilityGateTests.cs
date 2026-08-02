@@ -42,10 +42,7 @@ public sealed class SearchReachabilityGateTests
     }
 
     [TestMethod]
-    public void IsResultReachable_UnreachableSetEmpty_ReturnsTrue()
-    {
-        Assert.IsTrue(SearchReachabilityGate.IsResultReachable("Z", new HashSet<string>()));
-    }
+    public void IsResultReachable_UnreachableSetEmpty_ReturnsTrue() => Assert.IsTrue(SearchReachabilityGate.IsResultReachable("Z", new HashSet<string>()));
 
     [TestMethod]
     public void IsNetworkSourceReachable_DriveLetterResolved_ReturnsTrue()
@@ -106,7 +103,7 @@ public sealed class SearchReachabilityGateTests
     [TestMethod]
     public void IsNetworkSourceReachable_FolderIndexPathDeleted_ReturnsFalse()
     {
-        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "swiftlist-tests-nonexistent-folder-index");
+        var path = Path.Combine(Path.GetTempPath(), "swiftlist-tests-nonexistent-folder-index");
 
         Assert.IsFalse(SearchReachabilityGate.IsNetworkSourceReachable(path, new HashSet<string>(), new List<string>()));
     }

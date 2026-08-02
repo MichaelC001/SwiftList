@@ -22,8 +22,7 @@ public class WebSearchInstantProvider : IInstantResultProvider
 
     private const string PluginId = "SwiftList.Plugins.WebSearch";
 
-    static WebSearchInstantProvider()
-    {
+    static WebSearchInstantProvider() =>
         // Invalidate the cached sources as soon as the host reports this plugin's settings were
         // saved, so config changes apply to the very next keystroke instead of requiring a restart.
         PluginSettingsService.SettingChanged += (pluginId, key) =>
@@ -33,7 +32,6 @@ public class WebSearchInstantProvider : IInstantResultProvider
                 _cachedSources = null;
             }
         };
-    }
 
     private static List<SearchSourceItem>? _cachedSources;
 

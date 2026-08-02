@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using SwiftList.App.ViewModels;
 
 namespace SwiftList.App.Tests.ViewModels;

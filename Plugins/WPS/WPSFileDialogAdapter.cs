@@ -128,8 +128,7 @@ public class WPSFileDialogAdapter : IFileDialogAdapter
     /// there is no control HWND to SetFocus on, and UI Automation's own SetFocus crosses the process and
     /// thread boundary itself.
     /// </summary>
-    public bool RestoreFocus(IntPtr hwnd)
-    {
+    public bool RestoreFocus(IntPtr hwnd) =>
         // Nothing but a liveness check and SetForegroundWindow.
         //
         // This is the one thing the adapter does that WRITES to the dialog while it may be closing: the
@@ -142,7 +141,6 @@ public class WPSFileDialogAdapter : IFileDialogAdapter
         // destroyed. Reaching further in to put the caret back in the file-name box, which is what this
         // used to do through UI Automation, is not worth any of that -- focus landing on the dialog
         // rather than inside its text box is a detail nobody will notice.
-        return WPSWindowInterop.IsLiveAndVisible(hwnd) && WPSWindowInterop.Activate(hwnd);
-    }
+        WPSWindowInterop.IsLiveAndVisible(hwnd) && WPSWindowInterop.Activate(hwnd);
 
 }

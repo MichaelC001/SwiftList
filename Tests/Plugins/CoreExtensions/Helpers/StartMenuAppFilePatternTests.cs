@@ -20,12 +20,10 @@ public sealed class StartMenuAppFilePatternTests
     }
 
     [TestMethod]
-    public void ThePatternCoversTheKindsThatActuallyAppearInAStartMenu()
-    {
+    public void ThePatternCoversTheKindsThatActuallyAppearInAStartMenu() =>
         // Not an exhaustive list of what ShouldIndex takes -- these are the four an installer really
         // leaves behind, and losing any of them silently is the failure worth catching.
         CollectionAssert.IsSubsetOf(new[] { ".lnk", ".url", ".exe", ".appref-ms" }, Extensions().ToList());
-    }
 
     [TestMethod]
     public void ThePatternIsInTheFormTheHostEnumeratorExpects()

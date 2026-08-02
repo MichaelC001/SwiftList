@@ -87,30 +87,28 @@ public sealed class SearchResultWithHighlightBinarySerializerTests
     public async Task ReadAsync_BufferedBothWays_RoundTripsEveryResultAndItsRanges()
     {
         using var stream = new MemoryStream();
-        await using (var writeBuffer = new BufferedStream(stream, 11))
+        await using var writeBuffer = new BufferedStream(stream, 11);
+        await SearchResultWithHighlightBinarySerializer.WriteHeaderAsync(writeBuffer);
+        for (var i = 0; i < 150; i++)
         {
-            await SearchResultWithHighlightBinarySerializer.WriteHeaderAsync(writeBuffer);
-            for (var i = 0; i < 150; i++)
-            {
-                var name = new string('n', 1 + i % 29) + i + ".txt";
-                await SearchResultWithHighlightBinarySerializer.WriteFileResultAsync(
-                    writeBuffer, MakeResult(name, @"c:\folder" + new string('d', i % 17) + @"\" + name), new[] { 0, 1 + i % 5 });
-            }
-            await SearchResultWithHighlightBinarySerializer.WriteEndAsync(writeBuffer);
-            await writeBuffer.FlushAsync();
+            var name = new string('n', 1 + i % 29) + i + ".txt";
+            await SearchResultWithHighlightBinarySerializer.WriteFileResultAsync(
+                writeBuffer, MakeResult(name, @"c:\folder" + new string('d', i % 17) + @"\" + name), new[] { 0, 1 + i % 5 });
+        }
+        await SearchResultWithHighlightBinarySerializer.WriteEndAsync(writeBuffer);
+        await writeBuffer.FlushAsync();
 
-            stream.Position = 0;
-            var read = new List<(SearchResult Result, int[] Ranges)>();
-            await using var readBuffer = new BufferedStream(stream, 7);
-            await SearchResultWithHighlightBinarySerializer.ReadAsync(readBuffer, (r, ranges) => read.Add((r, ranges)));
+        stream.Position = 0;
+        var read = new List<(SearchResult Result, int[] Ranges)>();
+        await using var readBuffer = new BufferedStream(stream, 7);
+        await SearchResultWithHighlightBinarySerializer.ReadAsync(readBuffer, (r, ranges) => read.Add((r, ranges)));
 
-            Assert.HasCount(150, read);
-            for (var i = 0; i < read.Count; i++)
-            {
-                var expectedName = new string('n', 1 + i % 29) + i + ".txt";
-                Assert.AreEqual(expectedName, read[i].Result.Name, $"name at {i}");
-                CollectionAssert.AreEqual(new[] { 0, 1 + i % 5 }, read[i].Ranges, $"ranges at {i}");
-            }
+        Assert.HasCount(150, read);
+        for (var i = 0; i < read.Count; i++)
+        {
+            var expectedName = new string('n', 1 + i % 29) + i + ".txt";
+            Assert.AreEqual(expectedName, read[i].Result.Name, $"name at {i}");
+            CollectionAssert.AreEqual(new[] { 0, 1 + i % 5 }, read[i].Ranges, $"ranges at {i}");
         }
     }
 

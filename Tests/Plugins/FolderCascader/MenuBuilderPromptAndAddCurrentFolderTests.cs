@@ -1,5 +1,4 @@
 using SwiftList.PluginSdk.Abstractions;
-using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
 using SwiftList.Plugins.FolderCascader.Navigation;
 using static SwiftList.Plugins.FolderCascader.Tests.MenuBuilderTestHelpers;

@@ -13,17 +13,12 @@ namespace SwiftList.App.Tests.Views.QuickSearchWindow;
 public sealed class LockPositionGateTests
 {
     [TestMethod]
-    public void UnlockedIsTheOldBehaviour()
-    {
+    public void UnlockedIsTheOldBehaviour() =>
         // Off by default, so this is what every existing install keeps doing.
         Assert.IsTrue(QuickWindow.ShouldStartDrag(MouseButton.Left, lockPosition: false));
-    }
 
     [TestMethod]
-    public void LockedRefusesTheDrag()
-    {
-        Assert.IsFalse(QuickWindow.ShouldStartDrag(MouseButton.Left, lockPosition: true));
-    }
+    public void LockedRefusesTheDrag() => Assert.IsFalse(QuickWindow.ShouldStartDrag(MouseButton.Left, lockPosition: true));
 
     [TestMethod]
     public void OnlyTheLeftButtonEverStartsADrag()
@@ -64,10 +59,8 @@ public sealed class LockPositionGateTests
     }
 
     [TestMethod]
-    public void TheSettingDefaultsToUnlocked()
-    {
+    public void TheSettingDefaultsToUnlocked() =>
         // Being able to move the window is what everyone already has; turning that off for them on
         // upgrade would be a change nobody asked for.
         Assert.IsFalse(new SearchWindowSettings().LockPosition);
-    }
 }

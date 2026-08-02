@@ -1,5 +1,3 @@
-using SwiftList.Plugins.WindowSwitcher;
-
 namespace SwiftList.Plugins.WindowSwitcher.Tests;
 
 [TestClass]

@@ -129,8 +129,8 @@ public sealed class PluginInfoViewModelTests
 {
     private static PluginComponentViewModel Component(string id, PluginComponentType type, bool enabled = true) => new(id, type, id, enabled);
 
-    private static PluginInfoViewModel MakeVm(List<PluginComponentViewModel> components, List<SwiftList.App.ViewModels.Settings.Plugins.PluginConfigFieldViewModel>? configFields = null) =>
-        new("Name", "1.0", "plugin.dll", "1.0-sdk", components, configFields ?? new List<SwiftList.App.ViewModels.Settings.Plugins.PluginConfigFieldViewModel>());
+    private static PluginInfoViewModel MakeVm(List<PluginComponentViewModel> components, List<PluginConfigFieldViewModel>? configFields = null) =>
+        new("Name", "1.0", "plugin.dll", "1.0-sdk", components, configFields ?? new List<PluginConfigFieldViewModel>());
 
     [TestMethod]
     public void Constructor_SetsBasicFields()
@@ -164,13 +164,13 @@ public sealed class PluginInfoViewModelTests
     [TestMethod]
     public void HasConfigFields_NonEmptyList_ReturnsTrue()
     {
-        var field = new SwiftList.App.ViewModels.Settings.Plugins.PluginConfigFieldViewModel(
+        var field = new PluginConfigFieldViewModel(
             "plugin",
-            new SwiftList.PluginSdk.Abstractions.PluginConfigField { Key = "k", FieldType = SwiftList.PluginSdk.Abstractions.ConfigFieldType.Text, DefaultValue = "" },
-            new SwiftList.Core.UserSettings(),
+            new PluginSdk.Abstractions.PluginConfigField { Key = "k", FieldType = PluginSdk.Abstractions.ConfigFieldType.Text, DefaultValue = "" },
+            new Core.UserSettings(),
             () => { });
 
-        var vm = MakeVm(new List<PluginComponentViewModel>(), new List<SwiftList.App.ViewModels.Settings.Plugins.PluginConfigFieldViewModel> { field });
+        var vm = MakeVm(new List<PluginComponentViewModel>(), new List<PluginConfigFieldViewModel> { field });
 
         Assert.IsTrue(vm.HasConfigFields);
     }
@@ -193,12 +193,10 @@ public sealed class PluginInfoViewModelTests
     // "which plugin am I looking at" is the list's selection rather than a flag on every plugin. What
     // replaced it is IsConfigOpen, which is about the config form inside that one plugin's pane.
     [TestMethod]
-    public void TheDetailsTabIsTheOneShownFirst()
-    {
+    public void TheDetailsTabIsTheOneShownFirst() =>
         // Selecting a plugin should show what it is and what it provides, not drop the user straight
         // into a form.
         Assert.IsFalse(MakeVm(new List<PluginComponentViewModel>()).IsConfigTab);
-    }
 
     [TestMethod]
     public void TheTabCommandsMoveBetweenTheTwoTabs()

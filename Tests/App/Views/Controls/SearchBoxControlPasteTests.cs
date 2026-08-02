@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using SwiftList.App;
 
 namespace SwiftList.App.Tests.Views.Controls;
 

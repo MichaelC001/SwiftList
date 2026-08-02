@@ -62,12 +62,10 @@ public sealed class PinyinAliasProviderTests
     }
 
     [TestMethod]
-    public void MapAliasToSourceIndices_FullPinyinWithoutItsBoundaries_ReturnsNull()
-    {
+    public void MapAliasToSourceIndices_FullPinyinWithoutItsBoundaries_ReturnsNull() =>
         // The undelimited form is no longer something this provider produces for this text, and the
         // contract is to report that rather than guess -- a wrong map silently mis-highlights.
         Assert.IsNull(Provider.MapAliasToSourceIndices("中国", "zhongguo"));
-    }
 
     [TestMethod]
     public void MapAliasToSourceIndices_EmptyInputs_ReturnsNull()

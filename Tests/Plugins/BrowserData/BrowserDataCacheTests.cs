@@ -15,14 +15,11 @@ public sealed class BrowserDataCacheTests
         }
     }
 
-    private static void WriteBookmarksFile(string profileDir)
-    {
-        File.WriteAllText(Path.Combine(profileDir, "Bookmarks"), """
+    private static void WriteBookmarksFile(string profileDir) => File.WriteAllText(Path.Combine(profileDir, "Bookmarks"), """
         { "roots": { "bookmark_bar": { "type": "folder", "children": [
             { "type": "url", "name": "Example", "url": "https://example.com" }
         ] } } }
         """);
-    }
 
     private static void WriteHistoryDb(string profileDir)
     {

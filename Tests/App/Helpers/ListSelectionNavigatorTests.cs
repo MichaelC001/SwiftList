@@ -88,10 +88,7 @@ public class ListSelectionNavigatorTests
     }
 
     [TestMethod]
-    public void ADirectionOfZeroMovesNowhere()
-    {
-        Assert.AreEqual(-1, ListSelectionNavigator.NextSelectable(0, 0, 3, _ => true));
-    }
+    public void ADirectionOfZeroMovesNowhere() => Assert.AreEqual(-1, ListSelectionNavigator.NextSelectable(0, 0, 3, _ => true));
 
     [TestMethod]
     public void NeverTestsMoreRowsThanTheListHolds()
