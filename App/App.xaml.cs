@@ -295,7 +295,7 @@ public partial class App : Application
         Core.Services.LocalSend.LocalSendServiceManager.Instance.SendRequested += OnLocalSendSendRequested;
     }
 
-    private static Views.LocalSend.LocalSendProgressWindow? _activeLocalSendProgressWindow;
+    private static Views.LocalSend.LocalSendReceiveWindow? _activeLocalSendReceiveWindow;
     private static Core.Services.LocalSend.LocalSendProgressArgs? _pendingProgressArgs;
     private static bool _isProgressDispatchPending;
 
@@ -312,19 +312,15 @@ public partial class App : Application
                 var argsToUpdate = _pendingProgressArgs;
                 if (argsToUpdate == null) return;
 
-                if (_activeLocalSendProgressWindow == null || !_activeLocalSendProgressWindow.IsLoaded)
+                if (_activeLocalSendReceiveWindow != null && _activeLocalSendReceiveWindow.IsLoaded)
                 {
-                    _activeLocalSendProgressWindow = new Views.LocalSend.LocalSendProgressWindow();
-                    _activeLocalSendProgressWindow.Closed += (_, _) => _activeLocalSendProgressWindow = null;
-                    _activeLocalSendProgressWindow.Show();
+                    _activeLocalSendReceiveWindow.HandleProgressChanged(argsToUpdate);
                 }
-
-                _activeLocalSendProgressWindow.UpdateProgress(argsToUpdate);
             }));
         }
     }
 
-    private static void OnLocalSendSessionCanceled(object? sender, string sessionId) => Current.Dispatcher.BeginInvoke(new Action(() => _activeLocalSendProgressWindow?.HandleSessionCanceled(sessionId)));
+    private static void OnLocalSendSessionCanceled(object? sender, string sessionId) => Current.Dispatcher.BeginInvoke(new Action(() => _activeLocalSendReceiveWindow?.HandleSessionCanceled(sessionId)));
 
     private static void OnLocalSendTextReceived(object? sender, (string SenderAlias, string Text, bool IsLink) e) => Current.Dispatcher.BeginInvoke(new Action(() =>
     {
@@ -377,21 +373,9 @@ public partial class App : Application
 
     private static void OnLocalSendUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>
     {
-        var win = new Views.LocalSend.LocalSendReceiveRequestWindow(e.Dto);
-        var res = win.ShowDialog();
-
-        if (res == true)
-        {
-            if (win.Result == Views.LocalSend.LocalSendReceiveResult.AcceptCustomDir && !string.IsNullOrWhiteSpace(win.CustomDirectory))
-            {
-                e.CustomDownloadDirectory = win.CustomDirectory;
-            }
-            e.Respond(true);
-        }
-        else
-        {
-            e.Respond(false);
-        }
+        _activeLocalSendReceiveWindow = new Views.LocalSend.LocalSendReceiveWindow(e);
+        _activeLocalSendReceiveWindow.Closed += (_, _) => _activeLocalSendReceiveWindow = null;
+        _activeLocalSendReceiveWindow.ShowDialog();
     }));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();

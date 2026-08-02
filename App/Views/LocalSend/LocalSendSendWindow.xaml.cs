@@ -37,6 +37,22 @@ public partial class LocalSendSendWindow : Window
         Close();
     }
 
+    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.Escape)
+        {
+            if (_vm.IsSending)
+            {
+                _vm.CancelCommand.Execute(null);
+            }
+            else
+            {
+                Close();
+            }
+        }
+    }
+
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         if (_vm.IsSending)
