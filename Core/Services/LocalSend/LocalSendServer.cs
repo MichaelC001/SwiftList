@@ -49,12 +49,12 @@ public sealed class LocalSendServer : IDisposable
         {
             try
             {
-                var listener = new TcpListener(IPAddress.Any, p);
+                var listener = TryCreateDualStackListener(p) ?? new TcpListener(IPAddress.Any, p);
                 listener.Start();
                 _listener = listener;
                 ActualPort = p;
                 DeviceInfo.Port = p;
-                Logger.Log($"[LocalSendServer] Started on port {p} (TcpListener)");
+                Logger.Log($"[LocalSendServer] Started on port {p} (dual-stack={listener.Server.DualMode})");
                 break;
             }
             catch (Exception ex)
@@ -195,6 +195,26 @@ public sealed class LocalSendServer : IDisposable
         }
 
         await stream.FlushAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tries to create a dual-stack TcpListener (IPv6Any + DualMode=true) that accepts
+    /// both IPv4 and IPv6 connections on a single socket. Returns null if IPv6 is
+    /// unavailable on this host (DualMode not supported), so the caller falls back to
+    /// IPv4-only.
+    /// </summary>
+    private static TcpListener? TryCreateDualStackListener(int port)
+    {
+        try
+        {
+            var listener = new TcpListener(IPAddress.IPv6Any, port);
+            listener.Server.DualMode = true;
+            return listener;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void Stop()

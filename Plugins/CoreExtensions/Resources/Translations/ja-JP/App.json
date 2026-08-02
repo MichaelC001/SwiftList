@@ -38,7 +38,7 @@
   "Settings_LocalSend_StatusRunningDesc": "LAN転送サービスは有効で、ファイルの受信やデバイス検出が可能です",
   "Settings_LocalSend_StatusStoppedDesc": "LAN転送サービスは停止中のため、ファイルの受信やデバイス検出はできません",
   "Settings_LocalSend_FileReceived": "ファイル受信完了",
-  "Settings_LocalSend_FileReceivedDesc": "受信: {0}。クリックしてフォルダを開く。",
+  "Settings_LocalSend_FileReceivedDesc": "受信しました: {0}\n\nOKをクリックしてフォルダを開くか、キャンセルで閉じます。",
   "Settings_Browse": "参照...",
   "QuickPanel_Enabled": "クイックパネルを有効にする",
   "QuickPanel_HotkeyHint": "パネルを呼び出すキーは「ホットキー」ページで設定します。パネルを開いた後、「N 番目の結果へジャンプ」の修飾キーを押しながら 1~9 を押すとワークスペースを切り替えられます。",

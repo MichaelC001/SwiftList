@@ -288,20 +288,20 @@ public partial class App : Application
         Core.Services.LocalSend.LocalSendServiceManager.Instance.FileReceived += OnLocalSendFileReceived;
     }
 
-    private void OnLocalSendFileReceived(object? sender, (string FileId, string Path) e) =>
-        // Dispatch to UI thread because TrayIconService lives on it.
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            var fileName = System.IO.Path.GetFileName(e.Path);
-            var title = TranslationManager.Instance["Settings_LocalSend_FileReceived"];
-            var text = string.Format(TranslationManager.Instance["Settings_LocalSend_FileReceivedDesc"], fileName);
+    private static void OnLocalSendFileReceived(object? sender, (string FileId, string Path) e)
+    {
+        var fileName = System.IO.Path.GetFileName(e.Path);
+        var title = TranslationManager.Instance["Settings_LocalSend_FileReceived"];
+        var text = string.Format(TranslationManager.Instance["Settings_LocalSend_FileReceivedDesc"], fileName);
 
-            Services.Tray.TrayIconService.Instance?.ShowBalloonTip(title, text, ToolTipIcon.Info, () =>
-            {
-                try { Process.Start("explorer.exe", $"/select,\"{e.Path}\""); }
-                catch { }
-            });
-        }));
+        // CustomMessageBox.Show already dispatches to the UI thread when called from a background thread.
+        var result = MessageBox.Show(text, title, MessageBoxButton.OKCancel, MessageBoxImage.Information);
+        if (result == MessageBoxResult.OK)
+        {
+            try { Process.Start("explorer.exe", $"/select,\"{e.Path}\""); }
+            catch { }
+        }
+    }
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
 

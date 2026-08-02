@@ -38,7 +38,7 @@
   "Settings_LocalSend_StatusRunningDesc": "传输服务已就绪，可正常接收文件并发现局域网设备",
   "Settings_LocalSend_StatusStoppedDesc": "传输服务已关闭，无法接收文件或发现局域网设备",
   "Settings_LocalSend_FileReceived": "文件接收完成",
-  "Settings_LocalSend_FileReceivedDesc": "已接收：{0}，点击打开所在文件夹",
+  "Settings_LocalSend_FileReceivedDesc": "已接收：{0}\n\n点击「确定」打开所在文件夹，点击「取消」关闭。",
   "Settings_Browse": "浏览...",
   "QuickPanel_Enabled": "启用快速面板",
   "QuickPanel_HotkeyHint": "呼出面板的按键在「快捷键」页设置。面板打开后,按住「跳转到第 N 项结果」的修饰键再按 1~9 即可切换工作区。",
