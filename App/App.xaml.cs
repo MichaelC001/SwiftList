@@ -290,18 +290,33 @@ public partial class App : Application
     }
 
     private static Views.LocalSend.LocalSendProgressWindow? _activeLocalSendProgressWindow;
+    private static Core.Services.LocalSend.LocalSendProgressArgs? _pendingProgressArgs;
+    private static bool _isProgressDispatchPending;
 
-    private static void OnLocalSendProgressChanged(object? sender, Core.Services.LocalSend.LocalSendProgressArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>
-                                                                                                                            {
-                                                                                                                                if (_activeLocalSendProgressWindow == null || !_activeLocalSendProgressWindow.IsLoaded)
-                                                                                                                                {
-                                                                                                                                    _activeLocalSendProgressWindow = new Views.LocalSend.LocalSendProgressWindow();
-                                                                                                                                    _activeLocalSendProgressWindow.Closed += (_, _) => _activeLocalSendProgressWindow = null;
-                                                                                                                                    _activeLocalSendProgressWindow.Show();
-                                                                                                                                }
+    private static void OnLocalSendProgressChanged(object? sender, Core.Services.LocalSend.LocalSendProgressArgs e)
+    {
+        _pendingProgressArgs = e;
 
-                                                                                                                                _activeLocalSendProgressWindow.UpdateProgress(e);
-                                                                                                                            }));
+        if (e.IsAllDone || e.IsFinished || !_isProgressDispatchPending)
+        {
+            _isProgressDispatchPending = true;
+            Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
+            {
+                _isProgressDispatchPending = false;
+                var argsToUpdate = _pendingProgressArgs;
+                if (argsToUpdate == null) return;
+
+                if (_activeLocalSendProgressWindow == null || !_activeLocalSendProgressWindow.IsLoaded)
+                {
+                    _activeLocalSendProgressWindow = new Views.LocalSend.LocalSendProgressWindow();
+                    _activeLocalSendProgressWindow.Closed += (_, _) => _activeLocalSendProgressWindow = null;
+                    _activeLocalSendProgressWindow.Show();
+                }
+
+                _activeLocalSendProgressWindow.UpdateProgress(argsToUpdate);
+            }));
+        }
+    }
 
     private static void OnLocalSendSessionCanceled(object? sender, string sessionId) => Current.Dispatcher.BeginInvoke(new Action(() => _activeLocalSendProgressWindow?.HandleSessionCanceled(sessionId)));
 

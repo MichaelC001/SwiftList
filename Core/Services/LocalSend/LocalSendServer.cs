@@ -91,7 +91,7 @@ public sealed class LocalSendServer : IDisposable
             }
             catch (Exception ex)
             {
-                Logger.Log($"[LocalSendServer] Client handling error: {ex.Message}", LogLevel.Warn);
+                Logger.Log($"[LocalSendServer] Client handling error: {ex.Message}", LogLevel.Debug);
             }
         }
     }
@@ -190,6 +190,7 @@ public sealed class LocalSendServer : IDisposable
         var buffer = new byte[1024 * 1024];
         long bytesReadTotal = 0;
         long lastFlushedBytes = 0;
+        var progressStopwatch = System.Diagnostics.Stopwatch.StartNew();
         var isSuccess = false;
 
         try
@@ -211,14 +212,21 @@ public sealed class LocalSendServer : IDisposable
                         await dest.FlushAsync().ConfigureAwait(false);
                         lastFlushedBytes = bytesReadTotal;
                     }
+
                     var transferredDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
                     transferredDict[fileId] = bytesReadTotal;
-                    var sessionTransferred = transferredDict.Values.Sum();
-                    var sessionTotal = prepareDto?.Files.Values.Sum(f => f.Size) ?? totalBytes;
 
-                    ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-                        sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, fileIndex, totalFiles,
-                        sessionBytesTransferred: sessionTransferred, sessionTotalBytes: sessionTotal));
+                    // ponytail: 30ms throttle prevents Dispatcher lag while keeping receiver progress aligned with socket speed.
+                    if (progressStopwatch.ElapsedMilliseconds >= 30 || bytesReadTotal >= totalBytes)
+                    {
+                        progressStopwatch.Restart();
+                        var sessionTransferred = transferredDict.Values.Sum();
+                        var sessionTotal = prepareDto?.Files.Values.Sum(f => f.Size) ?? totalBytes;
+
+                        ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
+                            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, fileIndex, totalFiles,
+                            sessionBytesTransferred: sessionTransferred, sessionTotalBytes: sessionTotal));
+                    }
                 }
 
                 await dest.FlushAsync().ConfigureAwait(false);

@@ -101,7 +101,7 @@ public static class LocalSendServerHelper
         {
             var urlV2 = $"{scheme}://{cleanIp}:{senderInfo.Port}/api/localsend/v2/cancel?sessionId={sessionId}";
             var respV2 = await SharedClient.PostAsync(urlV2, null).ConfigureAwait(false);
-            Logger.Log($"[LocalSendServer] Notified sender v2 cancellation: {urlV2} -> {respV2.StatusCode}");
+            Logger.Log($"[LocalSendServer] Notified sender v2 cancellation: {urlV2} -> {respV2.StatusCode}", LogLevel.Debug);
             if (respV2.IsSuccessStatusCode) return true;
         }
         catch (Exception ex)
@@ -114,7 +114,7 @@ public static class LocalSendServerHelper
         {
             var urlV1 = $"{scheme}://{cleanIp}:{senderInfo.Port}/api/localsend/v1/cancel";
             var respV1 = await SharedClient.PostAsync(urlV1, null).ConfigureAwait(false);
-            Logger.Log($"[LocalSendServer] Notified sender v1 cancellation: {urlV1} -> {respV1.StatusCode}");
+            Logger.Log($"[LocalSendServer] Notified sender v1 cancellation: {urlV1} -> {respV1.StatusCode}", LogLevel.Debug);
             return respV1.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -149,7 +149,7 @@ public static class LocalSendServerHelper
             if (File.Exists(path))
             {
                 File.Delete(path);
-                Logger.Log($"[LocalSendServer] Cleaned up partial/canceled file: {path}");
+                Logger.Log($"[LocalSendServer] Cleaned up partial/canceled file: {path}", LogLevel.Debug);
             }
         }
         catch (Exception deleteEx)

@@ -209,7 +209,7 @@ public sealed class LocalSendDiscoveryService : IDisposable
 
         if (isNew)
         {
-            Logger.Log($"[LocalSendDiscovery] Discovered device: {device.Alias} ({device.IpAddress}:{device.Port}, model: {device.DeviceModel})");
+            Logger.Log($"[LocalSendDiscovery] Discovered device: {device.Alias} ({device.IpAddress}:{device.Port}, model: {device.DeviceModel})", LogLevel.Debug);
             DeviceDiscovered?.Invoke(this, device);
             DeviceListChanged?.Invoke(this, EventArgs.Empty);
         }
