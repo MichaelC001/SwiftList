@@ -25,6 +25,12 @@ static class Program
         else
         {
             Logger.Initialize("service.log", Logger.SharedDataDir, overwrite: true);
+            // Before the first line, so the level applies to everything this run writes. The service is
+            // the one process that cannot read the per-user log-level setting -- it runs as LocalSystem
+            // and that setting lives under the interactive user's %LocalAppData% -- so it had none at
+            // all, and every LogLevel.Debug line in the indexer was unreachable whatever the settings
+            // page said. See MachineSettings.ServiceLogLevel.
+            Logger.MinimumLevel = MachineSettings.Load().ResolveServiceLogLevel();
             Logger.Log("=========================================");
             Logger.Log($"Service starting with arguments: {string.Join(" ", args)}");
         }
