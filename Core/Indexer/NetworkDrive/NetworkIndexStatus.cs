@@ -1,5 +1,3 @@
-using SwiftList.Core.Indexer.Usn;
-
 namespace SwiftList.Core.Indexer.NetworkDrive;
 
 public sealed class NetworkIndexStatus

@@ -57,6 +57,7 @@ When interacting with this repository, performing code modification, compilation
    * **Only run formatting immediately before committing (not before every compilation) / 只在commit前才format**.
    * Never execute `git commit` or `git push` without explicit user authorization. All code changes must be reviewed and submitted under the direct instructions of the user.
    * **Commit Message Standard**: All commit messages must be written in **English**.
+   * **Commit Body**: When necessary, include a detailed commit body (in English) explaining the motivation, context, design choices, or non-obvious details behind the changes.
    * **No AI Attribution in Commits**: Commit messages (and PR descriptions) must **NOT** contain any AI/assistant attribution or trailers, such as `Co-Authored-By: Claude ...`, "Generated with Claude Code", or similar. Keep messages clean and attribution-free.
 
 4. **Launch and Debug Workflows**
@@ -132,8 +133,9 @@ When interacting with this repository, performing code modification, compilation
     * **Verify before trusting**: before writing a test against a class, read its actual constructor and the method bodies under test yourself. Do not assume a class is safe to construct, or that a member's accessibility (`public`/`internal`/`private`) matches what a prior summary, comment, or triage pass claimed — verify directly, every time.
     * Build and run only the specific test project you changed (see rule 1 — never blind-build the whole solution), and when a test fails, fix it based on the real failure output, not by re-guessing what the "correct" expected value should have been.
 
-12. **Comment Language**
-    * All comments in `.cs` files must be written in English, including comments that explain or reference Chinese-language text, bug reports, or user-facing strings.
+12. **Comment Language & Detailed Documentation**
+    * All comments in `.cs` files must be written in **English**, including comments that explain or reference Chinese-language text, bug reports, or user-facing strings.
+    * **Detailed Comments When Necessary**: Whenever code contains non-obvious logic, complex algorithms, edge-case handlings, or architectural rationale, write clear and detailed comments explaining the context so future maintainers understand why it was built that way.
 
 13. **No Double-Hyphen in XML-Style Comments**
     * Do not use `--` inside `<!-- ... -->` comments in `.xaml` or `.csproj` files — MSBuild/XAML parses a literal `--` inside an XML comment as a syntax error (`MC3000`/`MSB4025`). Use `:` or rephrase instead. This is a recurring mistake; double-check any comment you write in these file types before saving.

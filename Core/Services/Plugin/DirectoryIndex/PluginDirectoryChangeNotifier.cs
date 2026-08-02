@@ -1,11 +1,7 @@
 using SwiftList.Core.DriveMonitoring;
-
-using SwiftList.Core.Indexer.NetworkDrive;
-using SwiftList.Core.Indexer.Usn;
-
 using SwiftList.Core.Services.Network;
-
 using SwiftList.Core.Services.Search;
+
 namespace SwiftList.Core.Services.Plugin.DirectoryIndex;
 
 /// <summary>
@@ -37,8 +33,6 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
 
     private readonly KeyedDebouncer<string> _debouncer = new(QuietPeriodMs, StringComparer.OrdinalIgnoreCase);
     private readonly Func<IReadOnlyList<(string PluginId, string Path)>> _registrations;
-    private readonly Dictionary<string, long> _lastLocalRevisions = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, long> _lastNetworkRevisions = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private CancellationTokenSource? _localStatusCts;
     private bool _subscribedToNetwork;
@@ -153,43 +147,6 @@ internal sealed class PluginDirectoryChangeNotifier : IDisposable
             }
         }
     }
-
-    private void ReportSource(string sourceKey)
-    {
-        foreach (var pluginId in PluginsUnderSource(sourceKey, _registrations()))
-            Report(pluginId);
-    }
-
-    /// <summary>
-    /// The plugins whose registered directories are affected by a change in the source keyed
-    /// <paramref name="sourceKey"/> -- a drive letter, a WSL UNC root or a folder-index path.
-    /// </summary>
-    internal static IEnumerable<string> PluginsUnderSource(string sourceKey, IReadOnlyList<(string PluginId, string Path)> registrations)
-    {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (pluginId, path) in registrations)
-        {
-            if (SourceTouchesPath(sourceKey, path) && seen.Add(pluginId))
-                yield return pluginId;
-        }
-    }
-
-    // Either nesting direction counts: the registered directory sits inside the source that changed, or
-    // it contains that source (a plugin watching D:\ is affected by a folder index under D:\Projects).
-    // Compared with a trailing separator on both sides, so "D:\Foo" never matches a sibling "D:\FooBar".
-    internal static bool SourceTouchesPath(string sourceKey, string path)
-    {
-        if (string.IsNullOrEmpty(sourceKey) || string.IsNullOrEmpty(path))
-            return false;
-
-        var root = WithSeparator(sourceKey.Length == 1 ? sourceKey + Path.VolumeSeparatorChar : sourceKey);
-        var directory = WithSeparator(path);
-        return directory.StartsWith(root, StringComparison.OrdinalIgnoreCase)
-            || root.StartsWith(directory, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string WithSeparator(string value)
-        => value.EndsWith(Path.DirectorySeparatorChar) ? value : value + Path.DirectorySeparatorChar;
 
     public void Dispose()
     {
