@@ -1,6 +1,4 @@
-﻿using SwiftList.Core;
-
-namespace SwiftList.App.ViewModels.QuickPanel;
+﻿namespace SwiftList.App.ViewModels.QuickPanel;
 
 // How the panel notices that a folder it is showing has changed. Split out of
 // QuickPanelViewModelLoading.cs purely to keep that file under the repo's per-file line limit; it has no

@@ -197,7 +197,7 @@ public static class ScrollViewerHelper
     /// </summary>
     internal static TextBoxBase? FindTextHost(ScrollViewer scrollViewer)
     {
-        for (DependencyObject? node = VisualTreeHelper.GetParent(scrollViewer); node != null; node = VisualTreeHelper.GetParent(node))
+        for (var node = VisualTreeHelper.GetParent(scrollViewer); node != null; node = VisualTreeHelper.GetParent(node))
         {
             if (node is TextBoxBase host) return host;
             // Anything else that hosts content of its own means this ScrollViewer is not a text box's

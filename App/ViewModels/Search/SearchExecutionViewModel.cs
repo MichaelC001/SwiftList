@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Windows;
 using SwiftList.App.Helpers;
 using SwiftList.App.ViewModels.Search.Dispatch;

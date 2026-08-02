@@ -243,7 +243,7 @@ public partial class AboutSettingsPage : System.Windows.Controls.UserControl, IN
         if (_latestRelease == null) return;
 
         // Find portable zip asset
-        var zipAsset = Services.Update.UpdateAssetSelector.SelectPortableZip(_latestRelease.Assets, a => a.Name);
+        var zipAsset = UpdateAssetSelector.SelectPortableZip(_latestRelease.Assets, a => a.Name);
         if (zipAsset == null)
         {
             TxtUpdateStatus.Text = TranslationManager.Instance["About_Failed"];

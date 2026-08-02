@@ -50,7 +50,7 @@ public partial class QuickSearchWindow : Window, ISearchWindow, IHasVisibleConte
         // the flag also clears itself on the next real hide (see the controller's FinishHide).
         _controller.StayOpenChanged += stayOpen =>
         {
-            if (SearchBox != null) SearchBox.IsStayOpen = stayOpen;
+            SearchBox?.IsStayOpen = stayOpen;
         };
         _inputHandler = new QuickSearchWindowInputHandler(this);
         _layoutManager = new QuickSearchWindowLayoutManager(this);

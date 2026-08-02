@@ -55,7 +55,7 @@ internal sealed class WorkspaceTabSource : IQuickPanelTabSource
     public void Close(QuickPanelSettings settings)
     {
         var stored = settings.Tabs.FirstOrDefault(tab => tab.Id.Equals(Id, StringComparison.OrdinalIgnoreCase));
-        if (stored != null) stored.Enabled = false;
+        stored?.Enabled = false;
     }
 }
 

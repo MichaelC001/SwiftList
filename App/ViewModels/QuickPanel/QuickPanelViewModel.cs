@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using SwiftList.App.Services;
 using SwiftList.Core;
 using SwiftList.Core.Services.QuickPanel;
 

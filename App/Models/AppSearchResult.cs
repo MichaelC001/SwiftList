@@ -33,7 +33,7 @@ public class AppSearchResult : System.ComponentModel.INotifyPropertyChanged, Plu
 
     // The index record this row displays, for rows that came from a search. Null for synthetic rows,
     // which carry their own values in Extras instead.
-    private SwiftList.Core.SearchResult? _source;
+    private Core.SearchResult? _source;
     private AppSearchResultExtras? _extras;
 
     private AppSearchResultExtras Extras => _extras ??= new AppSearchResultExtras();
@@ -41,7 +41,7 @@ public class AppSearchResult : System.ComponentModel.INotifyPropertyChanged, Plu
     /// <summary>
     /// Builds a row backed by an index record, holding the record rather than copying values out of it.
     /// </summary>
-    internal static AppSearchResult FromIndexResult(SwiftList.Core.SearchResult item, string query, int index, bool isApplication, string? scope)
+    internal static AppSearchResult FromIndexResult(Core.SearchResult item, string query, int index, bool isApplication, string? scope)
     {
         var row = new AppSearchResult
         {

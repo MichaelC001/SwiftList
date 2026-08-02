@@ -29,13 +29,10 @@ public sealed class WatchedDirectoryMatcherTests
             new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu" },
             WatchedDirectoryMatcher.Match(Watched, new[] { @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs" }));
 
-    // A directory is named by its own path when it is itself created, renamed or removed, and somebody
-    // watching what was inside it needs to hear that.
+    // A change to a parent directory (e.g. C:\ or C:\Users\me) is outside the watched directory and must not match it.
     [TestMethod]
-    public void AChangeToAParentOfAWatchedDirectoryMatchesIt()
-        => CollectionAssert.AreEqual(
-            new[] { @"C:\Movies" },
-            WatchedDirectoryMatcher.Match(new List<string> { @"C:\Movies" }, new[] { @"C:\" }));
+    public void AChangeToAParentOfAWatchedDirectoryDoesNotMatchIt()
+        => Assert.IsEmpty(WatchedDirectoryMatcher.Match(new List<string> { @"C:\Movies" }, new[] { @"C:\" }));
 
     // Whole segments only, or a change in one folder would wake somebody watching an unrelated sibling
     // that happens to share its opening characters.
@@ -86,5 +83,12 @@ public sealed class WatchedDirectoryMatcherTests
     {
         Assert.IsTrue(WatchedDirectoryMatcher.Touches(@"\\nas\media\music\albums", @"\\nas\media\music"));
         Assert.IsFalse(WatchedDirectoryMatcher.Touches(@"\\nas\media\video", @"\\nas\media\music"));
+    }
+
+    [TestMethod]
+    public void ForwardSlashesAreNormalized()
+    {
+        Assert.IsTrue(WatchedDirectoryMatcher.Touches(@"//nas/media/music/albums", @"\\nas\media\music"));
+        Assert.IsTrue(WatchedDirectoryMatcher.Touches(@"C:/Movies/Sub", @"C:\Movies"));
     }
 }

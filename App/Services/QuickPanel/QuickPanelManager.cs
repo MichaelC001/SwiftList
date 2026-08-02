@@ -1,6 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Interop;
 using SwiftList.App.ViewModels.QuickPanel;
 using SwiftList.App.Views.QuickPanel;
 
@@ -117,7 +115,7 @@ public sealed partial class QuickPanelManager : IDisposable
     {
         // Cancels a trim that is armed but has not fired, before anything else runs: emptying the
         // working set moments before a summon is strictly worse than never emptying it.
-        Services.IdleWorkingSetTrimmer.WindowShowing();
+        IdleWorkingSetTrimmer.WindowShowing();
 
         _viewModel ??= new QuickPanelViewModel();
 
@@ -179,7 +177,7 @@ public sealed partial class QuickPanelManager : IDisposable
             // The window itself is garbage the moment this runs; the next collection has it, with no
             // help from here. Nor is the icon cache touched: it is shared with the quick window, and
             // dropping it here would make both re-resolve every icon.
-            Services.IdleWorkingSetTrimmer.WindowHidden();
+            IdleWorkingSetTrimmer.WindowHidden();
         };
 
         // Losing the foreground dismisses the panel, the way the inline window goes when the user clicks

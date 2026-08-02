@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Media.Animation;
 using SwiftList.PluginSdk.Services;
 
 using SwiftList.App.Services.AppWindow;

@@ -1,8 +1,6 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using ListBox = System.Windows.Controls.ListBox;
 using ListBoxItem = System.Windows.Controls.ListBoxItem;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;

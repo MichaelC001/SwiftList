@@ -1,7 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using SwiftList.App;
 using SwiftList.App.Services;
 using SwiftList.App.Services.ShellMenu.ActionFlyout;
 using SwiftList.App.ViewModels.QuickPanel;
@@ -12,7 +10,7 @@ namespace SwiftList.App.Views.QuickPanel;
 // front. Lifecycle, the hotkey and the docking maths all live in QuickPanelManager, and what is shown
 // comes from QuickPanelViewModel; this file is only the window's own input handling.
 public partial class QuickPanelWindow : Window,
-    SwiftList.PluginSdk.Abstractions.IPluginSearchWindow,
+    PluginSdk.Abstractions.IPluginSearchWindow,
     Services.AppWindow.IHasVisibleContentInset
 {
     // Must match QuickPanelWindow.xaml's root Border Margin, which is the room its drop shadow needs.
@@ -97,7 +95,7 @@ public partial class QuickPanelWindow : Window,
     {
         var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
-            Views.QuickSearchWindow.Helpers.QuickSearchWindowController.ForceForeground(hwnd);
+            QuickSearchWindow.Helpers.QuickSearchWindowController.ForceForeground(hwnd);
 
         Activate();
         Focus();
@@ -162,7 +160,7 @@ public partial class QuickPanelWindow : Window,
 
         // The flyout closes on its own Escape and hangs its handler on this window too. Letting this
         // one act as well would dismiss the panel out from under a menu the user was only closing.
-        if (Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
+        if (ActionFlyout.IsOpen) return;
 
         // A filter in the box is undone first, and only a second Escape closes the panel. Anything else
         // means the one key that gets you out of a narrowed list also throws away the panel you were
@@ -237,7 +235,7 @@ public partial class QuickPanelWindow : Window,
     {
         if (sender is not System.Windows.Controls.ListBox list) return;
 
-        Views.Controls.Results.ResultsDragDropHelper.Register(list);
+        Controls.Results.ResultsDragDropHelper.Register(list);
         list.SelectionChanged += GroupList_SelectionChanged;
         _activeList ??= list;
     }
@@ -256,7 +254,7 @@ public partial class QuickPanelWindow : Window,
         e.Handled = true;
         var bubbled = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
         {
-            RoutedEvent = UIElement.MouseWheelEvent,
+            RoutedEvent = MouseWheelEvent,
             Source = sender,
         };
         (list.Parent as UIElement)?.RaiseEvent(bubbled);
@@ -266,14 +264,14 @@ public partial class QuickPanelWindow : Window,
     // has one of these and each acts on the folder it heads.
     private void SortToggle_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.FrameworkElement { DataContext: QuickPanelGroupViewModel group })
+        if (sender is FrameworkElement { DataContext: QuickPanelGroupViewModel group })
             group.ToggleSort();
     }
 
     // Also a group's own, alongside its sort: which view suits a folder is a property of the folder.
     private void ViewToggle_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.FrameworkElement { DataContext: QuickPanelGroupViewModel group })
+        if (sender is FrameworkElement { DataContext: QuickPanelGroupViewModel group })
             group.ToggleView();
     }
 

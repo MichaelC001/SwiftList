@@ -58,10 +58,12 @@ public static class WatchedDirectoryMatcher
 
         var change = WithSeparator(changedDirectory);
         var target = WithSeparator(watched);
-        return change.StartsWith(target, StringComparison.OrdinalIgnoreCase)
-            || target.StartsWith(change, StringComparison.OrdinalIgnoreCase);
+        return change.StartsWith(target, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string WithSeparator(string value)
-        => value.EndsWith(Path.DirectorySeparatorChar) ? value : value + Path.DirectorySeparatorChar;
+    {
+        var normalized = value.Replace('/', Path.DirectorySeparatorChar);
+        return normalized.EndsWith(Path.DirectorySeparatorChar) ? normalized : normalized + Path.DirectorySeparatorChar;
+    }
 }

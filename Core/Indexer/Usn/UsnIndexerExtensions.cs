@@ -66,6 +66,8 @@ public static class UsnIndexerExtensions
                 var linkName = namePool.Get(record.FileName);
                 var linkFlags = FileRecordFlagsHelper.FromAttributes((FileAttributes)record.FileAttributes);
                 changedParentFrns.Add(parentFrn);
+                if ((record.FileAttributes & (uint)FileAttributes.Directory) != 0)
+                    changedParentFrns.Add(frn);
 
                 if ((record.Reason & Win32Api.USN_REASON_HARD_LINK_CHANGE) != 0
                     && (record.Reason & (Win32Api.USN_REASON_FILE_CREATE | Win32Api.USN_REASON_FILE_DELETE)) == 0)

@@ -1,5 +1,3 @@
-using SwiftList.App.Views.QuickPanel;
-
 namespace SwiftList.App.Services.QuickPanel;
 
 // When losing the foreground means the panel goes, and when it does not. Split out of
@@ -43,7 +41,7 @@ public sealed partial class QuickPanelManager
             // Nor while the action flyout is up. It hangs its key handler on the panel window and needs
             // it alive to reach it, so closing here would take the menu down with the panel and leave
             // every shortcut on it looking dead.
-            if (SwiftList.App.Services.ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
+            if (ShellMenu.ActionFlyout.ActionFlyout.IsOpen) return;
 
             // The preview this panel opened is a window the panel put on screen and the user reached from
             // a row in it -- scrolling a document or playing a video in there needs real focus. Clicking

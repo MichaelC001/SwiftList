@@ -1,5 +1,3 @@
-using SwiftList.Core;
-
 namespace SwiftList.App.ViewModels.QuickPanel;
 
 // The two things the panel does TO the settings rather than with them: closing a tab and dragging one.

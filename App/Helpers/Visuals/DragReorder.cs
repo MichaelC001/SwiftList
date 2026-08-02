@@ -3,16 +3,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
 using ButtonBase = System.Windows.Controls.Primitives.ButtonBase;
 using DragDropEffects = System.Windows.DragDropEffects;
 using DragEventArgs = System.Windows.DragEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
-using Pen = System.Windows.Media.Pen;
 using Point = System.Windows.Point;
 using Selector = System.Windows.Controls.Primitives.Selector;
-using Size = System.Windows.Size;
 using TextBoxBase = System.Windows.Controls.Primitives.TextBoxBase;
 
 namespace SwiftList.App.Helpers.Visuals;

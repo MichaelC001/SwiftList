@@ -94,6 +94,8 @@ internal class WatcherManager : IDisposable
 
             foreach (var path in changedPaths)
             {
+                if (!string.IsNullOrEmpty(path))
+                    pending.Add(path);
                 var directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     pending.Add(directory);

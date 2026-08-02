@@ -41,7 +41,7 @@ public partial class QuickPanelWindow
     private static bool CanDrop(QuickPanelGroupViewModel? group, DragEventArgs e)
         => CanDrop(group,
             e.Data.GetDataPresent(DataFormats.FileDrop) || VirtualFileExtractor.HasVirtualFiles(e.Data),
-            Views.Controls.Results.ResultsDragDropHelper.IsDragActive);
+            Controls.Results.ResultsDragDropHelper.IsDragActive);
 
     private static QuickPanelGroupViewModel? GroupOf(object sender)
         => (sender as FrameworkElement)?.DataContext as QuickPanelGroupViewModel;
@@ -57,8 +57,7 @@ public partial class QuickPanelWindow
         e.Effects = allowed ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
 
-        if (group != null)
-            group.IsDropTarget = allowed;
+        group?.IsDropTarget = allowed;
     }
 
     private void Group_DragLeave(object sender, DragEventArgs e)
@@ -70,8 +69,7 @@ public partial class QuickPanelWindow
     private void Group_Drop(object sender, DragEventArgs e)
     {
         var group = GroupOf(sender);
-        if (group != null)
-            group.IsDropTarget = false;
+        group?.IsDropTarget = false;
 
         if (!CanDrop(group, e)) return;
 

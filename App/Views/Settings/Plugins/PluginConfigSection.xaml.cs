@@ -7,8 +7,5 @@ namespace SwiftList.App.Views.Settings.Plugins;
 // XAML's bindings and in FieldRowTemplate's own handlers, so there is nothing here but the load.
 public partial class PluginConfigSection : UserControl
 {
-    public PluginConfigSection()
-    {
-        InitializeComponent();
-    }
+    public PluginConfigSection() => InitializeComponent();
 }
