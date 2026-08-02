@@ -33,7 +33,7 @@ When interacting with this repository, performing code modification, compilation
    * Compile projects only when absolutely necessary.
    * **Blind compilation of the entire production solution (e.g., `dotnet build SwiftList.slnx` or `SwiftList.Plugins.slnx`) is strictly prohibited**. You must compile only the specific subproject/csproj to which the modified files belong (for example: `dotnet build Src/MySubProject.csproj`).
    * This maximizes compilation efficiency, reduces resource usage, and avoids file lock conflicts in large workspaces.
-   * **Exception**: `Tests/Tests.slnx` is a dedicated test-only solution (never the production one), and running `dotnet test Tests/Tests.slnx` for a final aggregate check — after the individual test project(s) you actually touched already pass on their own — is fine. Build/test the specific project(s) first; the full-suite run is a last confirmation step, not a substitute for it.
+   * **Full Test Suite Rule**: Running `dotnet test Tests/Tests.slnx` for the full solution test suite is **strictly prohibited during regular development, bug fixing, or feature modification tasks**. You must only build and run the specific test project(s) you modified (e.g., `dotnet test Tests/App/App.csproj`). Running the full aggregate test suite (`dotnet test Tests/Tests.slnx`) is **ONLY** allowed during the formal release process (Release Flow) as a final pre-release validation step after the touched test projects pass.
 
 2. **Do Not Terminate App and Service**
    * **Do NOT proactively terminate the app and background service processes. Only perform testing and compilation. The build process does not conflict with the running app and service.**
