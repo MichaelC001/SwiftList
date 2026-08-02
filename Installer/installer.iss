@@ -70,9 +70,19 @@ CloseApplicationsFilter={#AppExeName},{#CliExeName}
 [Languages]
 Name: "en_US"; MessagesFile: "compiler:Default.isl"
 Name: "zh_CN"; MessagesFile: "ThirdParty\ChineseSimplified.isl"
+Name: "zh_TW"; MessagesFile: "ThirdParty\ChineseTraditional.isl"
+Name: "zh_HK"; MessagesFile: "ThirdParty\ChineseTraditional.isl"
+Name: "es_ES"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "ja_JP"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "ko_KR"; MessagesFile: "compiler:Languages\Korean.isl"
 
 #include "Languages\en-US.iss"
 #include "Languages\zh-CN.iss"
+#include "Languages\zh-TW.iss"
+#include "Languages\zh-HK.iss"
+#include "Languages\es-ES.iss"
+#include "Languages\ja-JP.iss"
+#include "Languages\ko-KR.iss"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
