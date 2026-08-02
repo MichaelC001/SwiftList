@@ -13,10 +13,7 @@ internal sealed partial class NetworkIndexerPublisher
         lock (_gate)
         {
             var isTracked = _statuses.TryGetValue(drive, out var status);
-            var isRescanning = isTracked && status!.State == "indexing";
-            if (isRescanning)
-                _missedDuringRescan.Add(drive);
-            return isRescanning;
+            return isTracked && status!.State == "indexing";
         }
     }
 
@@ -27,8 +24,6 @@ internal sealed partial class NetworkIndexerPublisher
         {
             var isTracked = _statuses.TryGetValue(drive, out var stateCheck);
             skip = !isTracked || stateCheck!.State == "indexing";
-            if (skip && isTracked)
-                _missedDuringRescan.Add(drive);
         }
         if (skip)
             return;

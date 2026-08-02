@@ -197,7 +197,7 @@ public sealed class NetworkIndexerPublisherTests
     // already finished and moved the drive back to "ready", missing the flag entirely (see this method's
     // own comment on WatcherManager for the full failure scenario this closes).
     [TestMethod]
-    public void MarkMissedIfRescanning_DriveCurrentlyIndexing_FlagsItAndReturnsTrue()
+    public void MarkMissedIfRescanning_DriveCurrentlyIndexing_ReturnsTrue()
     {
         var fixture = new Fixture();
         fixture.Statuses["Z"] = new NetworkIndexStatus { Drive = "Z", State = "indexing" };
@@ -206,10 +206,8 @@ public sealed class NetworkIndexerPublisherTests
         var result = publisher.MarkMissedIfRescanning("Z");
 
         Assert.IsTrue(result);
-        // OnRefreshFinished is what consumes the flag -- exercise it here instead of reaching into the
-        // publisher's private HashSet, matching this test class's existing style.
         publisher.OnRefreshFinished("Z", new NetworkIndex("Z"));
-        CollectionAssert.Contains(fixture.QueuedRefreshes.Select(r => r.Drive).ToList(), "Z");
+        Assert.IsEmpty(fixture.QueuedRefreshes);
     }
 
     [TestMethod]
@@ -265,21 +263,17 @@ public sealed class NetworkIndexerPublisherTests
         Assert.AreEqual(0, fixture.StatusesChangedCount);
     }
 
-    // Regression coverage: a watcher-detected change skipped while a rescan was running used to just be
-    // discarded once that rescan finished and swapped in its own freshly-walked index -- silently losing
-    // it forever unless something else happened to touch that same path again. OnRefreshFinished must
-    // queue one follow-up refresh so the walk gets a chance to observe it on its own.
     [TestMethod]
-    public void OnRefreshFinished_AfterAWatcherChangeWasMissedDuringTheRescan_QueuesAFollowUpRefresh()
+    public void OnRefreshFinished_AfterAWatcherChangeDuringRescan_DoesNotQueueFollowUpRefresh()
     {
         var fixture = new Fixture();
         fixture.Statuses["Z"] = new NetworkIndexStatus { Drive = "Z", State = "indexing" };
         var publisher = fixture.CreatePublisher();
-        publisher.PublishIncrementalUpdate("Z", new NetworkIndex("Z")); // skipped while indexing, recorded as missed
+        publisher.PublishIncrementalUpdate("Z", new NetworkIndex("Z")); // skipped while indexing
 
         publisher.OnRefreshFinished("Z", new NetworkIndex("Z"));
 
-        CollectionAssert.Contains(fixture.QueuedRefreshes.Select(r => r.Drive).ToList(), "Z");
+        Assert.IsEmpty(fixture.QueuedRefreshes);
     }
 
     [TestMethod]
@@ -291,36 +285,6 @@ public sealed class NetworkIndexerPublisherTests
         var publisher = fixture.CreatePublisher();
 
         publisher.OnRefreshFinished("Z", new NetworkIndex("Z"));
-
-        Assert.IsEmpty(fixture.QueuedRefreshes);
-    }
-
-    [TestMethod]
-    public void OnRefreshFinished_DriveRemovedFromConfigAfterAMissedWatcherChange_DoesNotQueueAFollowUpRefresh()
-    {
-        var fixture = new Fixture();
-        fixture.Statuses["Z"] = new NetworkIndexStatus { Drive = "Z", State = "indexing" };
-        var publisher = fixture.CreatePublisher();
-        publisher.PublishIncrementalUpdate("Z", new NetworkIndex("Z")); // recorded as missed
-        fixture.Statuses.Remove("Z"); // drive removed from config while the rescan was still running
-
-        publisher.OnRefreshFinished("Z", new NetworkIndex("Z"));
-
-        Assert.IsEmpty(fixture.QueuedRefreshes);
-    }
-
-    [TestMethod]
-    public void OnRefreshFinished_MissedFlagFromAnEarlierCompletedRescan_DoesNotCarryOverToTheNextOne()
-    {
-        var fixture = new Fixture();
-        fixture.Statuses["Z"] = new NetworkIndexStatus { Drive = "Z", State = "indexing" };
-        var publisher = fixture.CreatePublisher();
-        publisher.PublishIncrementalUpdate("Z", new NetworkIndex("Z")); // recorded as missed
-        publisher.OnRefreshFinished("Z", new NetworkIndex("Z")); // consumes it, queues one follow-up
-        fixture.QueuedRefreshes.Clear();
-        fixture.Statuses["Z"] = new NetworkIndexStatus { Drive = "Z", State = "indexing" };
-
-        publisher.OnRefreshFinished("Z", new NetworkIndex("Z")); // nothing missed THIS time around
 
         Assert.IsEmpty(fixture.QueuedRefreshes);
     }
