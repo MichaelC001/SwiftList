@@ -1,4 +1,5 @@
 using SwiftList.Core.Indexer.NetworkDrive.Walk;
+
 namespace SwiftList.Core.IndexV2.Delta;
 
 // Watcher-family (folder-scan / FAT drive-letter) path-based delta application, mirroring
@@ -13,7 +14,7 @@ namespace SwiftList.Core.IndexV2.Delta;
 public static class DeltaPathApplier
 {
     public static bool ApplyCreatedOrChanged(DeltaOverlay delta, UInt128 rootId, string root, string path, ExclusionRuleSet? exclusionRules = null)
-        => UpsertPath(delta, rootId, root, path, includeChildren: Directory.Exists(path), exclusionRules);
+        => UpsertPath(delta, rootId, root, path, includeChildren: Directory.Exists(path), exclusionRules, parentAncestors: null, depth: 0);
 
     public static bool ApplyDeleted(DeltaOverlay delta, string path)
     {
@@ -36,12 +37,23 @@ public static class DeltaPathApplier
     public static bool ApplyRenamed(DeltaOverlay delta, UInt128 rootId, string root, string oldPath, string newPath, ExclusionRuleSet? exclusionRules = null)
     {
         var changed = ApplyDeleted(delta, oldPath);
-        changed |= UpsertPath(delta, rootId, root, newPath, includeChildren: Directory.Exists(newPath), exclusionRules);
+        changed |= UpsertPath(delta, rootId, root, newPath, includeChildren: Directory.Exists(newPath), exclusionRules, parentAncestors: null, depth: 0);
         return changed;
     }
 
-    private static bool UpsertPath(DeltaOverlay delta, UInt128 rootId, string root, string path, bool includeChildren, ExclusionRuleSet? exclusionRules)
+    private static bool UpsertPath(
+        DeltaOverlay delta,
+        UInt128 rootId,
+        string root,
+        string path,
+        bool includeChildren,
+        ExclusionRuleSet? exclusionRules,
+        AncestorNode? parentAncestors,
+        int depth)
     {
+        if (depth > 128)
+            return false;
+
         FileInfo info;
         FileAttributes attributes;
         try
@@ -66,6 +78,30 @@ public static class DeltaPathApplier
         if (normalized.Equals(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             return false;
 
+        AncestorNode? nextAncestors = null;
+        if (isDirectory)
+        {
+            if (parentAncestors != null && parentAncestors.Contains(normalized))
+                return false;
+
+            try
+            {
+                if (Directory.ResolveLinkTarget(path, returnFinalTarget: true) is { } target)
+                {
+                    var targetPath = PathHelpers.NormalizePath(target.FullName, isDirectory: true);
+                    if (parentAncestors != null && parentAncestors.Contains(targetPath))
+                        return false;
+                }
+            }
+            catch
+            {
+            }
+
+            nextAncestors = new AncestorNode(normalized, parentAncestors);
+            if (nextAncestors.HasSegmentCycle())
+                return false;
+        }
+
         EnsureParentChain(delta, rootId, normalizedRoot, normalized);
 
         var name = Path.GetFileName(normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
@@ -88,13 +124,20 @@ public static class DeltaPathApplier
             FileTimeHelper.ToUnixSeconds(info.LastWriteTimeUtc),
             FileTimeHelper.ToUnixSeconds(info.LastAccessTimeUtc));
 
-        if (includeChildren && isDirectory)
-            UpsertDirectoryChildren(delta, rootId, root, normalized, exclusionRules);
+        if (includeChildren && isDirectory && nextAncestors != null)
+            UpsertDirectoryChildren(delta, rootId, root, normalized, exclusionRules, nextAncestors, depth + 1);
 
         return true;
     }
 
-    private static void UpsertDirectoryChildren(DeltaOverlay delta, UInt128 rootId, string root, string directory, ExclusionRuleSet? exclusionRules)
+    private static void UpsertDirectoryChildren(
+        DeltaOverlay delta,
+        UInt128 rootId,
+        string root,
+        string directory,
+        ExclusionRuleSet? exclusionRules,
+        AncestorNode ancestors,
+        int depth)
     {
         IEnumerable<string> children;
         try
@@ -107,7 +150,7 @@ public static class DeltaPathApplier
         }
 
         foreach (var child in children)
-            UpsertPath(delta, rootId, root, child, includeChildren: true, exclusionRules);
+            UpsertPath(delta, rootId, root, child, includeChildren: true, exclusionRules, ancestors, depth);
     }
 
     private static void EnsureParentChain(DeltaOverlay delta, UInt128 rootId, string normalizedRoot, string normalizedPath)
