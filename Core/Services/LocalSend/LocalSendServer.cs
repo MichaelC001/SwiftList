@@ -217,13 +217,10 @@ public sealed class LocalSendServer : IDisposable
 
         if (!isSuccess)
         {
-            for (var i = 0; i < 10; i++)
-            {
-                if (IsSessionCanceled(sessionId)) break;
-                await Task.Delay(100).ConfigureAwait(false);
-            }
-
-            CancelSession(sessionId);
+            // Brief grace period for a concurrent /cancel POST from the sender to arrive and
+            // fire SessionCanceled via the route handler before we return.
+            if (!IsSessionCanceled(sessionId))
+                await Task.Delay(300).ConfigureAwait(false);
             return;
         }
 
