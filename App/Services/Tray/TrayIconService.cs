@@ -18,6 +18,9 @@ public class TrayIconService : IDisposable
     private readonly Action _toggleVisibilityAction;
     private IntPtr _hIcon = IntPtr.Zero;
 
+    /// <summary>The active tray service, available after the Quick window initializes it.</summary>
+    public static TrayIconService? Instance { get; private set; }
+
     private System.Windows.Controls.ContextMenu? _wpfContextMenu;
     private System.Windows.Controls.MenuItem? _wpfItemShowWindow;
     private System.Windows.Controls.MenuItem? _wpfItemToggleHotkeys;
@@ -40,6 +43,8 @@ public class TrayIconService : IDisposable
         ThemeManager.Instance.ThemeChanged += UpdateTrayIconThemeColor;
         TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
         UpdateMenuTexts();
+
+        Instance = this;
     }
 
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => UpdateMenuTexts();
@@ -323,6 +328,35 @@ public class TrayIconService : IDisposable
 
     private void UpdateCleanExitVisibility() => _wpfItemCleanExit?.Visibility = TrayCleanExitHelper.IsOnlyAppProcessRunning() ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>
+    /// Shows a balloon tip notification from the system tray icon.
+    /// <paramref name="onClick"/> is invoked on the UI thread when the user clicks the balloon.
+    /// </summary>
+    public void ShowBalloonTip(string title, string text, ToolTipIcon icon = ToolTipIcon.Info, Action? onClick = null)
+    {
+        if (_notifyIcon == null) return;
+
+        // Force icon visible for the duration of the balloon even if HideTrayIcon is on;
+        // Windows will not show the balloon at all if the icon is hidden.
+        _notifyIcon.Visible = true;
+
+        if (onClick != null)
+        {
+            EventHandler balloonClicked = null!;
+            balloonClicked = (s, e) =>
+            {
+                _notifyIcon.BalloonTipClicked -= balloonClicked;
+                onClick();
+            };
+            _notifyIcon.BalloonTipClicked += balloonClicked;
+        }
+
+        _notifyIcon.ShowBalloonTip(5000, title, text, icon);
+
+        // Restore the configured visibility after the balloon has shown.
+        ApplyTrayIconVisible();
+    }
+
     public void Dispose()
     {
         ThemeManager.Instance.ThemeChanged -= UpdateTrayIconThemeColor;
@@ -332,5 +366,7 @@ public class TrayIconService : IDisposable
         if (_dummyWindow != null) { try { _dummyWindow.Close(); } catch { } _dummyWindow = null; }
         if (_notifyIcon != null) { _notifyIcon.Visible = false; _notifyIcon.Dispose(); _notifyIcon = null; }
         if (_hIcon != IntPtr.Zero) { DestroyIcon(_hIcon); _hIcon = IntPtr.Zero; }
+
+        if (Instance == this) Instance = null;
     }
 }

@@ -285,7 +285,23 @@ public partial class App : Application
 
         // LocalSend transfer service runs in App process
         Core.Services.LocalSend.LocalSendServiceManager.Instance.ApplySettings(settings);
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.FileReceived += OnLocalSendFileReceived;
     }
+
+    private void OnLocalSendFileReceived(object? sender, (string FileId, string Path) e) =>
+        // Dispatch to UI thread because TrayIconService lives on it.
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var fileName = System.IO.Path.GetFileName(e.Path);
+            var title = TranslationManager.Instance["Settings_LocalSend_FileReceived"];
+            var text = string.Format(TranslationManager.Instance["Settings_LocalSend_FileReceivedDesc"], fileName);
+
+            Services.Tray.TrayIconService.Instance?.ShowBalloonTip(title, text, ToolTipIcon.Info, () =>
+            {
+                try { Process.Start("explorer.exe", $"/select,\"{e.Path}\""); }
+                catch { }
+            });
+        }));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
 

@@ -9,6 +9,9 @@ public sealed class LocalSendServiceManager : IDisposable
 
     public bool IsRunning => _server != null || _discoveryService != null;
 
+    /// <summary>Raised (on a thread-pool thread) when a file has been fully received and saved to disk.</summary>
+    public event EventHandler<(string FileId, string Path)>? FileReceived;
+
     public void ApplySettings(UserSettings userSettings)
     {
         var settings = userSettings.LocalSend;
@@ -42,6 +45,7 @@ public sealed class LocalSendServiceManager : IDisposable
         _discoveryService.LocalInfo.Alias = alias;
         _discoveryService.LocalInfo.Port = _server.ActualPort > 0 ? _server.ActualPort : settings.Port;
         _server.DeviceRegistered += (s, device) => _discoveryService?.AddDiscoveredDevice(device);
+        _server.FileReceived += (s, e) => FileReceived?.Invoke(this, e);
         _discoveryService.Start(settings.Port);
     }
 

@@ -37,6 +37,8 @@
   "Settings_LocalSend_StatusStopped": "Stopped",
   "Settings_LocalSend_StatusRunningDesc": "LAN transfer service is active and ready to discover devices",
   "Settings_LocalSend_StatusStoppedDesc": "LAN transfer service is disabled, cannot receive files or discover devices",
+  "Settings_LocalSend_FileReceived": "File Received",
+  "Settings_LocalSend_FileReceivedDesc": "Received: {0}. Click to open folder.",
   "Settings_Browse": "Browse...",
   "QuickPanel_Enabled": "Enable the quick panel",
   "QuickPanel_HotkeyHint": "The key that summons the panel is on the Hotkeys page. Once it is open, hold the \"jump to Nth result\" modifier and press 1-9 to switch workspaces.",

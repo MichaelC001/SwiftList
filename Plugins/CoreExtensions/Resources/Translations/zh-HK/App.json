@@ -37,6 +37,8 @@
   "Settings_LocalSend_StatusStopped": "已停止",
   "Settings_LocalSend_StatusRunningDesc": "傳輸服務已就緒，可正常接收檔案並發現局域網裝置",
   "Settings_LocalSend_StatusStoppedDesc": "傳輸服務已關閉，無法接收檔案或發現局域網裝置",
+  "Settings_LocalSend_FileReceived": "檔案接收完成",
+  "Settings_LocalSend_FileReceivedDesc": "已接收：{0}，點擊打開所在資料夾",
   "Settings_Browse": "瀏覽...",
   "QuickPanel_Enabled": "啟用快速面板",
   "QuickPanel_HotkeyHint": "呼出面板嘅按鍵喺「快速鍵」頁設定。面板開咗之後,㩒住「跳去第 N 項結果」嘅輔助鍵再㩒 1~9 就可以切換工作區。",

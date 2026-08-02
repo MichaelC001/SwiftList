@@ -37,6 +37,8 @@
   "Settings_LocalSend_StatusStopped": "Detenido",
   "Settings_LocalSend_StatusRunningDesc": "El servicio de transferencia LAN está activo y listo para descubrir dispositivos",
   "Settings_LocalSend_StatusStoppedDesc": "El servicio de transferencia LAN está desactivado, no puede recibir archivos ni descubrir dispositivos",
+  "Settings_LocalSend_FileReceived": "Archivo recibido",
+  "Settings_LocalSend_FileReceivedDesc": "Recibido: {0}. Haga clic para abrir la carpeta.",
   "Settings_Browse": "Examinar...",
   "QuickPanel_Enabled": "Activar el panel rápido",
   "QuickPanel_HotkeyHint": "La tecla que abre el panel está en la página Atajos. Una vez abierto, mantén el modificador de \"ir al resultado N\" y pulsa 1-9 para cambiar de espacio de trabajo.",
