@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
 using SwiftList.Core.Services.LocalSend.Models;
 
 namespace SwiftList.Core.Services.LocalSend;
@@ -108,6 +107,7 @@ public sealed class LocalSendServer : IDisposable
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _canceledSessions = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<string, byte>> _sessionCompletedFiles = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<string, long>> _sessionTransferredBytes = new();
 
     public void CancelSession(string sessionId)
     {
@@ -205,8 +205,15 @@ public sealed class LocalSendServer : IDisposable
 
                     await dest.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
                     bytesReadTotal += bytesRead;
+
+                    var transferredDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
+                    transferredDict[fileId] = bytesReadTotal;
+                    var sessionTransferred = transferredDict.Values.Sum();
+                    var sessionTotal = prepareDto?.Files.Values.Sum(f => f.Size) ?? totalBytes;
+
                     ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-                        sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, fileIndex, totalFiles));
+                        sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, fileIndex, totalFiles,
+                        sessionBytesTransferred: sessionTransferred, sessionTotalBytes: sessionTotal));
                 }
 
                 await dest.FlushAsync().ConfigureAwait(false);
@@ -262,31 +269,22 @@ public sealed class LocalSendServer : IDisposable
 
         var rootSavedPath = Path.Combine(DownloadDirectory, normalizedRelativePath.Split('/')[0]);
 
+        var finalDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
+        finalDict[fileId] = bytesReadTotal;
+        var finalSessionTransferred = finalDict.Values.Sum();
+        var finalSessionTotal = prepareDto?.Files.Values.Sum(f => f.Size) ?? totalBytes;
+
         Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{totalFiles})");
         ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles, isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath));
+            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles,
+            isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
+            sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
         FileReceived?.Invoke(this, (fileId, targetPath));
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }
 
-    internal async Task HandleRegisterAsync(Stream stream, string body, EndPoint? remoteEp)
-    {
-        var dto = JsonSerializer.Deserialize<LocalSendDeviceInfo>(body);
-        if (dto?.Fingerprint == DeviceInfo.Fingerprint)
-        {
-            await LocalSendServerHelper.WriteResponseAsync(stream, 412).ConfigureAwait(false);
-            return;
-        }
-
-        if (dto != null && !string.IsNullOrEmpty(dto.Alias) && remoteEp is IPEndPoint ep)
-        {
-            dto.IpAddress = ep.Address.AddressFamily == AddressFamily.InterNetworkV6 ? $"[{ep.Address}]" : ep.Address.ToString();
-            DeviceRegistered?.Invoke(this, dto);
-        }
-
-        await LocalSendServerHelper.WriteResponseAsync(stream, 200, JsonSerializer.Serialize(DeviceInfo)).ConfigureAwait(false);
-    }
+    internal void InvokeDeviceRegistered(LocalSendDeviceInfo dto) => DeviceRegistered?.Invoke(this, dto);
 
     public void Stop()
     {

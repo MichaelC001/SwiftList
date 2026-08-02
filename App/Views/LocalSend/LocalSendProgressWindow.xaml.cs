@@ -48,16 +48,16 @@ public partial class LocalSendProgressWindow : Window
         TxtFileCount.Text = $"{displayIdx}/{args.TotalFiles}";
         TxtFileName.Text = args.FileName;
 
-        if (args.TotalBytes > 0)
+        if (args.SessionTotalBytes > 0)
         {
-            var percent = (double)args.BytesTransferred / args.TotalBytes * 100;
+            var percent = (double)args.SessionBytesTransferred / args.SessionTotalBytes * 100;
             PbTransfer.Value = Math.Min(100, Math.Max(0, percent));
-            TxtSize.Text = $"{FormatBytes(args.BytesTransferred)} / {FormatBytes(args.TotalBytes)}";
+            TxtSize.Text = $"{FormatBytes(args.SessionBytesTransferred)} / {FormatBytes(args.SessionTotalBytes)}";
         }
         else
         {
             PbTransfer.Value = 100;
-            TxtSize.Text = FormatBytes(args.BytesTransferred);
+            TxtSize.Text = FormatBytes(args.SessionBytesTransferred);
         }
 
         if (!string.IsNullOrEmpty(args.SavedPath))

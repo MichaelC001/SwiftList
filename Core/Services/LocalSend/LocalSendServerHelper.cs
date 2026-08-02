@@ -123,4 +123,22 @@ internal static class LocalSendServerHelper
             return false;
         }
     }
+
+    internal static async Task HandleRegisterAsync(LocalSendServer server, Stream stream, string body, EndPoint? remoteEp)
+    {
+        var dto = System.Text.Json.JsonSerializer.Deserialize<Models.LocalSendDeviceInfo>(body);
+        if (dto?.Fingerprint == server.DeviceInfo.Fingerprint)
+        {
+            await WriteResponseAsync(stream, 412).ConfigureAwait(false);
+            return;
+        }
+
+        if (dto != null && !string.IsNullOrEmpty(dto.Alias) && remoteEp is IPEndPoint ep)
+        {
+            dto.IpAddress = ep.Address.AddressFamily == AddressFamily.InterNetworkV6 ? $"[{ep.Address}]" : ep.Address.ToString();
+            server.InvokeDeviceRegistered(dto);
+        }
+
+        await WriteResponseAsync(stream, 200, System.Text.Json.JsonSerializer.Serialize(server.DeviceInfo)).ConfigureAwait(false);
+    }
 }

@@ -99,7 +99,7 @@ internal static class LocalSendServerHandler
     {
         if (IsRegister(path))
         {
-            await server.HandleRegisterAsync(stream, body, remoteEp).ConfigureAwait(false);
+            await LocalSendServerHelper.HandleRegisterAsync(server, stream, body, remoteEp).ConfigureAwait(false);
         }
         else if (IsPrepareUpload(path))
         {

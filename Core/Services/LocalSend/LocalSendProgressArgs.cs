@@ -17,6 +17,8 @@ public sealed class LocalSendProgressArgs : EventArgs
     public bool IsAllDone { get; }
     public string? SavedPath { get; }
     public string? RootSavedPath { get; }
+    public long SessionBytesTransferred { get; }
+    public long SessionTotalBytes { get; }
 
     public LocalSendProgressArgs(
         string sessionId,
@@ -30,7 +32,9 @@ public sealed class LocalSendProgressArgs : EventArgs
         bool isFinished = false,
         bool isAllDone = false,
         string? savedPath = null,
-        string? rootSavedPath = null)
+        string? rootSavedPath = null,
+        long sessionBytesTransferred = 0,
+        long sessionTotalBytes = 0)
     {
         SessionId = sessionId;
         SenderAlias = senderAlias;
@@ -44,5 +48,7 @@ public sealed class LocalSendProgressArgs : EventArgs
         IsAllDone = isAllDone;
         SavedPath = savedPath;
         RootSavedPath = rootSavedPath;
+        SessionBytesTransferred = sessionBytesTransferred > 0 ? sessionBytesTransferred : bytesTransferred;
+        SessionTotalBytes = sessionTotalBytes > 0 ? sessionTotalBytes : totalBytes;
     }
 }
