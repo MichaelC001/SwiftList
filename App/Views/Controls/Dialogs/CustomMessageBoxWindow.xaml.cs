@@ -22,6 +22,45 @@ public partial class CustomMessageBoxWindow : Window
         TxtMessage.Text = messageBoxText;
 
         SetupIcon(icon);
+        SetupButtons(button);
+    }
+
+    private void SetupButtons(MessageBoxButton button)
+    {
+        switch (button)
+        {
+            case MessageBoxButton.OK:
+                BtnOK.Visibility = Visibility.Visible;
+                BtnCancel.Visibility = Visibility.Collapsed;
+                BtnYes.Visibility = Visibility.Collapsed;
+                BtnNo.Visibility = Visibility.Collapsed;
+                BtnOK.IsDefault = true;
+                break;
+            case MessageBoxButton.OKCancel:
+                BtnOK.Visibility = Visibility.Visible;
+                BtnCancel.Visibility = Visibility.Visible;
+                BtnYes.Visibility = Visibility.Collapsed;
+                BtnNo.Visibility = Visibility.Collapsed;
+                BtnOK.IsDefault = true;
+                BtnCancel.IsCancel = true;
+                break;
+            case MessageBoxButton.YesNo:
+                BtnOK.Visibility = Visibility.Collapsed;
+                BtnCancel.Visibility = Visibility.Collapsed;
+                BtnYes.Visibility = Visibility.Visible;
+                BtnNo.Visibility = Visibility.Visible;
+                BtnYes.IsDefault = true;
+                BtnNo.IsCancel = true;
+                break;
+            case MessageBoxButton.YesNoCancel:
+                BtnOK.Visibility = Visibility.Collapsed;
+                BtnCancel.Visibility = Visibility.Visible;
+                BtnYes.Visibility = Visibility.Visible;
+                BtnNo.Visibility = Visibility.Visible;
+                BtnYes.IsDefault = true;
+                BtnCancel.IsCancel = true;
+                break;
+        }
     }
 
     private void SetupIcon(MessageBoxImage icon)
@@ -65,6 +104,24 @@ public partial class CustomMessageBoxWindow : Window
     private void BtnOK_Click(object sender, RoutedEventArgs e)
     {
         Result = MessageBoxResult.OK;
+        Close();
+    }
+
+    private void BtnCancel_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MessageBoxResult.Cancel;
+        Close();
+    }
+
+    private void BtnYes_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MessageBoxResult.Yes;
+        Close();
+    }
+
+    private void BtnNo_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MessageBoxResult.No;
         Close();
     }
 }

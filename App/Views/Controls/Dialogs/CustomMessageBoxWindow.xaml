@@ -78,9 +78,18 @@
                 <Border Grid.Row="2" Background="{DynamicResource StatusBarBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0">
                     <Grid Margin="12,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Style="{StaticResource PrimarySettingsButton}" 
+                            <Button x:Name="BtnYes" Style="{StaticResource PrimarySettingsButton}" 
+                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Yes]}" 
+                                    Width="80" Height="28" Margin="0,0,8,0" Click="BtnYes_Click"/>
+                            <Button x:Name="BtnNo" Style="{StaticResource SettingsButton}" 
+                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_No]}" 
+                                    Width="80" Height="28" Margin="0,0,8,0" Click="BtnNo_Click"/>
+                            <Button x:Name="BtnOK" Style="{StaticResource PrimarySettingsButton}" 
                                     Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_OK]}" 
-                                    Width="80" Height="28" Click="BtnOK_Click" IsDefault="True"/>
+                                    Width="80" Height="28" Margin="0,0,8,0" Click="BtnOK_Click"/>
+                            <Button x:Name="BtnCancel" Style="{StaticResource SettingsButton}" 
+                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}" 
+                                    Width="80" Height="28" Click="BtnCancel_Click"/>
                         </StackPanel>
                     </Grid>
                 </Border>
