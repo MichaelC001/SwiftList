@@ -96,7 +96,8 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
     private void RandomizeAlias()
     {
-        DeviceAlias = Core.Services.LocalSend.LocalSendAliasGenerator.GenerateRandomAlias();
+        var culture = Services.TranslationManager.Instance.CurrentCulture;
+        DeviceAlias = Core.Services.LocalSend.LocalSendAliasGenerator.GenerateRandomAlias(culture);
         Apply();
     }
 
