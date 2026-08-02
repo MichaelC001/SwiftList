@@ -61,7 +61,7 @@
   "Settings_LocalSend_ReceivePin": "Receive PIN",
   "Settings_LocalSend_ReceivePinDesc": "PIN code required for incoming transfers (leave empty to disable)",
   "Settings_LocalSend_DiscoveryTimeout": "Discovery Timeout (ms)",
-  "Settings_LocalSend_DiscoveryTimeoutDesc": "Response timeout when scanning LAN devices (ms, default 2000)",
+  "Settings_LocalSend_DiscoveryTimeoutDesc": "Response timeout when scanning LAN devices (ms, default 1000)",
   "Settings_LocalSend_EnableHttps": "Encrypted Transfer (HTTPS)",
   "Settings_LocalSend_EnableHttpsDesc": "Use HTTPS encrypted connection for data transfer",
   "Settings_LocalSend_DownloadDir": "Save Directory",

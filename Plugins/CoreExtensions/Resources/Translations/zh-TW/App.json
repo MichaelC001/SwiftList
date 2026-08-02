@@ -61,7 +61,7 @@
   "Settings_LocalSend_ReceivePin": "接收 PIN 碼",
   "Settings_LocalSend_ReceivePinDesc": "用戶端傳輸檔案時需驗證的 PIN 碼 (留空則不啟用)",
   "Settings_LocalSend_DiscoveryTimeout": "搜尋超時 (毫秒)",
-  "Settings_LocalSend_DiscoveryTimeoutDesc": "掃描局域網裝置時的相應等待超時時間 (毫秒, 預設 2000)",
+  "Settings_LocalSend_DiscoveryTimeoutDesc": "掃描局域網裝置時的相應等待超時時間 (毫秒, 預設 1000)",
   "Settings_LocalSend_EnableHttps": "加密傳輸 (HTTPS)",
   "Settings_LocalSend_EnableHttpsDesc": "使用 HTTPS 加密連線傳輸資料 (需對方裝置支援)",
   "Settings_LocalSend_DownloadDir": "接收儲存目錄",

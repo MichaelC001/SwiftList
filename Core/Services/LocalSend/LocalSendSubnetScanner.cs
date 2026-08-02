@@ -12,7 +12,7 @@ namespace SwiftList.Core.Services.LocalSend;
 /// </summary>
 internal static class LocalSendSubnetScanner
 {
-    public static async Task ScanSubnetAsync(LocalSendDiscoveryService discovery, LocalSendDeviceInfo localInfo, int timeoutMs = 2000)
+    public static async Task ScanSubnetAsync(LocalSendDiscoveryService discovery, LocalSendDeviceInfo localInfo, int timeoutMs = 1000)
     {
         var localIps = GetLocalIPv4Addresses();
         var tasks = new List<Task>();

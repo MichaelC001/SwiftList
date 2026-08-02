@@ -26,7 +26,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
         _enabled = userSettings.LocalSend.Enabled;
         _deviceAlias = userSettings.LocalSend.DeviceAlias;
-        _discoveryTimeout = userSettings.LocalSend.DiscoveryTimeout > 0 ? userSettings.LocalSend.DiscoveryTimeout : 2000;
+        _discoveryTimeout = userSettings.LocalSend.DiscoveryTimeout > 0 ? userSettings.LocalSend.DiscoveryTimeout : 1000;
         _quickSave = userSettings.LocalSend.QuickSave;
         _downloadDirectory = string.IsNullOrEmpty(userSettings.LocalSend.DownloadDirectory)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")
@@ -95,7 +95,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
         _userSettings.LocalSend.Enabled = _enabled;
         _userSettings.LocalSend.DeviceAlias = _deviceAlias;
-        _userSettings.LocalSend.DiscoveryTimeout = _discoveryTimeout > 0 ? _discoveryTimeout : 2000;
+        _userSettings.LocalSend.DiscoveryTimeout = _discoveryTimeout > 0 ? _discoveryTimeout : 1000;
         _userSettings.LocalSend.QuickSave = _quickSave;
         _userSettings.LocalSend.DownloadDirectory = _downloadDirectory;
         _userSettings.LocalSend.EnableHttps = _enableHttps;

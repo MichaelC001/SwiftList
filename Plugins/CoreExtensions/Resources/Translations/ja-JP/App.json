@@ -61,7 +61,7 @@
   "Settings_LocalSend_ReceivePin": "受信 PIN コード",
   "Settings_LocalSend_ReceivePinDesc": "転送時に必要な PIN コード (空欄で無効化)",
   "Settings_LocalSend_DiscoveryTimeout": "検索タイムアウト (ミリ秒)",
-  "Settings_LocalSend_DiscoveryTimeoutDesc": "LANデバイスをスキャンする際の応答待機タイムアウト (ミリ秒、デフォルト 2000)",
+  "Settings_LocalSend_DiscoveryTimeoutDesc": "LANデバイスをスキャンする際の応答待機タイムアウト (ミリ秒、デフォルト 1000)",
   "Settings_LocalSend_EnableHttps": "暗号化転送 (HTTPS)",
   "Settings_LocalSend_EnableHttpsDesc": "データ転送に HTTPS 暗号化接続を使用する",
   "Settings_LocalSend_DownloadDir": "保存先ディレクトリ",

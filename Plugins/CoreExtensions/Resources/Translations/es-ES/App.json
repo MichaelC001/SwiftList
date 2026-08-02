@@ -61,7 +61,7 @@
   "Settings_LocalSend_ReceivePin": "PIN de recepción",
   "Settings_LocalSend_ReceivePinDesc": "Código PIN requerido para transferencias entrantes (dejar en blanco para desactivar)",
   "Settings_LocalSend_DiscoveryTimeout": "Tiempo de espera de búsqueda (ms)",
-  "Settings_LocalSend_DiscoveryTimeoutDesc": "Tiempo de espera de respuesta al escanear dispositivos de red local (ms, predeterminado 2000)",
+  "Settings_LocalSend_DiscoveryTimeoutDesc": "Tiempo de espera de respuesta al escanear dispositivos de red local (ms, predeterminado 1000)",
   "Settings_LocalSend_EnableHttps": "Transferencia cifrada (HTTPS)",
   "Settings_LocalSend_EnableHttpsDesc": "Usar conexión cifrada HTTPS para la transferencia",
   "Settings_LocalSend_DownloadDir": "Directorio de guardado",

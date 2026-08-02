@@ -34,7 +34,7 @@ public sealed class LocalSendDiscoveryService : IDisposable
         Protocol = "http"
     };
 
-    public int DiscoveryTimeout { get; set; } = 2000;
+    public int DiscoveryTimeout { get; set; } = 1000;
 
     public IReadOnlyCollection<LocalSendDeviceInfo> DiscoveredDevices => _discoveredDevices.Values.ToList().AsReadOnly();
 

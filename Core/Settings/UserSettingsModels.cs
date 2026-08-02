@@ -44,7 +44,7 @@ public class LocalSendSettingsModel
     public string DownloadDirectory { get; set; } = string.Empty;
     public bool EnableHttps { get; set; } = false;
     public string? ReceivePin { get; set; }
-    public int DiscoveryTimeout { get; set; } = 2000;
+    public int DiscoveryTimeout { get; set; } = 1000;
 }
 
 /// <summary>Everything shown on the Hotkey Settings page, grouped under one object.</summary>

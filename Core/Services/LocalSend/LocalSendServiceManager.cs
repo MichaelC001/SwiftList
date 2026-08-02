@@ -62,7 +62,7 @@ public sealed class LocalSendServiceManager : IDisposable
         _server.Start(53317);
 
         _discoveryService = new LocalSendDiscoveryService();
-        _discoveryService.DiscoveryTimeout = settings.DiscoveryTimeout > 0 ? settings.DiscoveryTimeout : 2000;
+        _discoveryService.DiscoveryTimeout = settings.DiscoveryTimeout > 0 ? settings.DiscoveryTimeout : 1000;
         _discoveryService.LocalInfo.Alias = alias;
         _discoveryService.LocalInfo.Port = _server.ActualPort > 0 ? _server.ActualPort : 53317;
         _server.DeviceRegistered += (s, device) => _discoveryService?.AddDiscoveredDevice(device);
