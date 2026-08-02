@@ -27,6 +27,8 @@ public partial class LocalSendProgressWindow : Window
     private bool _isCompleted;
     private int _lastFileIndex = -1;
 
+    private string? _lastRootSavedPath;
+
     public void UpdateProgress(LocalSendProgressArgs args)
     {
         _currentSessionId = args.SessionId;
@@ -60,6 +62,8 @@ public partial class LocalSendProgressWindow : Window
 
         if (!string.IsNullOrEmpty(args.SavedPath))
             _lastSavedPath = args.SavedPath;
+        if (!string.IsNullOrEmpty(args.RootSavedPath))
+            _lastRootSavedPath = args.RootSavedPath;
 
         if (isAllDone)
         {
@@ -115,9 +119,10 @@ public partial class LocalSendProgressWindow : Window
 
     private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(_lastSavedPath) && File.Exists(_lastSavedPath))
+        var targetToSelect = _lastRootSavedPath ?? _lastSavedPath;
+        if (!string.IsNullOrEmpty(targetToSelect) && (File.Exists(targetToSelect) || Directory.Exists(targetToSelect)))
         {
-            try { Process.Start("explorer.exe", $"/select,\"{_lastSavedPath}\""); }
+            try { Process.Start("explorer.exe", $"/select,\"{targetToSelect}\""); }
             catch { }
         }
         Close();

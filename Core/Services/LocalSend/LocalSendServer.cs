@@ -260,9 +260,11 @@ public sealed class LocalSendServer : IDisposable
         var isAllDone = completedSet.Count >= totalFiles;
         var displayIndex = isAllDone ? totalFiles : Math.Max(fileIndex, completedSet.Count);
 
+        var rootSavedPath = Path.Combine(DownloadDirectory, normalizedRelativePath.Split('/')[0]);
+
         Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{totalFiles})");
         ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles, isFinished: true, isAllDone: isAllDone, savedPath: targetPath));
+            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles, isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath));
         FileReceived?.Invoke(this, (fileId, targetPath));
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);

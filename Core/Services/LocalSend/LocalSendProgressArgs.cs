@@ -16,6 +16,7 @@ public sealed class LocalSendProgressArgs : EventArgs
     public bool IsFinished { get; }
     public bool IsAllDone { get; }
     public string? SavedPath { get; }
+    public string? RootSavedPath { get; }
 
     public LocalSendProgressArgs(
         string sessionId,
@@ -28,7 +29,8 @@ public sealed class LocalSendProgressArgs : EventArgs
         int totalFiles,
         bool isFinished = false,
         bool isAllDone = false,
-        string? savedPath = null)
+        string? savedPath = null,
+        string? rootSavedPath = null)
     {
         SessionId = sessionId;
         SenderAlias = senderAlias;
@@ -41,5 +43,6 @@ public sealed class LocalSendProgressArgs : EventArgs
         IsFinished = isFinished;
         IsAllDone = isAllDone;
         SavedPath = savedPath;
+        RootSavedPath = rootSavedPath;
     }
 }
