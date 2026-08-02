@@ -60,6 +60,8 @@
   "Settings_LocalSend_QuickSaveDesc": "无需手动确认，自动保存来自局域网设备的传输文件",
   "Settings_LocalSend_ReceivePin": "接收 PIN 码",
   "Settings_LocalSend_ReceivePinDesc": "客户端传输文件时需验证的 PIN 码 (留空则不启用)",
+  "Settings_LocalSend_DiscoveryTimeout": "搜索超时 (毫秒)",
+  "Settings_LocalSend_DiscoveryTimeoutDesc": "扫描局域网设备时的响应等待超时时间 (毫秒, 默认 2000)",
   "Settings_LocalSend_EnableHttps": "加密传输 (HTTPS)",
   "Settings_LocalSend_EnableHttpsDesc": "使用 HTTPS 加密连接传输数据 (需对方设备支持)",
   "Settings_LocalSend_DownloadDir": "接收保存目录",

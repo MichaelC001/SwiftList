@@ -12,7 +12,7 @@ namespace SwiftList.Core.Services.LocalSend;
 /// </summary>
 internal static class LocalSendSubnetScanner
 {
-    public static async Task ScanSubnetAsync(LocalSendDiscoveryService discovery, LocalSendDeviceInfo localInfo)
+    public static async Task ScanSubnetAsync(LocalSendDiscoveryService discovery, LocalSendDeviceInfo localInfo, int timeoutMs = 2000)
     {
         var localIps = GetLocalIPv4Addresses();
         var tasks = new List<Task>();
@@ -24,19 +24,19 @@ internal static class LocalSendSubnetScanner
             {
                 if (i == bytes[3]) continue;
                 var targetIp = $"{bytes[0]}.{bytes[1]}.{bytes[2]}.{i}";
-                tasks.Add(ProbeHostAsync(discovery, localInfo, targetIp, localInfo.Port));
+                tasks.Add(ProbeHostAsync(discovery, localInfo, targetIp, localInfo.Port, timeoutMs));
             }
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private static async Task ProbeHostAsync(LocalSendDiscoveryService discovery, LocalSendDeviceInfo localInfo, string ip, int port)
+    private static async Task ProbeHostAsync(LocalSendDiscoveryService discovery, LocalSendDeviceInfo localInfo, string ip, int port, int timeoutMs)
     {
         try
         {
             using var handler = new HttpClientHandler { UseProxy = false };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(1500) };
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
             var resp = await client.GetAsync($"http://{ip}:{port}/api/localsend/v2/info").ConfigureAwait(false);
             if (resp.IsSuccessStatusCode)
             {

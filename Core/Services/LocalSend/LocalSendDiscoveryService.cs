@@ -34,6 +34,8 @@ public sealed class LocalSendDiscoveryService : IDisposable
         Protocol = "http"
     };
 
+    public int DiscoveryTimeout { get; set; } = 2000;
+
     public IReadOnlyCollection<LocalSendDeviceInfo> DiscoveredDevices => _discoveredDevices.Values.ToList().AsReadOnly();
 
     public void Start(int port = DefaultPort)
@@ -249,7 +251,7 @@ public sealed class LocalSendDiscoveryService : IDisposable
 
             if (loopCount % 4 == 0)
             {
-                _ = LocalSendSubnetScanner.ScanSubnetAsync(this, LocalInfo);
+                _ = LocalSendSubnetScanner.ScanSubnetAsync(this, LocalInfo, DiscoveryTimeout);
             }
             loopCount++;
 

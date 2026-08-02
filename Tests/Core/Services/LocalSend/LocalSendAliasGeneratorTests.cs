@@ -16,6 +16,22 @@ public class LocalSendAliasGeneratorTests
     }
 
     [TestMethod]
+    public void GenerateRandomAlias_TraditionalChinese_ReturnsEnglishFallback()
+    {
+        var aliasHk = LocalSendAliasGenerator.GenerateRandomAlias("zh-HK");
+        var aliasTw = LocalSendAliasGenerator.GenerateRandomAlias("zh-TW");
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(aliasHk));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(aliasTw));
+        // Traditional Chinese should not use "的" (simplified Chinese adjectives formula)
+        Assert.DoesNotContain("的", aliasHk);
+        Assert.DoesNotContain("的", aliasTw);
+        // Fallback to English space-separated alias format
+        StringAssert.Contains(aliasHk, " ");
+        StringAssert.Contains(aliasTw, " ");
+    }
+
+    [TestMethod]
     public void GenerateRandomAlias_EnglishCulture_ReturnsSpaceSeparatedWords()
     {
         var alias = LocalSendAliasGenerator.GenerateRandomAlias("en-US");

@@ -14,7 +14,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
     private bool _enabled;
     private string _deviceAlias;
-    private int _port;
+    private int _discoveryTimeout;
     private bool _quickSave;
     private string _downloadDirectory;
     private bool _enableHttps;
@@ -26,7 +26,7 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
         _enabled = userSettings.LocalSend.Enabled;
         _deviceAlias = userSettings.LocalSend.DeviceAlias;
-        _port = userSettings.LocalSend.Port;
+        _discoveryTimeout = userSettings.LocalSend.DiscoveryTimeout > 0 ? userSettings.LocalSend.DiscoveryTimeout : 2000;
         _quickSave = userSettings.LocalSend.QuickSave;
         _downloadDirectory = string.IsNullOrEmpty(userSettings.LocalSend.DownloadDirectory)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads")
@@ -53,10 +53,10 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
         set => SetProperty(ref _deviceAlias, value);
     }
 
-    public int Port
+    public int DiscoveryTimeout
     {
-        get => _port;
-        set => SetProperty(ref _port, value);
+        get => _discoveryTimeout;
+        set => SetProperty(ref _discoveryTimeout, value);
     }
 
     public bool QuickSave
@@ -88,9 +88,14 @@ public sealed class LocalSendSettingsViewModel : ViewModelBase
 
     public void Apply()
     {
+        if (string.IsNullOrWhiteSpace(_deviceAlias))
+        {
+            RandomizeAlias();
+        }
+
         _userSettings.LocalSend.Enabled = _enabled;
         _userSettings.LocalSend.DeviceAlias = _deviceAlias;
-        _userSettings.LocalSend.Port = _port;
+        _userSettings.LocalSend.DiscoveryTimeout = _discoveryTimeout > 0 ? _discoveryTimeout : 2000;
         _userSettings.LocalSend.QuickSave = _quickSave;
         _userSettings.LocalSend.DownloadDirectory = _downloadDirectory;
         _userSettings.LocalSend.EnableHttps = _enableHttps;

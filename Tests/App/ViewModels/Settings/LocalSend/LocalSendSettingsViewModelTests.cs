@@ -17,7 +17,7 @@ public class LocalSendSettingsViewModelTests
         Assert.IsFalse(vm.Enabled);
         vm.Enabled = true;
         vm.DeviceAlias = "Custom-PC";
-        vm.Port = 54321;
+        vm.DiscoveryTimeout = 3000;
         vm.QuickSave = true;
 
         // Before Apply, UserSettings retains original values
@@ -28,8 +28,13 @@ public class LocalSendSettingsViewModelTests
         vm.Apply();
         Assert.IsTrue(settings.LocalSend.Enabled);
         Assert.AreEqual("Custom-PC", settings.LocalSend.DeviceAlias);
-        Assert.AreEqual(54321, settings.LocalSend.Port);
+        Assert.AreEqual(3000, settings.LocalSend.DiscoveryTimeout);
         Assert.IsTrue(settings.LocalSend.QuickSave);
+
+        // If DeviceAlias is empty on Apply, it auto-generates a random alias
+        vm.DeviceAlias = "  ";
+        vm.Apply();
+        Assert.IsFalse(string.IsNullOrWhiteSpace(settings.LocalSend.DeviceAlias));
     }
 
     [TestMethod]

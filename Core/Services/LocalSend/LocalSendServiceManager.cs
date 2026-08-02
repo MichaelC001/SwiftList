@@ -55,22 +55,23 @@ public sealed class LocalSendServiceManager : IDisposable
 
         _server = new LocalSendServer();
         _server.DeviceInfo.Alias = alias;
-        _server.DeviceInfo.Port = settings.Port;
+        _server.DeviceInfo.Port = 53317;
         _server.DownloadDirectory = downloadDir;
         _server.QuickSave = settings.QuickSave;
         _server.ReceivePin = settings.ReceivePin;
-        _server.Start(settings.Port);
+        _server.Start(53317);
 
         _discoveryService = new LocalSendDiscoveryService();
+        _discoveryService.DiscoveryTimeout = settings.DiscoveryTimeout > 0 ? settings.DiscoveryTimeout : 2000;
         _discoveryService.LocalInfo.Alias = alias;
-        _discoveryService.LocalInfo.Port = _server.ActualPort > 0 ? _server.ActualPort : settings.Port;
+        _discoveryService.LocalInfo.Port = _server.ActualPort > 0 ? _server.ActualPort : 53317;
         _server.DeviceRegistered += (s, device) => _discoveryService?.AddDiscoveredDevice(device);
         _server.FileReceived += (s, e) => FileReceived?.Invoke(this, e);
         _server.ProgressChanged += (s, e) => ProgressChanged?.Invoke(this, e);
         _server.SessionCanceled += (s, e) => SessionCanceled?.Invoke(this, e);
         _server.TextReceived += (s, e) => TextReceived?.Invoke(this, e);
         _server.UploadRequested += (s, e) => UploadRequested?.Invoke(this, e);
-        _discoveryService.Start(settings.Port);
+        _discoveryService.Start(53317);
     }
 
     public void CancelSession(string sessionId) => _server?.CancelSession(sessionId);

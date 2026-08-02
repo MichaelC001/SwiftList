@@ -92,7 +92,12 @@ public static class LocalSendAliasGenerator
     {
         var lang = cultureName ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
 
-        if (lang.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+        if (lang.Equals("zh-CN", StringComparison.OrdinalIgnoreCase) ||
+            lang.Equals("zh-Hans", StringComparison.OrdinalIgnoreCase) ||
+            (lang.StartsWith("zh", StringComparison.OrdinalIgnoreCase) &&
+             !lang.StartsWith("zh-HK", StringComparison.OrdinalIgnoreCase) &&
+             !lang.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase) &&
+             !lang.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase)))
         {
             var adj = ZhAdjectives[Random.Shared.Next(ZhAdjectives.Length)];
             var fruit = ZhFruits[Random.Shared.Next(ZhFruits.Length)];

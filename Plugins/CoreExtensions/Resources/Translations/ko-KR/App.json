@@ -60,6 +60,8 @@
   "Settings_LocalSend_QuickSaveDesc": "수동 확인 없이 LAN 기기에서 전송된 파일을 자동으로 저장합니다",
   "Settings_LocalSend_ReceivePin": "수신 PIN 코드",
   "Settings_LocalSend_ReceivePinDesc": "전송 시 인증이 필요한 PIN 코드 (비워두면 비활성화)",
+  "Settings_LocalSend_DiscoveryTimeout": "검색 타임아웃 (밀리초)",
+  "Settings_LocalSend_DiscoveryTimeoutDesc": "LAN 기기를 스캔할 때의 응답 대기 타임아웃 (밀리초, 기본값 2000)",
   "Settings_LocalSend_EnableHttps": "암호화 전송 (HTTPS)",
   "Settings_LocalSend_EnableHttpsDesc": "데이터 전송에 HTTPS 암호화 연결 사용",
   "Settings_LocalSend_DownloadDir": "저장 디렉터리",
