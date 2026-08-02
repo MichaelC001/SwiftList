@@ -86,4 +86,23 @@ public class LocalSendAliasGeneratorTests
         Assert.IsTrue(triggered);
         Assert.IsTrue(isLinkResult);
     }
+
+    [TestMethod]
+    public async Task RequestUserAcceptanceAsync_UserAccepts_ReturnsTrue()
+    {
+        using var server = new LocalSendServer();
+        server.UploadRequested += (s, e) => e.Respond(true);
+
+        var dto = new PrepareUploadRequestDto
+        {
+            Info = new LocalSendDeviceInfo(),
+            Files = new Dictionary<string, LocalSendFileDto>
+            {
+                ["f1"] = new LocalSendFileDto { Id = "f1", FileName = "test.png", Size = 100 }
+            }
+        };
+
+        var (accepted, _) = await server.RequestUserAcceptanceAsync(dto);
+        Assert.IsTrue(accepted);
+    }
 }

@@ -122,12 +122,6 @@ internal static class LocalSendServerHandler
 
     private static async Task HandlePrepareUploadAsync(LocalSendServer server, Stream stream, string body, EndPoint? remoteEp)
     {
-        if (!server.QuickSave)
-        {
-            await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
-            return;
-        }
-
         var dto = System.Text.Json.JsonSerializer.Deserialize<Models.PrepareUploadRequestDto>(body);
         if (dto == null || dto.Files.Count == 0)
         {
@@ -140,8 +134,29 @@ internal static class LocalSendServerHandler
             dto.Info.IpAddress = LocalSendServerHelper.FormatIpAddress(ep.Address);
         }
 
+        var isTextMessage = dto.Files.Count == 1 && dto.Files.Values.Any(f =>
+            string.Equals(f.FileType, "text", StringComparison.OrdinalIgnoreCase) ||
+            !string.IsNullOrEmpty(f.Preview) ||
+            f.FileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
+
+        var isAccepted = server.QuickSave || isTextMessage;
+        string? customDir = null;
+        if (!isAccepted)
+        {
+            var res = await server.RequestUserAcceptanceAsync(dto).ConfigureAwait(false);
+            isAccepted = res.Accepted;
+            customDir = res.CustomDir;
+        }
+
+        if (!isAccepted)
+        {
+            await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
+            return;
+        }
+
         var sessionId = Guid.NewGuid().ToString();
         server.RegisterActiveSession(sessionId, dto);
+        server.RegisterCustomDirectory(sessionId, customDir);
 
         var fileTokens = new Dictionary<string, string>();
         foreach (var kv in dto.Files)

@@ -94,3 +94,18 @@ public sealed class PrepareUploadResponseDto
     [JsonPropertyName("files")]
     public Dictionary<string, string> Files { get; set; } = new();
 }
+
+public sealed class LocalSendUploadRequestArgs : EventArgs
+{
+    public PrepareUploadRequestDto Dto { get; }
+    public string? CustomDownloadDirectory { get; set; }
+    private readonly Action<bool> _respond;
+
+    public LocalSendUploadRequestArgs(PrepareUploadRequestDto dto, Action<bool> respond)
+    {
+        Dto = dto;
+        _respond = respond;
+    }
+
+    public void Respond(bool accept) => _respond(accept);
+}

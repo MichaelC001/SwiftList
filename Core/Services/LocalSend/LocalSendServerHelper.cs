@@ -225,4 +225,41 @@ public static class LocalSendServerHelper
 
         return false;
     }
+
+    public static string FormatBytes(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        if (bytes < 1024 * 1024 * 1024) return $"{bytes / (1024.0 * 1024.0):F1} MB";
+        return $"{bytes / (1024.0 * 1024.0 * 1024.0):F1} GB";
+    }
+
+    internal static string? ResolveTargetPath(string downloadDir, string rawFileName)
+    {
+        if (!Directory.Exists(downloadDir)) Directory.CreateDirectory(downloadDir);
+        var normalizedRelativePath = rawFileName.Replace('\\', '/').TrimStart('/');
+        var fullPathCandidate = Path.GetFullPath(Path.Combine(downloadDir, normalizedRelativePath));
+
+        var fullDownloadDir = Path.GetFullPath(downloadDir);
+        if (!fullPathCandidate.StartsWith(fullDownloadDir, StringComparison.OrdinalIgnoreCase)) return null;
+
+        var targetDir = Path.GetDirectoryName(fullPathCandidate) ?? fullDownloadDir;
+        if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+
+        var safeFileName = Path.GetFileName(fullPathCandidate);
+        var targetPath = Path.Combine(targetDir, safeFileName);
+        if (File.Exists(targetPath))
+        {
+            var nameWithoutExt = Path.GetFileNameWithoutExtension(safeFileName);
+            var ext = Path.GetExtension(safeFileName);
+            var counter = 1;
+            do
+            {
+                targetPath = Path.Combine(targetDir, $"{nameWithoutExt} ({counter}){ext}");
+                counter++;
+            } while (File.Exists(targetPath));
+        }
+
+        return targetPath;
+    }
 }

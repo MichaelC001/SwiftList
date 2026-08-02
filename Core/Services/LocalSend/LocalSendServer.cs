@@ -30,7 +30,7 @@ public sealed class LocalSendServer : IDisposable
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
     public bool QuickSave { get; set; } = false;
 
-    public event EventHandler<PrepareUploadRequestDto>? UploadRequested;
+    public event EventHandler<LocalSendUploadRequestArgs>? UploadRequested;
     public event EventHandler<(string FileId, string Path)>? FileReceived;
     public event EventHandler<(string SenderAlias, string Text, bool IsLink)>? TextReceived;
     public event EventHandler<LocalSendDeviceInfo>? DeviceRegistered;
@@ -93,11 +93,7 @@ public sealed class LocalSendServer : IDisposable
         }
     }
 
-    internal void RegisterActiveSession(string sessionId, PrepareUploadRequestDto dto)
-    {
-        _activeSessions[sessionId] = dto;
-        UploadRequested?.Invoke(this, dto);
-    }
+    internal void RegisterActiveSession(string sessionId, PrepareUploadRequestDto dto) => _activeSessions[sessionId] = dto;
 
     public event EventHandler<LocalSendProgressArgs>? ProgressChanged;
     public event EventHandler<string>? SessionCanceled;
@@ -147,36 +143,12 @@ public sealed class LocalSendServer : IDisposable
             }
         }
 
-        if (!Directory.Exists(DownloadDirectory))
-            Directory.CreateDirectory(DownloadDirectory);
-
-        var normalizedRelativePath = fileName.Replace('\\', '/').TrimStart('/');
-        var fullPathCandidate = Path.GetFullPath(Path.Combine(DownloadDirectory, normalizedRelativePath));
-
-        var fullDownloadDir = Path.GetFullPath(DownloadDirectory);
-        if (!fullPathCandidate.StartsWith(fullDownloadDir, StringComparison.OrdinalIgnoreCase))
+        var baseDownloadDir = _sessionCustomDirectories.TryGetValue(sessionId, out var customDir) && !string.IsNullOrEmpty(customDir) ? customDir : DownloadDirectory;
+        var targetPath = LocalSendServerHelper.ResolveTargetPath(baseDownloadDir, fileName);
+        if (targetPath == null)
         {
             await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
             return;
-        }
-
-        var targetDir = Path.GetDirectoryName(fullPathCandidate) ?? fullDownloadDir;
-        if (!Directory.Exists(targetDir))
-            Directory.CreateDirectory(targetDir);
-
-        var safeFileName = Path.GetFileName(fullPathCandidate);
-        var targetPath = Path.Combine(targetDir, safeFileName);
-
-        if (File.Exists(targetPath))
-        {
-            var nameWithoutExt = Path.GetFileNameWithoutExtension(safeFileName);
-            var ext = Path.GetExtension(safeFileName);
-            var counter = 1;
-            do
-            {
-                targetPath = Path.Combine(targetDir, $"{nameWithoutExt} ({counter}){ext}");
-                counter++;
-            } while (File.Exists(targetPath));
         }
 
         var buffer = new byte[1024 * 1024];
@@ -247,7 +219,7 @@ public sealed class LocalSendServer : IDisposable
             }
             else
             {
-                await LocalSendServerHelper.WriteResponseAsync(stream, 500).ConfigureAwait(false);
+                await LocalSendServerHelper.WriteResponseAsync(stream, 500, "{\"message\":\"Could not save file. Check receiving device for more information.\"}").ConfigureAwait(false);
             }
             return;
         }
@@ -258,7 +230,8 @@ public sealed class LocalSendServer : IDisposable
         var isAllDone = completedSet.Count >= totalFiles;
         var displayIndex = isAllDone ? totalFiles : Math.Max(fileIndex, completedSet.Count);
 
-        var rootSavedPath = Path.Combine(DownloadDirectory, normalizedRelativePath.Split('/')[0]);
+        var relPath = fileName.Replace('\\', '/').TrimStart('/');
+        var rootSavedPath = Path.Combine(DownloadDirectory, relPath.Split('/')[0]);
 
         var finalDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
         finalDict[fileId] = bytesReadTotal;
@@ -282,6 +255,27 @@ public sealed class LocalSendServer : IDisposable
         }
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
+    }
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _sessionCustomDirectories = new();
+
+    internal void RegisterCustomDirectory(string sessionId, string? customDir)
+    {
+        if (!string.IsNullOrEmpty(customDir)) _sessionCustomDirectories[sessionId] = customDir;
+    }
+
+    internal async Task<(bool Accepted, string? CustomDir)> RequestUserAcceptanceAsync(PrepareUploadRequestDto dto)
+    {
+        if (UploadRequested == null) return (false, null);
+        var tcs = new TaskCompletionSource<(bool, string?)>(TaskCreationOptions.RunContinuationsAsynchronously);
+        LocalSendUploadRequestArgs? args = null;
+        args = new LocalSendUploadRequestArgs(dto, accept => tcs.TrySetResult((accept, args?.CustomDownloadDirectory)));
+        UploadRequested.Invoke(this, args);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        using (cts.Token.Register(() => tcs.TrySetResult((false, null))))
+        {
+            return await tcs.Task.ConfigureAwait(false);
+        }
     }
 
     internal void InvokeDeviceRegistered(LocalSendDeviceInfo dto) => DeviceRegistered?.Invoke(this, dto);

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Windows;
 using SwiftList.Core;
 using SwiftList.Core.Services;
+using SwiftList.Core.Services.LocalSend.Models;
 using SwiftList.App.Services;
 using SwiftList.App.ViewModels.Search;
 using Application = System.Windows.Application;
@@ -288,6 +289,7 @@ public partial class App : Application
         Core.Services.LocalSend.LocalSendServiceManager.Instance.ProgressChanged += OnLocalSendProgressChanged;
         Core.Services.LocalSend.LocalSendServiceManager.Instance.SessionCanceled += OnLocalSendSessionCanceled;
         Core.Services.LocalSend.LocalSendServiceManager.Instance.TextReceived += OnLocalSendTextReceived;
+        Core.Services.LocalSend.LocalSendServiceManager.Instance.UploadRequested += OnLocalSendUploadRequested;
     }
 
     private static Views.LocalSend.LocalSendProgressWindow? _activeLocalSendProgressWindow;
@@ -362,6 +364,38 @@ public partial class App : Application
             }
         }
     }));
+
+    private static void OnLocalSendUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Current.Dispatcher.BeginInvoke(new Action(() =>
+                                                                                                         {
+                                                                                                             var title = TranslationManager.Instance["Settings_LocalSend_UploadRequestTitle"];
+                                                                                                             var acceptText = TranslationManager.Instance["Settings_LocalSend_Accept"];
+                                                                                                             var declineText = TranslationManager.Instance["Settings_LocalSend_Decline"];
+
+                                                                                                             var totalBytes = e.Dto.Files.Values.Sum(f => f.Size);
+                                                                                                             var sizeFormatted = Core.Services.LocalSend.LocalSendServerHelper.FormatBytes(totalBytes);
+                                                                                                             var format = TranslationManager.Instance["Settings_LocalSend_UploadRequestMsg"];
+                                                                                                             var msg = string.Format(format, e.Dto.Info.Alias, e.Dto.Files.Count, sizeFormatted);
+
+                                                                                                             var result = MessageBox.ShowCustom(
+                                                                                                                 msg, title, acceptText, declineText, MessageBoxImage.Question);
+
+                                                                                                             if (result == MessageBoxResult.OK)
+                                                                                                             {
+                                                                                                                 var folderDialog = new Microsoft.Win32.OpenFolderDialog
+                                                                                                                 {
+                                                                                                                     Title = title
+                                                                                                                 };
+
+                                                                                                                 if (folderDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(folderDialog.FolderName))
+                                                                                                                 {
+                                                                                                                     e.CustomDownloadDirectory = folderDialog.FolderName;
+                                                                                                                     e.Respond(true);
+                                                                                                                     return;
+                                                                                                                 }
+                                                                                                             }
+
+                                                                                                             e.Respond(false);
+                                                                                                         }));
 
     public static void HideInlineSearch() => InlineSearchManager.Instance.CloseInlineSearch();
 
