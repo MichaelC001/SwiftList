@@ -21,6 +21,10 @@ public sealed class LocalSendReceiveFileItem : INotifyPropertyChanged
     public bool IsLink => !string.IsNullOrEmpty(LinkUrl);
     public string? TextContent { get; init; }
     public bool HasText => !string.IsNullOrEmpty(TextContent);
+    public bool IsTextItem { get; init; }
+    public string GroupHeader => IsTextItem
+        ? Services.TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"]
+        : Services.TranslationManager.Instance["Settings_LocalSend_Files"];
     public required long Size { get; init; }
     public required string SizeText { get; init; }
 
