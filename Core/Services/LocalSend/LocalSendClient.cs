@@ -107,36 +107,45 @@ public sealed class LocalSendClient : IDisposable
     {
         if (filePaths.Count == 0) return LocalSendSendResult.Error;
 
-        var expandedFiles = new List<string>();
+        var expandedItems = new List<(string absolutePath, string relativePath)>();
         foreach (var p in filePaths)
         {
             if (File.Exists(p))
             {
-                expandedFiles.Add(p);
+                expandedItems.Add((p, Path.GetFileName(p)));
             }
             else if (Directory.Exists(p))
             {
+                var fullPath = Path.GetFullPath(p);
+                var parentDir = Path.GetDirectoryName(fullPath);
+                var baseDir = string.IsNullOrEmpty(parentDir) ? fullPath : parentDir;
+
                 try
                 {
-                    expandedFiles.AddRange(Directory.GetFiles(p, "*", SearchOption.AllDirectories));
+                    var files = Directory.GetFiles(fullPath, "*", SearchOption.AllDirectories);
+                    foreach (var f in files)
+                    {
+                        var relPath = Path.GetRelativePath(baseDir, f).Replace('\\', '/');
+                        expandedItems.Add((f, relPath));
+                    }
                 }
                 catch { }
             }
         }
 
-        if (expandedFiles.Count == 0) return LocalSendSendResult.Error;
+        if (expandedItems.Count == 0) return LocalSendSendResult.Error;
 
         var filesDict = new Dictionary<string, LocalSendFileDto>();
         var pathMap = new Dictionary<string, string>();
-        for (var i = 0; i < expandedFiles.Count; i++)
+        for (var i = 0; i < expandedItems.Count; i++)
         {
-            var path = expandedFiles[i];
+            var (path, relPath) = expandedItems[i];
             var fi = new FileInfo(path);
             var id = $"file_{i}_{Guid.NewGuid():N}";
             filesDict[id] = new LocalSendFileDto
             {
                 Id = id,
-                FileName = fi.Name,
+                FileName = relPath,
                 Size = fi.Length,
                 FileType = LocalSendClientHelper.GetFileType(fi.Extension)
             };

@@ -33,9 +33,18 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
                             <Border x:Name="border" CornerRadius="4" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                <Grid>
+                                    <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                    <TextBlock x:Name="PlaceholderText" Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_TargetPin]}" Margin="6,0,0,0"
+                                               VerticalAlignment="Center" IsHitTestVisible="False"
+                                               Foreground="{DynamicResource TextSecondary}" Opacity="0.55"
+                                               FontSize="11" Visibility="Collapsed"/>
+                                </Grid>
                             </Border>
                             <ControlTemplate.Triggers>
+                                <Trigger Property="Text" Value="">
+                                    <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible"/>
+                                </Trigger>
                                 <Trigger Property="IsMouseOver" Value="true">
                                     <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
                                 </Trigger>
@@ -157,7 +166,6 @@
                                                        VerticalAlignment="Center" Margin="0,0,12,0"/>
 
                                             <TextBox Grid.Column="2" Text="{Binding Pin, UpdateSourceTrigger=PropertyChanged}"
-                                                     ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_TargetPin]}"
                                                      Style="{StaticResource ThemeTextBoxStyle}" Height="26"
                                                      VerticalAlignment="Center"/>
                                         </Grid>

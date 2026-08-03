@@ -62,4 +62,26 @@ public class LocalSendServerHelperTests
         StringAssert.Contains(output, "Content-Length: 16\r\n");
         StringAssert.Contains(output, json);
     }
+
+    [TestMethod]
+    public void ResolveTargetPath_RelativeFolderStructure_CreatesSubDirectories()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "LocalSendTest_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var rawFileName = "folderA/subB/test.txt";
+            var targetPath = LocalSendServerHelper.ResolveTargetPath(tempDir, rawFileName);
+
+            Assert.IsNotNull(targetPath);
+            StringAssert.EndsWith(targetPath, Path.Combine("folderA", "subB", "test.txt"));
+            Assert.IsTrue(Directory.Exists(Path.Combine(tempDir, "folderA", "subB")));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, true); } catch { }
+            }
+        }
+    }
 }
