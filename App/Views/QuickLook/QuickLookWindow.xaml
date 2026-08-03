@@ -3,12 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="QuickLook"
         Height="529" Width="400"
+        MinHeight="300" MinWidth="300"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         ShowInTaskbar="False"
         ShowActivated="False"
         Focusable="False"
+        ResizeMode="CanResizeWithGrip"
         BorderThickness="0">
     <Window.Resources>
         <ResourceDictionary>
