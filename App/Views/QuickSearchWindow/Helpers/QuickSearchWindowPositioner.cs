@@ -27,23 +27,13 @@ public class QuickSearchWindowPositioner
 
     public void PositionWindow()
     {
-        var lastActiveHwnd = _getLastActiveHwnd();
-
-        // DPI must come from the monitor this window is about to be placed ON, not from wherever it
-        // currently happens to sit (PresentationSource.FromVisual(_window)'s own CompositionTarget, the
-        // old source here) -- see InlineSearchWindowPositioner's identical fix for the full writeup.
-        // This window persists for the whole app session (only ever Hidden, never Closed), so it can be
-        // sitting on whatever monitor it was last shown on when ShowWindow() runs again for a different
-        // (differently-scaled) monitor; on a mixed-DPI multi-monitor setup that stale source computes a
-        // position wrong by exactly the ratio between the two monitors' scales.
-        var targetMonitor = lastActiveHwnd != IntPtr.Zero
-            ? MonitorFromWindow(lastActiveHwnd, MONITOR_DEFAULTTONEAREST)
-            : MonitorFromPoint(new POINT { X = Control.MousePosition.X, Y = Control.MousePosition.Y }, MONITOR_DEFAULTTONEAREST);
+        // DPI and placement must come from the monitor the mouse cursor is currently on, ensuring
+        // double-Ctrl activation follows the user's active cursor in multi-monitor setups.
+        var mousePos = Control.MousePosition;
+        var targetMonitor = MonitorFromPoint(new POINT { X = mousePos.X, Y = mousePos.Y }, MONITOR_DEFAULTTONEAREST);
         var (dpiScaleX, dpiScaleY) = GetMonitorDpiScale(targetMonitor);
 
-        var screen = lastActiveHwnd != IntPtr.Zero
-            ? Screen.FromHandle(lastActiveHwnd)
-            : Screen.FromPoint(Control.MousePosition);
+        var screen = Screen.FromPoint(mousePos);
 
         var (waLeft, waTop, waWidth, waHeight) = WorkingAreaInDip(screen, dpiScaleX, dpiScaleY);
         var settings = UserSettings.Load();
