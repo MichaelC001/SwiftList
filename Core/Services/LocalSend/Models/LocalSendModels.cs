@@ -37,6 +37,12 @@ public sealed class LocalSendDeviceInfo
     [JsonPropertyName("announce")]
     public bool? Announce { get; set; } = true;
 
+    [JsonPropertyName("isBusy")]
+    public bool? IsBusy { get; set; }
+
+    [JsonPropertyName("busy")]
+    public bool? BusyFallback { set { if (value.HasValue) IsBusy = value; } }
+
     [JsonIgnore]
     public string IpAddress { get; set; } = string.Empty;
 

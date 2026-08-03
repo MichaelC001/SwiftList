@@ -203,7 +203,7 @@ public sealed class LocalSendDiscoveryService : IDisposable
 
         device.IpAddress = LocalSendServerHelper.CleanIpAddress(device.IpAddress);
         var key = $"{device.IpAddress}:{device.Port}";
-        var isNew = !_discoveredDevices.ContainsKey(key);
+        var isNew = !_discoveredDevices.TryGetValue(key, out var existingDev);
         device.LastSeen = DateTime.UtcNow;
         _discoveredDevices[key] = device;
 
@@ -211,8 +211,8 @@ public sealed class LocalSendDiscoveryService : IDisposable
         {
             Logger.Log($"[LocalSendDiscovery] Discovered device: {device.Alias} ({device.IpAddress}:{device.Port}, model: {device.DeviceModel})", LogLevel.Debug);
             DeviceDiscovered?.Invoke(this, device);
-            DeviceListChanged?.Invoke(this, EventArgs.Empty);
         }
+        DeviceListChanged?.Invoke(this, EventArgs.Empty);
     }
 
     internal void RegisterWithAnnouncingDevice(string ip, int port) => _ = Task.Run(async () =>

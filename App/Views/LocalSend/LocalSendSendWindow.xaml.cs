@@ -24,13 +24,6 @@ public partial class LocalSendSendWindow : Window
         _vm = new LocalSendSendViewModel(initialFiles, initialText);
         DataContext = _vm;
 
-        _vm.SendSuccessCompleted += (_, _) =>
-        {
-            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
-            timer.Tick += (_, _) => { timer.Stop(); Close(); };
-            timer.Start();
-        };
-
         Closed += (_, _) => _vm.Dispose();
     }
 
@@ -56,6 +49,9 @@ public partial class LocalSendSendWindow : Window
         }
     }
 
+    private enum CancelSource { None, Self, Receiver }
+    private CancelSource _cancelSource = CancelSource.None;
+
     private async void BtnSend_Click(object sender, RoutedEventArgs e)
     {
         var selectedDevices = LstDevices.SelectedItems.OfType<LocalSendSendDeviceItem>().ToList();
@@ -64,23 +60,57 @@ public partial class LocalSendSendWindow : Window
         // Switch to Step 2 Progress UI
         GridStep1.Visibility = Visibility.Collapsed;
         GridStep2.Visibility = Visibility.Visible;
-        TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Sending"];
+        TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Waiting"];
+        PrgBar.Visibility = Visibility.Collapsed;
 
-        await _vm.StartSendBatchAsync(selectedDevices);
+        EventHandler onSendingStarted = (_, _) => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Sending"];
+            PrgBar.Visibility = Visibility.Visible;
+            TxtSpeed.Visibility = Visibility.Visible;
+        }));
+        _vm.SendingStarted += onSendingStarted;
+        try
+        {
+            await _vm.StartSendBatchAsync(selectedDevices);
+        }
+        finally
+        {
+            _vm.SendingStarted -= onSendingStarted;
+        }
 
         // Update UI states after send batch completes
         BtnCancelOrClose.Content = TranslationManager.Instance["Common_Close"];
+        TxtSpeed.Visibility = Visibility.Collapsed;
+        TxtFileName.Visibility = Visibility.Visible;
+        TxtCounter.Visibility = Visibility.Visible;
+        PrgBar.Visibility = Visibility.Visible;
+
         if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Completed"]))
         {
             TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
         }
-        else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Declined"]))
+        else if (_cancelSource == CancelSource.Self)
         {
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Declined"];
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+        }
+        else if (_cancelSource == CancelSource.Receiver || _vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Declined"]))
+        {
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ReceiverCanceled"];
+        }
+        else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Busy"]))
+        {
+            TxtFileName.Visibility = Visibility.Collapsed;
+            TxtCounter.Visibility = Visibility.Collapsed;
+            PrgBar.Visibility = Visibility.Collapsed;
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
         }
         else
         {
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            TxtFileName.Visibility = Visibility.Collapsed;
+            TxtCounter.Visibility = Visibility.Collapsed;
+            PrgBar.Visibility = Visibility.Collapsed;
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ConnectionError"];
         }
     }
 
@@ -94,6 +124,7 @@ public partial class LocalSendSendWindow : Window
     {
         if (_vm.IsSending)
         {
+            _cancelSource = CancelSource.Self;
             BtnCancelOrClose.Content = TranslationManager.Instance["Common_Close"];
             TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
             _vm.CancelCommand.Execute(null);
@@ -104,7 +135,8 @@ public partial class LocalSendSendWindow : Window
 
     public void HandleSessionCanceled(string sessionId) => Dispatcher.BeginInvoke(new Action(() =>
     {
-        TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Declined"];
+        _cancelSource = CancelSource.Receiver;
+        TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ReceiverCanceled"];
         BtnCancelOrClose.Content = TranslationManager.Instance["Common_Close"];
         _vm.CancelCommand.Execute(null);
     }));

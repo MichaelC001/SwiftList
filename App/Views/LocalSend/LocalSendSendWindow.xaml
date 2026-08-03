@@ -196,20 +196,17 @@
 
                     <Grid Grid.Row="0" Margin="20,16,20,12">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="TxtStatus" Text="{Binding StatusText}"
-                                       FontSize="14" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimary2}" Margin="0,0,0,12"/>
-
                             <Grid Margin="0,0,0,8">
                                 <TextBlock x:Name="TxtFileName" Text="{Binding CurrentFileName}"
-                                           FontSize="12.5" Foreground="{DynamicResource TextSecondary}"
+                                           FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"
                                            TextTrimming="CharacterEllipsis" HorizontalAlignment="Left" Width="300"/>
                                 <TextBlock x:Name="TxtCounter" Text="{Binding CounterText}"
                                            FontSize="12" Foreground="{DynamicResource TextSecondary}"
                                            HorizontalAlignment="Right"/>
                             </Grid>
 
-                            <ProgressBar Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" Height="6"
+                            <ProgressBar x:Name="PrgBar" Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" Height="6"
+                                         Visibility="Collapsed"
                                          Foreground="{DynamicResource AccentBlue}" Background="{DynamicResource ControlBackground}"
                                          BorderThickness="0" Margin="0,0,0,12">
                                 <ProgressBar.Template>

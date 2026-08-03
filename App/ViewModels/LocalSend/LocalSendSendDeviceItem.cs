@@ -13,10 +13,19 @@ public sealed class LocalSendSendDeviceItem : INotifyPropertyChanged
     private string _pin = string.Empty;
     private bool _isSelected;
 
-    public required LocalSendDeviceInfo Device { get; init; }
+    public LocalSendSendDeviceItem(LocalSendDeviceInfo device) => Device = device;
+
+    public LocalSendDeviceInfo Device { get; private set; }
 
     public string Alias => Device.Alias;
     public string IpAddress => Device.IpAddress;
+
+    public void UpdateDevice(LocalSendDeviceInfo newDev)
+    {
+        Device = newDev;
+        OnPropertyChanged(nameof(Alias));
+        OnPropertyChanged(nameof(IpAddress));
+    }
 
     public bool IsSelected
     {

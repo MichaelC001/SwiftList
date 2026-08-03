@@ -47,13 +47,19 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
         foreach (var dev in discovery.DiscoveredDevices)
         {
-            if (!_discoveredDevices.Any(item => item.IpAddress == dev.IpAddress))
+            var existing = _discoveredDevices.FirstOrDefault(item => item.IpAddress == dev.IpAddress);
+            if (existing == null)
             {
-                _discoveredDevices.Add(new LocalSendSendDeviceItem { Device = dev });
+                _discoveredDevices.Add(new LocalSendSendDeviceItem(dev));
+            }
+            else
+            {
+                existing.UpdateDevice(dev);
             }
         }
     }));
 
+    public event EventHandler? SendingStarted;
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(nameof(StatusText));
 
     public ObservableCollection<string> TargetFiles { get; }
@@ -97,6 +103,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
 
         IsSending = false;
+        SpeedText = string.Empty;
         if (allSuccess && !_cts.IsCancellationRequested)
         {
             StatusText = TranslationManager.Instance["Settings_LocalSend_Completed"];
@@ -106,6 +113,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
     private async Task<LocalSendSendResult> SendToSingleDeviceAsync(LocalSendSendDeviceItem item, string prefix)
     {
+        StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Waiting"];
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         long lastBytes = 0;
         double currentSpeed = 0;
@@ -118,6 +126,9 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             if (TargetFiles.Count > 0)
             {
                 var filesList = TargetFiles.ToList();
+                var firstFile = filesList.FirstOrDefault();
+                CurrentFileName = string.IsNullOrEmpty(firstFile) ? string.Empty : System.IO.Path.GetFileName(firstFile);
+                CounterText = filesList.Count > 1 ? $"(0/{filesList.Count})" : string.Empty;
                 var fileSizes = filesList.Select(f => { try { return new System.IO.FileInfo(f).Length; } catch { return 0L; } }).ToList();
                 var totalSessionBytes = fileSizes.Sum();
                 var completedFilesBytes = new long[filesList.Count];
@@ -126,18 +137,17 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                     item.Device, filesList, item.Pin,
                     args => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        var idx = Math.Clamp(args.FileIndex - 1, 0, filesList.Count - 1);
-                        completedFilesBytes[idx] = Math.Min(args.BytesSent, fileSizes[idx]);
-                        var currentSessionSent = completedFilesBytes.Sum();
-                        var pct = totalSessionBytes > 0 ? (double)currentSessionSent / totalSessionBytes * 100.0 : 0;
-                        ProgressPercentage = Math.Min(100.0, pct);
+                        var currentFileRatio = args.TotalBytes > 0 ? (double)args.BytesSent / args.TotalBytes : 0.0;
+                        var fileProgress = Math.Clamp(args.FileIndex - 1 + currentFileRatio, 0.0, args.TotalFiles);
+                        var pct = args.TotalFiles > 0 ? (fileProgress / args.TotalFiles) * 100.0 : 0.0;
+                        ProgressPercentage = Math.Clamp(pct, 0.0, 100.0);
 
                         var elapsedSec = stopwatch.Elapsed.TotalSeconds;
                         if (elapsedSec >= 0.3 || lastBytes == 0)
                         {
-                            var bytesDelta = currentSessionSent - lastBytes;
+                            var bytesDelta = args.BytesSent - lastBytes;
                             currentSpeed = elapsedSec > 0 && bytesDelta > 0 ? bytesDelta / elapsedSec : currentSpeed;
-                            lastBytes = currentSessionSent;
+                            lastBytes = args.BytesSent;
                             stopwatch.Restart();
                         }
 
@@ -148,6 +158,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                         CounterText = $"({completedCount}/{args.TotalFiles})";
                         SpeedText = currentSpeed > 0 ? $"{FormatBytes((long)currentSpeed)}/s" : string.Empty;
                         StatusText = $"{prefix}{args.FileName} ({completedCount}/{args.TotalFiles})";
+                        SendingStarted?.Invoke(this, EventArgs.Empty);
                     })),
                     _cts?.Token ?? CancellationToken.None);
             }
@@ -162,13 +173,23 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
-            return LocalSendSendResult.Canceled;
+            if (_cts != null && _cts.IsCancellationRequested)
+            {
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
+                return LocalSendSendResult.Canceled;
+            }
+            StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Declined"];
+            return LocalSendSendResult.Declined;
         }
         catch (ObjectDisposedException)
         {
-            StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
-            return LocalSendSendResult.Canceled;
+            if (_cts != null && _cts.IsCancellationRequested)
+            {
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
+                return LocalSendSendResult.Canceled;
+            }
+            StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Declined"];
+            return LocalSendSendResult.Declined;
         }
         catch (Exception ex)
         {
