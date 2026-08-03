@@ -47,6 +47,7 @@
   "Settings_LocalSend_InvalidPin": "PIN 码验证失败",
   "Settings_LocalSend_OpenFolder": "打开文件夹",
   "Settings_LocalSend_TextReceivedTitle": "收到纯文本",
+  "Settings_LocalSend_Text": "文本",
   "Settings_LocalSend_Files": "文件",
   "Settings_LocalSend_Copy": "复制",
   "Settings_LocalSend_Open": "打开",

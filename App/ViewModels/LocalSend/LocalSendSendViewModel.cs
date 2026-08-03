@@ -83,6 +83,10 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         {
             StatusText = TranslationManager.Instance["Settings_LocalSend_SelectDeviceHint"];
         }
+        if (IsTextMode || (TargetFiles.Count == 0 && !string.IsNullOrWhiteSpace(TextToSend)))
+        {
+            CurrentFileName = TranslationManager.Instance["Settings_LocalSend_Text"];
+        }
         OnPropertyChanged(nameof(StatusText));
     }
 
@@ -222,7 +226,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             if (isSendingText)
             {
                 StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Waiting"];
-                CurrentFileName = "Text";
+                CurrentFileName = TranslationManager.Instance["Settings_LocalSend_Text"];
                 CounterText = "(1/1)";
 
                 (result, errDetails) = await LocalSendServiceManager.Instance.SendTextAsync(
