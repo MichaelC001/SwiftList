@@ -7,7 +7,6 @@ using SwiftList.App.Services;
 using SwiftList.App.Services.Theme;
 using SwiftList.Core.Services.LocalSend;
 using SwiftList.Core.Services.LocalSend.Models;
-using System.IO;
 using System.Windows.Data;
 using System.Windows.Threading;
 
@@ -50,9 +49,8 @@ public partial class LocalSendReceiveWindow : Window
             var isLink = Uri.TryCreate(pText, UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
             var isFileLink = Uri.TryCreate(kv.Value.FileName, UriKind.Absolute, out var u2) && (u2.Scheme == Uri.UriSchemeHttp || u2.Scheme == Uri.UriSchemeHttps);
             var linkUrl = isLink ? pText : (isFileLink ? kv.Value.FileName : null);
-            var isGuid = Guid.TryParse(Path.GetFileNameWithoutExtension(kv.Value.FileName), out _);
-            var displayName = isLink ? pText! : (!string.IsNullOrEmpty(pText) ? pText : (isGuid ? TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"] : kv.Value.FileName));
-            return new LocalSendReceiveFileItem { FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = linkUrl, TextContent = pText ?? (isGuid ? null : kv.Value.FileName), IsTextItem = isTextItem, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size) };
+            var displayName = !string.IsNullOrWhiteSpace(pText) ? pText : kv.Value.FileName;
+            return new LocalSendReceiveFileItem { FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = linkUrl, TextContent = pText ?? kv.Value.FileName, IsTextItem = isTextItem, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size) };
         }).ToList();
 
         var view = (ListCollectionView)CollectionViewSource.GetDefaultView(_fileItems);
@@ -77,25 +75,20 @@ public partial class LocalSendReceiveWindow : Window
 
     private void BtnToggleSelectAll_Click(object sender, RoutedEventArgs e)
     {
-        if (LstFiles.SelectedItems.Count == _fileItems.Count)
-        {
-            LstFiles.UnselectAll();
-        }
-        else
-        {
-            LstFiles.SelectAll();
-        }
+        if (LstFiles.SelectedItems.Count == _fileItems.Count) LstFiles.UnselectAll();
+        else LstFiles.SelectAll();
     }
 
     private void UpdateSummaryText()
     {
-        var selected = LstFiles.SelectedItems.OfType<LocalSendReceiveFileItem>().ToList();
-        var totalBytes = selected.Sum(i => i.Size);
+        var selectedFiles = LstFiles.SelectedItems.OfType<LocalSendReceiveFileItem>().Where(i => !i.IsTextItem).ToList();
+        var totalBytes = selectedFiles.Sum(i => i.Size);
         var sizeFormatted = LocalSendServerHelper.FormatBytes(totalBytes);
         var msgFormat = TranslationManager.Instance["Settings_LocalSend_UploadRequestMsg"];
-        TxtSummary.Text = string.Format(msgFormat, _senderAlias, selected.Count, sizeFormatted);
+        TxtSummary.Text = string.Format(msgFormat, _senderAlias, selectedFiles.Count, sizeFormatted);
 
-        var hasSelection = selected.Count > 0;
+        var hasFiles = _fileItems.Any(i => !i.IsTextItem);
+        var hasSelection = selectedFiles.Count > 0 || !hasFiles;
         BtnSaveTo.IsEnabled = hasSelection;
         BtnAcceptDefault.IsEnabled = hasSelection;
     }

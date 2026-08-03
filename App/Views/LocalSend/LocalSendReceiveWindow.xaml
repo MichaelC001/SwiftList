@@ -147,6 +147,10 @@
                                                         <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource SelectedBackground}"/>
                                                         <Setter TargetName="AccentBar" Property="Fill" Value="{DynamicResource AccentBarColor}"/>
                                                     </Trigger>
+                                                    <DataTrigger Binding="{Binding IsTextItem}" Value="True">
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="Transparent"/>
+                                                        <Setter TargetName="AccentBar" Property="Fill" Value="Transparent"/>
+                                                    </DataTrigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
                                         </Setter.Value>
