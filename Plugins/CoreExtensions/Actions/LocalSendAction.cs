@@ -20,7 +20,13 @@ public class LocalSendAction : ISearchResultAction
         "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
         "TextPrimary");
 
-    public bool CanExecute(IReadOnlyList<ISearchResult> results) => results.Count > 0;
+    public bool CanExecute(IReadOnlyList<ISearchResult> results) => results.Count > 0 && results.All(Exists);
+
+    private static bool Exists(ISearchResult result)
+    {
+        if (result == null || string.IsNullOrEmpty(result.FullPath)) return false;
+        return PathExistenceCache.Exists(result.FullPath);
+    }
 
     public void Execute(IReadOnlyList<ISearchResult> results, IPluginSearchWindow view)
     {
