@@ -49,8 +49,11 @@ public partial class LocalSendReceiveWindow : Window
             var isLink = Uri.TryCreate(pText, UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
             var isFileLink = Uri.TryCreate(kv.Value.FileName, UriKind.Absolute, out var u2) && (u2.Scheme == Uri.UriSchemeHttp || u2.Scheme == Uri.UriSchemeHttps);
             var linkUrl = isLink ? pText : (isFileLink ? kv.Value.FileName : null);
-            var displayName = !string.IsNullOrWhiteSpace(pText) ? pText : kv.Value.FileName;
-            return new LocalSendReceiveFileItem { FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = linkUrl, TextContent = pText ?? kv.Value.FileName, IsTextItem = isTextItem, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size) };
+            var isGuid = Guid.TryParse(System.IO.Path.GetFileNameWithoutExtension(kv.Value.FileName), out _);
+            var displayName = !string.IsNullOrWhiteSpace(pText)
+                ? pText
+                : (isGuid ? TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"] : kv.Value.FileName);
+            return new LocalSendReceiveFileItem { FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = linkUrl, TextContent = pText, IsTextItem = isTextItem, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size) };
         }).ToList();
 
         var view = (ListCollectionView)CollectionViewSource.GetDefaultView(_fileItems);
