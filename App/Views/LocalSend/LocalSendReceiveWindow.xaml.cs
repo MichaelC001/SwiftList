@@ -7,6 +7,7 @@ using SwiftList.App.Services;
 using SwiftList.App.Services.Theme;
 using SwiftList.Core.Services.LocalSend;
 using SwiftList.Core.Services.LocalSend.Models;
+using System.IO;
 using System.Windows.Threading;
 
 namespace SwiftList.App.Views.LocalSend;
@@ -45,14 +46,10 @@ public partial class LocalSendReceiveWindow : Window
         {
             var rawText = !string.IsNullOrWhiteSpace(kv.Value.Preview) ? kv.Value.Preview.Trim() : kv.Value.FileName;
             var isLink = Uri.TryCreate(rawText, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+            var displayName = Guid.TryParse(Path.GetFileNameWithoutExtension(rawText), out _) ? TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"] : rawText;
             return new LocalSendReceiveFileItem
             {
-                FileId = kv.Key,
-                FileName = kv.Value.FileName,
-                DisplayName = rawText,
-                LinkUrl = isLink ? rawText : null,
-                Size = kv.Value.Size,
-                SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
+                FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = isLink ? rawText : null, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
             };
         }).ToList();
 
