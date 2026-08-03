@@ -265,19 +265,12 @@ public sealed class LocalSendServer : IDisposable
 
         Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{expectedTotalFiles})");
 
-        var isTextHandled = LocalSendServerHelper.CheckAndNotifyTextReceived(this, prepareDto, fileId, targetPath, senderAlias);
-        if (isTextHandled)
-        {
-            LocalSendServerHelper.TryDeleteFile(targetPath);
-        }
-        else
-        {
-            ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-                sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, expectedTotalFiles,
-                isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
-                sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
-            FileReceived?.Invoke(this, (fileId, targetPath));
-        }
+        LocalSendServerHelper.CheckAndNotifyTextReceived(this, prepareDto, fileId, targetPath, senderAlias);
+        ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
+            sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, expectedTotalFiles,
+            isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
+            sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
+        FileReceived?.Invoke(this, (fileId, targetPath));
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }

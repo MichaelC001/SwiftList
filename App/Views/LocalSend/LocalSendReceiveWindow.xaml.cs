@@ -41,13 +41,19 @@ public partial class LocalSendReceiveWindow : Window
         var deviceLabel = TranslationManager.Instance["Settings_LocalSend_Device"];
         TxtSender.Text = $"{deviceLabel}: {_senderAlias}";
 
-        _fileItems = dto.Files.Select(kv => new LocalSendReceiveFileItem
+        _fileItems = dto.Files.Select(kv =>
         {
-            FileId = kv.Key,
-            FileName = kv.Value.FileName,
-            DisplayName = !string.IsNullOrWhiteSpace(kv.Value.Preview) ? kv.Value.Preview.Trim() : kv.Value.FileName,
-            Size = kv.Value.Size,
-            SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
+            var rawText = !string.IsNullOrWhiteSpace(kv.Value.Preview) ? kv.Value.Preview.Trim() : kv.Value.FileName;
+            var isLink = Uri.TryCreate(rawText, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+            return new LocalSendReceiveFileItem
+            {
+                FileId = kv.Key,
+                FileName = kv.Value.FileName,
+                DisplayName = rawText,
+                LinkUrl = isLink ? rawText : null,
+                Size = kv.Value.Size,
+                SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
+            };
         }).ToList();
 
         LstFiles.ItemsSource = _fileItems;
@@ -82,10 +88,12 @@ public partial class LocalSendReceiveWindow : Window
         BtnAcceptDefault.IsEnabled = hasSelection;
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
     {
-        if (e.ChangedButton == MouseButton.Left) DragMove();
+        try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); } catch { }
+        e.Handled = true;
     }
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); }
 
     protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
     {

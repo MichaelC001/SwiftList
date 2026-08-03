@@ -17,6 +17,8 @@ public sealed class LocalSendReceiveFileItem : INotifyPropertyChanged
     public required string FileId { get; init; }
     public required string FileName { get; init; }
     public required string DisplayName { get; init; }
+    public string? LinkUrl { get; init; }
+    public bool IsLink => !string.IsNullOrEmpty(LinkUrl);
     public required long Size { get; init; }
     public required string SizeText { get; init; }
 
