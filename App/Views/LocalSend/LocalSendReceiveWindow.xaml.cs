@@ -101,15 +101,12 @@ public partial class LocalSendReceiveWindow : Window
     }
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); }
 
-    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
-        base.OnKeyDown(e);
-        if (e.Key == Key.Escape)
+        base.OnPreviewKeyDown(e);
+        if (e.Key == Key.Escape || e.SystemKey == Key.Escape)
         {
             e.Handled = true;
-            if (GridStep1Footer.Visibility == Visibility.Visible) BtnDecline_Click(this, new RoutedEventArgs());
-            else if (!_isCompleted) BtnCloseProgress_Click(this, new RoutedEventArgs());
-            else Close();
         }
     }
 

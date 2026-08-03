@@ -37,14 +37,12 @@ public partial class LocalSendSendWindow : Window
         Close();
     }
 
-    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
-        base.OnKeyDown(e);
-        if (e.Key == Key.Escape)
+        base.OnPreviewKeyDown(e);
+        if (e.Key == Key.Escape || e.SystemKey == Key.Escape)
         {
             e.Handled = true;
-            if (_vm.IsSending) _vm.CancelCommand.Execute(null);
-            else Close();
         }
     }
 
