@@ -42,14 +42,9 @@ public partial class LocalSendSendWindow : Window
         base.OnKeyDown(e);
         if (e.Key == Key.Escape)
         {
-            if (_vm.IsSending)
-            {
-                _vm.CancelCommand.Execute(null);
-            }
-            else
-            {
-                Close();
-            }
+            e.Handled = true;
+            if (_vm.IsSending) _vm.CancelCommand.Execute(null);
+            else Close();
         }
     }
 

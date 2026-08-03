@@ -44,12 +44,15 @@ public partial class LocalSendReceiveWindow : Window
 
         _fileItems = dto.Files.Select(kv =>
         {
-            var rawText = !string.IsNullOrWhiteSpace(kv.Value.Preview) ? kv.Value.Preview.Trim() : kv.Value.FileName;
-            var isLink = Uri.TryCreate(rawText, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-            var displayName = Guid.TryParse(Path.GetFileNameWithoutExtension(rawText), out _) ? TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"] : rawText;
+            var pText = kv.Value.Preview?.Trim();
+            var isLink = Uri.TryCreate(pText, UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
+            var isFileLink = Uri.TryCreate(kv.Value.FileName, UriKind.Absolute, out var u2) && (u2.Scheme == Uri.UriSchemeHttp || u2.Scheme == Uri.UriSchemeHttps);
+            var linkUrl = isLink ? pText : (isFileLink ? kv.Value.FileName : null);
+            var isGuid = Guid.TryParse(Path.GetFileNameWithoutExtension(kv.Value.FileName), out _);
+            var displayName = isLink ? pText! : (!string.IsNullOrEmpty(pText) ? pText : (isGuid ? TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"] : kv.Value.FileName));
             return new LocalSendReceiveFileItem
             {
-                FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = isLink ? rawText : null, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
+                FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = linkUrl, TextContent = pText, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
             };
         }).ToList();
 
@@ -97,14 +100,10 @@ public partial class LocalSendReceiveWindow : Window
         base.OnKeyDown(e);
         if (e.Key == Key.Escape)
         {
-            if (GridStep1Footer.Visibility == Visibility.Visible)
-            {
-                BtnDecline_Click(this, new RoutedEventArgs());
-            }
-            else
-            {
-                BtnCloseProgress_Click(this, new RoutedEventArgs());
-            }
+            e.Handled = true;
+            if (GridStep1Footer.Visibility == Visibility.Visible) BtnDecline_Click(this, new RoutedEventArgs());
+            else if (!_isCompleted) BtnCloseProgress_Click(this, new RoutedEventArgs());
+            else Close();
         }
     }
 
