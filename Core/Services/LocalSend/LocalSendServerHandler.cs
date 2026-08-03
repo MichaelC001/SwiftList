@@ -205,7 +205,15 @@ internal static class LocalSendServerHandler
         }
 
         var resp = new Models.PrepareUploadResponseDto { SessionId = sessionId, Files = fileTokens };
-        await LocalSendServerHelper.WriteResponseAsync(stream, 200, System.Text.Json.JsonSerializer.Serialize(resp)).ConfigureAwait(false);
+        try
+        {
+            await LocalSendServerHelper.WriteResponseAsync(stream, 200, System.Text.Json.JsonSerializer.Serialize(resp)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LocalSendServer] Failed to send prepare-upload response to sender: {ex.Message}");
+            server.CancelSession(sessionId);
+        }
     }
 
     private static async Task RouteUploadAsync(
