@@ -104,13 +104,15 @@ public sealed class LocalSendUploadRequestArgs : EventArgs
     public PrepareUploadRequestDto Dto { get; }
     public string? CustomDownloadDirectory { get; set; }
     public HashSet<string>? SelectedFileIds { get; set; }
+    public bool IsAutoAccepted { get; }
     private readonly Action<bool> _respond;
 
-    public LocalSendUploadRequestArgs(string sessionId, PrepareUploadRequestDto dto, Action<bool> respond)
+    public LocalSendUploadRequestArgs(string sessionId, PrepareUploadRequestDto dto, Action<bool> respond, bool isAutoAccepted = false)
     {
         SessionId = sessionId;
         Dto = dto;
         _respond = respond;
+        IsAutoAccepted = isAutoAccepted;
     }
 
     public void Respond(bool accept) => _respond(accept);

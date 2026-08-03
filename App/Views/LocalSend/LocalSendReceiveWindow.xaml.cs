@@ -52,6 +52,11 @@ public partial class LocalSendReceiveWindow : Window
         LstFiles.ItemsSource = _fileItems;
         LstFiles.SelectAll();
         UpdateSummaryText();
+
+        if (_requestArgs.IsAutoAccepted)
+        {
+            Loaded += (_, _) => SwitchToProgressStep();
+        }
     }
 
     private void LstFiles_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => UpdateSummaryText();
@@ -229,6 +234,14 @@ public partial class LocalSendReceiveWindow : Window
             BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
             var target = LocalSendReceiveWindowHelper.ResolveFolderTarget(_lastRootSavedPath, _lastSavedPath);
             if (!string.IsNullOrEmpty(target)) BtnOpenFolder.Visibility = Visibility.Visible;
+
+            var hasError = LstFiles.Items.OfType<LocalSendReceiveFileItem>().Any(i => !i.IsFinished);
+            if (!hasError)
+            {
+                var autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
+                autoCloseTimer.Tick += (_, _) => { autoCloseTimer.Stop(); Close(); };
+                autoCloseTimer.Start();
+            }
         }
     }));
 

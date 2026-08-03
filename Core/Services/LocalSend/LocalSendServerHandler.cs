@@ -169,21 +169,11 @@ internal static class LocalSendServerHandler
         var sessionId = Guid.NewGuid().ToString();
         server.RegisterActiveSession(sessionId, dto);
 
-        var isTextMessage = dto.Files.Count == 1 && dto.Files.Values.Any(f =>
-            string.Equals(f.FileType, "text", StringComparison.OrdinalIgnoreCase) ||
-            !string.IsNullOrEmpty(f.Preview) ||
-            f.FileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
-
-        var isAccepted = server.QuickSave || isTextMessage;
-        string? customDir = null;
-        HashSet<string>? selectedFileIds = null;
-        if (!isAccepted)
-        {
-            var res = await server.RequestUserAcceptanceAsync(sessionId, dto).ConfigureAwait(false);
-            isAccepted = res.Accepted;
-            customDir = res.CustomDir;
-            selectedFileIds = res.SelectedFileIds;
-        }
+        var isQuickSave = server.QuickSave;
+        var res = await server.RequestUserAcceptanceAsync(sessionId, dto, isAutoAccepted: isQuickSave).ConfigureAwait(false);
+        var isAccepted = isQuickSave || res.Accepted;
+        var customDir = res.CustomDir;
+        var selectedFileIds = res.SelectedFileIds;
 
         if (!isAccepted || server.IsSessionCanceled(sessionId) || (selectedFileIds != null && selectedFileIds.Count == 0))
         {
