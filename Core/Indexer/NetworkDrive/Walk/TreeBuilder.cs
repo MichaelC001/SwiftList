@@ -143,16 +143,15 @@ internal sealed class TreeBuilder
 
         var ignoreRules = _filter.LoadIgnoreRules(current.Path, current.LogicalPath, current.IgnoreRules);
         var stopwatch = Stopwatch.StartNew();
-        IEnumerable<string> children;
-        try
+        IEnumerable<string> children = null!;
+        var success = false;
+        for (var attempt = 0; attempt < 3; attempt++)
         {
-            children = Directory.EnumerateFileSystemEntries(current.Path);
+            try { children = Directory.EnumerateFileSystemEntries(current.Path); success = true; break; }
+            catch when (attempt < 2 && !_token.IsCancellationRequested) { Thread.Sleep(100 * (attempt + 1)); }
+            catch { break; }
         }
-        catch
-        {
-            this.CountError(ref _enumerateErrors);
-            return;
-        }
+        if (!success) { this.CountError(ref _enumerateErrors); return; }
 
         var batch = new List<FileRecord>(RecordBatchSize);
         foreach (var child in children)
@@ -221,7 +220,7 @@ internal sealed class TreeBuilder
 
     private int GetWorkerCount() => _filter.WorkerCount > 0
             ? Math.Clamp(_filter.WorkerCount, 1, 32)
-            : Math.Clamp(Environment.ProcessorCount, 2, 8);
+            : Math.Clamp(Environment.ProcessorCount, 2, 4);
 
     // parentId here is this directory's OWN id (becomes WorkItem.LocalId), not its parent's -- matches the
     // naming TryCreateRecord's callers already use when they pass record.Id through as this parameter.
