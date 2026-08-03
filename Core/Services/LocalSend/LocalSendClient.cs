@@ -144,30 +144,33 @@ public sealed class LocalSendClient : IDisposable
                 if (!resp.IsSuccessStatusCode)
                 {
                     await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
-                    if (LocalSendServiceManager.Instance.IsSessionCanceled(sessionId))
+                    if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
                     {
+                        LastError = "403 Forbidden (Declined by receiver)";
                         return LocalSendSendResult.Declined;
                     }
+                    if (resp.StatusCode == System.Net.HttpStatusCode.Conflict || (int)resp.StatusCode == 409)
+                    {
+                        LastError = "409 Conflict (Receiver busy)";
+                        return LocalSendSendResult.Busy;
+                    }
                     LastError = $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";
-                    return LocalSendSendResult.Error;
+                    return LocalSendSendResult.Declined;
                 }
             }
             catch (OperationCanceledException)
             {
-                // Use CancellationToken.None: the user token is already cancelled, so we must
-                // send the /cancel HTTP POST on a fresh token or it silently throws and never arrives.
                 await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
                 return LocalSendSendResult.Canceled;
             }
             catch (Exception ex)
             {
                 await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
-                if (LocalSendServiceManager.Instance.IsSessionCanceled(sessionId))
-                {
-                    return LocalSendSendResult.Declined;
-                }
-                LastError = $"{ex.GetType().Name}: {ex.Message}";
-                return LocalSendSendResult.Error;
+                // When receiver cancels or closes mid-transfer, TCP socket is reset/closed by peer (SocketException/IOException/HttpRequestException).
+                // Map peer disconnection directly to Declined/Canceled rather than a raw network error.
+                Logger.Log($"[LocalSendClient] Transfer interrupted by receiver: {ex.GetType().Name} - {ex.Message}");
+                LastError = "Declined or canceled by receiver";
+                return LocalSendSendResult.Declined;
             }
         }
 
@@ -220,6 +223,11 @@ public sealed class LocalSendClient : IDisposable
                     LastError = "429 Too Many Attempts";
                     return (LocalSendSendResult.TooManyAttempts, null, null, tryHttps);
                 }
+                if (resp.StatusCode == System.Net.HttpStatusCode.Conflict || (int)resp.StatusCode == 409)
+                {
+                    LastError = "409 Conflict (Busy: Blocked by another session)";
+                    return (LocalSendSendResult.Busy, null, null, tryHttps);
+                }
                 if (!resp.IsSuccessStatusCode)
                 {
                     LastError = $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";
@@ -244,8 +252,10 @@ public sealed class LocalSendClient : IDisposable
             }
             catch (Exception ex)
             {
-                LastError = $"{ex.GetType().Name}: {ex.Message}";
-                // Timeout, scheme mismatch or proxy error, fallback to alternate scheme
+                // Receiver declined/closed prompt window or disconnected stream
+                Logger.Log($"[LocalSendClient] PrepareUpload interrupted by receiver: {ex.GetType().Name} - {ex.Message}");
+                LastError = "Declined or canceled by receiver";
+                return (LocalSendSendResult.Declined, null, null, tryHttps);
             }
         }
 
@@ -267,35 +277,4 @@ public sealed class LocalSendClient : IDisposable
     };
 
     public void Dispose() => _httpClient.Dispose();
-}
-
-internal sealed class ProgressiveStreamContent : HttpContent
-{
-    private readonly Stream _stream;
-    private readonly Action<long, long> _onProgress;
-
-    public ProgressiveStreamContent(Stream stream, Action<long, long> onProgress)
-    {
-        _stream = stream;
-        _onProgress = onProgress;
-    }
-
-    protected override async Task SerializeToStreamAsync(Stream stream, System.Net.TransportContext? context)
-    {
-        var buffer = new byte[1024 * 1024];
-        long totalRead = 0;
-        int read;
-        while ((read = await _stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
-        {
-            await stream.WriteAsync(buffer, 0, read).ConfigureAwait(false);
-            totalRead += read;
-            _onProgress(totalRead, _stream.Length);
-        }
-    }
-
-    protected override bool TryComputeLength(out long length)
-    {
-        length = _stream.Length;
-        return true;
-    }
 }

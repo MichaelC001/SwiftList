@@ -41,6 +41,7 @@
   "Settings_LocalSend_SenderCanceled": "送信者によってキャンセルされました",
   "Settings_LocalSend_ConnectionError": "接続に失敗しました",
   "Settings_LocalSend_Declined": "受信者によって拒否されました",
+  "Settings_LocalSend_Busy": "相手のデバイスがビジー状態です",
   "Settings_LocalSend_InvalidPin": "無効な PIN",
   "Settings_LocalSend_OpenFolder": "フォルダを開く",
   "Settings_LocalSend_TextReceivedTitle": "テキストを受信しました",

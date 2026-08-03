@@ -150,7 +150,7 @@ internal static class LocalSendServerHandler
 
         if (server.IsBusy)
         {
-            await LocalSendServerHelper.WriteResponseAsync(stream, 409).ConfigureAwait(false);
+            await LocalSendServerHelper.WriteResponseAsync(stream, 409, "{\"message\":\"Blocked by another session\"}").ConfigureAwait(false);
             return;
         }
 
@@ -176,14 +176,16 @@ internal static class LocalSendServerHandler
 
         var isAccepted = server.QuickSave || isTextMessage;
         string? customDir = null;
+        HashSet<string>? selectedFileIds = null;
         if (!isAccepted)
         {
             var res = await server.RequestUserAcceptanceAsync(sessionId, dto).ConfigureAwait(false);
             isAccepted = res.Accepted;
             customDir = res.CustomDir;
+            selectedFileIds = res.SelectedFileIds;
         }
 
-        if (!isAccepted || server.IsSessionCanceled(sessionId))
+        if (!isAccepted || server.IsSessionCanceled(sessionId) || (selectedFileIds != null && selectedFileIds.Count == 0))
         {
             server.UnregisterSession(sessionId);
             await LocalSendServerHelper.WriteResponseAsync(stream, 403).ConfigureAwait(false);
@@ -191,10 +193,16 @@ internal static class LocalSendServerHandler
         }
 
         server.RegisterCustomDirectory(sessionId, customDir);
+        server.RegisterSelectedFileIds(sessionId, selectedFileIds);
 
         var fileTokens = new Dictionary<string, string>();
         foreach (var kv in dto.Files)
-            fileTokens[kv.Key] = Guid.NewGuid().ToString("N");
+        {
+            if (selectedFileIds == null || selectedFileIds.Contains(kv.Key))
+            {
+                fileTokens[kv.Key] = Guid.NewGuid().ToString("N");
+            }
+        }
 
         var resp = new Models.PrepareUploadResponseDto { SessionId = sessionId, Files = fileTokens };
         await LocalSendServerHelper.WriteResponseAsync(stream, 200, System.Text.Json.JsonSerializer.Serialize(resp)).ConfigureAwait(false);
@@ -270,51 +278,5 @@ internal static class LocalSendServerHandler
         }
 
         return sb.ToString();
-    }
-}
-
-/// <summary>
-/// Wraps an inner stream and limits the number of bytes that can be read.
-/// Used to read exactly the file body bytes declared in Content-Length.
-/// </summary>
-internal sealed class LengthLimitedStream(Stream inner, long limit) : Stream
-{
-    private long _remaining = limit;
-
-    public override bool CanRead => true;
-    public override bool CanSeek => false;
-    public override bool CanWrite => false;
-    public override long Length => throw new NotSupportedException();
-    public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-    public override void Flush() { }
-    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-    public override void SetLength(long value) => throw new NotSupportedException();
-    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-
-    public override int Read(byte[] buffer, int offset, int count)
-    {
-        if (_remaining <= 0) return 0;
-        var toRead = (int)Math.Min(count, _remaining);
-        var read = inner.Read(buffer, offset, toRead);
-        _remaining -= read;
-        return read;
-    }
-
-    public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-    {
-        if (_remaining <= 0) return 0;
-        var toRead = (int)Math.Min(count, _remaining);
-        var read = await inner.ReadAsync(buffer.AsMemory(offset, toRead), cancellationToken).ConfigureAwait(false);
-        _remaining -= read;
-        return read;
-    }
-
-    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-    {
-        if (_remaining <= 0) return 0;
-        var toRead = (int)Math.Min(buffer.Length, _remaining);
-        var read = await inner.ReadAsync(buffer[..toRead], cancellationToken).ConfigureAwait(false);
-        _remaining -= read;
-        return read;
     }
 }

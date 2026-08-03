@@ -41,6 +41,7 @@
   "Settings_LocalSend_SenderCanceled": "發送方已取消傳輸",
   "Settings_LocalSend_ConnectionError": "連線裝置失敗",
   "Settings_LocalSend_Declined": "對方拒絕了傳送請求",
+  "Settings_LocalSend_Busy": "對方裝置忙碌",
   "Settings_LocalSend_InvalidPin": "PIN 碼驗證失敗",
   "Settings_LocalSend_OpenFolder": "開啟資料夾",
   "Settings_LocalSend_TextReceivedTitle": "收到純文字",

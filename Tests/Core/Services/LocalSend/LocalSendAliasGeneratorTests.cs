@@ -118,7 +118,7 @@ public class LocalSendAliasGeneratorTests
             }
         };
 
-        var (accepted, _) = await server.RequestUserAcceptanceAsync("test-session-id", dto);
+        var (accepted, _, _) = await server.RequestUserAcceptanceAsync("test-session-id", dto);
         Assert.IsTrue(accepted);
     }
 

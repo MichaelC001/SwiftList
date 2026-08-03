@@ -233,6 +233,9 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             case LocalSendSendResult.Declined:
                 SetStatusKey("Settings_LocalSend_Declined");
                 break;
+            case LocalSendSendResult.Busy:
+                SetStatusKey("Settings_LocalSend_Busy");
+                break;
             case LocalSendSendResult.InvalidPin:
                 SetStatusKey("Settings_LocalSend_InvalidPin");
                 break;

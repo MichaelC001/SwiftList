@@ -18,12 +18,18 @@ namespace SwiftList.App.Helpers.LocalSend;
 public static class LocalSendAppEventHandler
 {
     private static LocalSendReceiveWindow? _activeReceiveWindow;
+    private static LocalSendSendWindow? _activeSendWindow;
     private static LocalSendProgressArgs? _pendingProgressArgs;
     private static bool _isProgressDispatchPending;
+
+    public static bool IsAnyWindowOpen =>
+        (_activeReceiveWindow != null && _activeReceiveWindow.IsLoaded) ||
+        (_activeSendWindow != null && _activeSendWindow.IsLoaded);
 
     public static void Initialize(UserSettings settings)
     {
         var manager = LocalSendServiceManager.Instance;
+        manager.WindowOpenCheck = () => IsAnyWindowOpen;
         manager.ApplySettings(settings);
         manager.ProgressChanged += OnProgressChanged;
         manager.SessionCanceled += OnSessionCanceled;
@@ -88,11 +94,17 @@ public static class LocalSendAppEventHandler
                                                                                                                  }));
 
     private static void OnSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                                                                                                                {
-                                                                                                                    var sendWin = new LocalSendSendWindow(e.Files, e.Text);
-                                                                                                                    sendWin.Show();
-                                                                                                                    sendWin.Activate();
-                                                                                                                }));
+    {
+        if (_activeSendWindow != null && _activeSendWindow.IsLoaded)
+        {
+            _activeSendWindow.Activate();
+            return;
+        }
+        _activeSendWindow = new LocalSendSendWindow(e.Files, e.Text);
+        _activeSendWindow.Closed += (_, _) => _activeSendWindow = null;
+        _activeSendWindow.Show();
+        _activeSendWindow.Activate();
+    }));
 
     private static void OnUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                                                                                                 {

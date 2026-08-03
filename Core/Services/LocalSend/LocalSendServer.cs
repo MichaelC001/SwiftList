@@ -41,7 +41,7 @@ public sealed class LocalSendServer : IDisposable
     public event EventHandler<LocalSendDeviceInfo>? DeviceRegistered;
 
     public int ActualPort { get; private set; }
-    public bool IsBusy => _activeSessions.Count > 0;
+    public bool IsBusy => LocalSendServiceManager.Instance.IsWindowOpen || _activeSessions.Count > 0;
 
     public void Start(int port = 53317)
     {
@@ -51,21 +51,17 @@ public sealed class LocalSendServer : IDisposable
         {
             try
             {
-                var listener = LocalSendServerHelper.TryCreateDualStackListener(p) ?? new TcpListener(IPAddress.Any, p);
-                listener.Start();
-                _listener = listener;
+                var l = LocalSendServerHelper.TryCreateDualStackListener(p) ?? new TcpListener(IPAddress.Any, p);
+                l.Start();
+                _listener = l;
                 ActualPort = p;
                 DeviceInfo.Port = p;
-                Logger.Log($"[LocalSendServer] Started on port {p} (dual-stack={listener.Server.DualMode})");
                 break;
             }
-            catch (Exception ex)
-            {
-                Logger.Log($"[LocalSendServer] Port {p} unavailable: {ex.Message}", LogLevel.Warn);
-            }
+            catch { }
         }
-
-        if (_listener != null) _listenTask = Task.Run(() => AcceptLoopAsync(_cts.Token));
+        if (_listener == null) throw new InvalidOperationException("Failed to bind LocalSend port.");
+        _listenTask = Task.Run(() => AcceptLoopAsync(_cts.Token));
     }
 
     private async Task AcceptLoopAsync(CancellationToken token)
@@ -119,7 +115,6 @@ public sealed class LocalSendServer : IDisposable
         {
             SessionCanceled?.Invoke(this, sessionId);
         }
-        UnregisterSession(sessionId);
     }
 
     public void CancelAllSessions()
@@ -143,6 +138,7 @@ public sealed class LocalSendServer : IDisposable
         if (string.IsNullOrEmpty(sessionId)) return;
         _activeSessions.TryRemove(sessionId, out _);
         _sessionCustomDirectories.TryRemove(sessionId, out _);
+        _sessionSelectedFileIds.TryRemove(sessionId, out _);
         _sessionCompletedFiles.TryRemove(sessionId, out _);
         _sessionTransferredBytes.TryRemove(sessionId, out _);
         _canceledSessions.TryRemove(sessionId, out _);
@@ -255,8 +251,10 @@ public sealed class LocalSendServer : IDisposable
         var completedSet = _sessionCompletedFiles.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, byte>());
         completedSet[fileId] = 0;
 
-        var isAllDone = completedSet.Count >= totalFiles;
-        var displayIndex = isAllDone ? totalFiles : Math.Max(fileIndex, completedSet.Count);
+        var selectedIds = _sessionSelectedFileIds.TryGetValue(sessionId, out var sIds) ? sIds : null;
+        var expectedTotalFiles = selectedIds != null ? selectedIds.Count : totalFiles;
+        var isAllDone = completedSet.Count >= expectedTotalFiles;
+        var displayIndex = isAllDone ? expectedTotalFiles : Math.Max(fileIndex, completedSet.Count);
 
         var relPath = fileName.Replace('\\', '/').TrimStart('/');
         var rootSavedPath = Path.Combine(DownloadDirectory, relPath.Split('/')[0]);
@@ -264,9 +262,11 @@ public sealed class LocalSendServer : IDisposable
         var finalDict = _sessionTransferredBytes.GetOrAdd(sessionId, _ => new System.Collections.Concurrent.ConcurrentDictionary<string, long>());
         finalDict[fileId] = bytesReadTotal;
         var finalSessionTransferred = finalDict.Values.Sum();
-        var finalSessionTotal = prepareDto?.Files.Values.Sum(f => f.Size) ?? totalBytes;
+        var finalSessionTotal = prepareDto != null
+            ? prepareDto.Files.Where(kv => selectedIds == null || selectedIds.Contains(kv.Key)).Sum(kv => kv.Value.Size)
+            : totalBytes;
 
-        Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{totalFiles})");
+        Logger.Log($"[LocalSendServer] Received: {fileName} -> {targetPath} (size={bytesReadTotal}, {completedSet.Count}/{expectedTotalFiles})");
 
         var isTextHandled = LocalSendServerHelper.CheckAndNotifyTextReceived(this, prepareDto, fileId, targetPath, senderAlias);
         if (isTextHandled)
@@ -276,54 +276,25 @@ public sealed class LocalSendServer : IDisposable
         else
         {
             ProgressChanged?.Invoke(this, new LocalSendProgressArgs(
-                sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, totalFiles,
+                sessionId, senderAlias, fileId, fileName, bytesReadTotal, totalBytes, displayIndex, expectedTotalFiles,
                 isFinished: true, isAllDone: isAllDone, savedPath: targetPath, rootSavedPath: rootSavedPath,
                 sessionBytesTransferred: finalSessionTransferred, sessionTotalBytes: finalSessionTotal));
             FileReceived?.Invoke(this, (fileId, targetPath));
-        }
-
-        if (isAllDone)
-        {
-            UnregisterSession(sessionId);
         }
 
         await LocalSendServerHelper.WriteResponseAsync(stream, 200).ConfigureAwait(false);
     }
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _sessionCustomDirectories = new();
-
-    internal void RegisterCustomDirectory(string sessionId, string? customDir)
-    {
-        if (!string.IsNullOrEmpty(customDir)) _sessionCustomDirectories[sessionId] = customDir;
-    }
-
-    internal async Task<(bool Accepted, string? CustomDir)> RequestUserAcceptanceAsync(string sessionId, PrepareUploadRequestDto dto)
-    {
-        if (UploadRequested == null) return (false, null);
-        var tcs = new TaskCompletionSource<(bool, string?)>(TaskCreationOptions.RunContinuationsAsynchronously);
-        LocalSendUploadRequestArgs? args = null;
-        args = new LocalSendUploadRequestArgs(sessionId, dto, accept => tcs.TrySetResult((accept, args?.CustomDownloadDirectory)));
-        UploadRequested.Invoke(this, args);
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-        using (cts.Token.Register(() =>
-        {
-            CancelSession(sessionId);
-            tcs.TrySetResult((false, null));
-        }))
-        {
-            return await tcs.Task.ConfigureAwait(false);
-        }
-    }
-
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, HashSet<string>> _sessionSelectedFileIds = new();
+    internal void RegisterCustomDirectory(string sessionId, string? customDir) { if (!string.IsNullOrEmpty(customDir)) _sessionCustomDirectories[sessionId] = customDir; }
+    internal void RegisterSelectedFileIds(string sessionId, HashSet<string>? selectedIds) { if (selectedIds != null) _sessionSelectedFileIds[sessionId] = selectedIds; }
+    internal Task<(bool Accepted, string? CustomDir, HashSet<string>? SelectedFileIds)> RequestUserAcceptanceAsync(string sessionId, PrepareUploadRequestDto dto) =>
+        LocalSendServerSessionHelper.RequestAcceptanceAsync(this, sessionId, dto);
+    internal bool HasUploadRequestedHandler => UploadRequested != null;
+    internal void InvokeUploadRequested(LocalSendUploadRequestArgs args) => UploadRequested?.Invoke(this, args);
     internal void InvokeDeviceRegistered(LocalSendDeviceInfo dto) => DeviceRegistered?.Invoke(this, dto);
     internal void InvokeTextReceived(string senderAlias, string text, bool isLink) => TextReceived?.Invoke(this, (senderAlias, text, isLink));
-
-    public void Stop()
-    {
-        _cts?.Cancel();
-        try { _listener?.Stop(); } catch { }
-        _listener = null;
-    }
-
+    public void Stop() { _cts?.Cancel(); try { _listener?.Stop(); } catch { } _listener = null; }
     public void Dispose() => Stop();
 }

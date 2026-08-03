@@ -51,27 +51,64 @@
                     </Grid>
                 </Border>
 
-                <!-- STEP 1: Request Confirmation View -->
-                <Grid x:Name="GridRequestStep" Grid.Row="1" Visibility="Visible">
+                <!-- Central Main Content Region: Shared File List Box -->
+                <Grid Grid.Row="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="54"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="16,14,16,8">
-                        <StackPanel>
+                    <!-- Header Row: Sender Info & Select All Button -->
+                    <Grid Grid.Row="0" Margin="16,12,16,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
                             <TextBlock x:Name="TxtSender" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary2}"/>
                             <TextBlock x:Name="TxtSummary" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
                         </StackPanel>
+
+                        <!-- Step 2 Progress Summary / Counter -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock x:Name="TxtSpeed" FontSize="11.5" Foreground="{DynamicResource AccentBlue}" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="TxtCounter" FontSize="11.5" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
+
+                        <Button x:Name="BtnToggleSelectAll" Grid.Column="2" VerticalAlignment="Center"
+                                Content="全选 / 取消全选" Click="BtnToggleSelectAll_Click"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="{DynamicResource AccentBlue}" Cursor="Hand"
+                                FontSize="12" Padding="4,2">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <TextBlock x:Name="Txt" Text="{TemplateBinding Content}"
+                                               Foreground="{TemplateBinding Foreground}"
+                                               FontSize="{TemplateBinding FontSize}"
+                                               Cursor="Hand" VerticalAlignment="Center"/>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Txt" Property="TextDecorations" Value="Underline"/>
+                                            <Setter TargetName="Txt" Property="Foreground" Value="{DynamicResource AccentColor}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                     </Grid>
 
-                    <Border Grid.Row="1" Margin="16,0,16,12" Background="{DynamicResource FieldBackground}"
+                    <!-- Shared ListBox with Per-File Individual Progress Bars -->
+                    <Border Grid.Row="1" Margin="16,0,16,8" MaxHeight="220" Background="{DynamicResource FieldBackground}"
                             BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="8">
                         <ListBox x:Name="LstFiles" Background="Transparent" BorderThickness="0" Margin="4"
+                                 SelectionMode="Multiple" SelectionChanged="LstFiles_SelectionChanged"
                                  HorizontalContentAlignment="Stretch"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.CanContentScroll="True">
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -106,107 +143,112 @@
                             </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="4,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                                    <Grid Margin="2,4">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding FileName}"
-                                                   ToolTip="{Binding FileName}"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource TextPrimary2}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   VerticalAlignment="Center"
-                                                   Margin="0,0,12,0"/>
+                                        <!-- Row 0: File Name & Size/Status -->
+                                        <Grid Grid.Row="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
 
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding SizeText}"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextSecondary}"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding FileName}"
+                                                       ToolTip="{Binding FileName}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource TextPrimary2}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,12,0"/>
+
+                                            <TextBlock Grid.Column="1"
+                                                       FontSize="11.5"
+                                                       Foreground="{DynamicResource TextSecondary}"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="{Binding SizeText}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ShowProgress}" Value="True">
+                                                                <Setter Property="Text" Value="{Binding StatusText}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+
+                                        <!-- Row 1: Individual File Progress Bar -->
+                                        <ProgressBar Grid.Row="1" Value="{Binding ProgressPercentage, Mode=OneWay}"
+                                                     Minimum="0" Maximum="100" Height="3.5" Margin="0,5,0,1"
+                                                     Foreground="{DynamicResource AccentBlue}" Background="{DynamicResource ControlBorderBrush}"
+                                                     BorderThickness="0">
+                                            <ProgressBar.Style>
+                                                <Style TargetType="ProgressBar">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ShowProgress}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ProgressBar.Style>
+                                        </ProgressBar>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
                     </Border>
 
-                    <Border Grid.Row="2" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
+                    <!-- Overall Session Progress Bar -->
+                    <ProgressBar x:Name="PbTransfer" Grid.Row="2" Height="4" Margin="16,0,16,8"
+                                 Minimum="0" Maximum="100" Visibility="Collapsed"
+                                 Foreground="{DynamicResource AccentBlue}" BorderThickness="0"/>
+
+                    <!-- Footer Action Bar: Step 1 vs Step 2 -->
+                    <Border Grid.Row="3" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Button x:Name="BtnDecline" Grid.Column="0" Height="30" Width="80" HorizontalAlignment="Left"
-                                    Style="{StaticResource SettingsButton}"
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Decline]}"
-                                    Click="BtnDecline_Click"/>
-
-                            <Button x:Name="BtnSaveTo" Grid.Column="1" Height="30" Padding="12,0" Margin="0,0,8,0"
-                                    Style="{StaticResource SettingsButton}"
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_SaveTo]}"
-                                    Click="BtnSaveTo_Click"/>
-
-                            <Button x:Name="BtnAcceptDefault" Grid.Column="2" Height="30" Padding="16,0"
-                                    Style="{StaticResource PrimarySettingsButton}"
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_AcceptDefault]}"
-                                    Click="BtnAcceptDefault_Click"/>
-                        </Grid>
-                    </Border>
-                </Grid>
-
-                <!-- STEP 2: Progress Transfer View -->
-                <Grid x:Name="GridProgressStep" Grid.Row="1" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="54"/>
-                    </Grid.RowDefinitions>
-
-                    <Grid Grid.Row="0" Margin="20,16,20,14">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="TxtProgressStatus"
-                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Receiving]}"
-                                       FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary2}" Margin="0,0,0,10"/>
-
-                            <!-- File Name & Right-Aligned Counter Row -->
-                            <Grid Margin="0,0,0,6">
+                            <!-- Step 1 Footer Buttons -->
+                            <Grid x:Name="GridStep1Footer" Visibility="Visible">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock x:Name="TxtFileName" Grid.Column="0"
-                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}"
-                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
-                                           Margin="0,0,12,0"/>
+                                <Button x:Name="BtnDecline" Grid.Column="0" Height="30" Width="80" HorizontalAlignment="Left"
+                                        Style="{StaticResource SettingsButton}"
+                                        Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Decline]}"
+                                        Click="BtnDecline_Click"/>
 
-                                <TextBlock x:Name="TxtCounter" Grid.Column="1"
-                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}"
-                                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                <Button x:Name="BtnSaveTo" Grid.Column="1" Height="30" Padding="12,0" Margin="0,0,8,0"
+                                        Style="{StaticResource SettingsButton}"
+                                        Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_SaveTo]}"
+                                        Click="BtnSaveTo_Click"/>
+
+                                <Button x:Name="BtnAcceptDefault" Grid.Column="2" Height="30" Padding="16,0"
+                                        Style="{StaticResource PrimarySettingsButton}"
+                                        Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_AcceptDefault]}"
+                                        Click="BtnAcceptDefault_Click"/>
                             </Grid>
 
-                            <ProgressBar x:Name="PbTransfer" Height="6" Minimum="0" Maximum="100" Margin="0,0,0,10"/>
+                            <!-- Step 2 Footer Buttons -->
+                            <StackPanel x:Name="PanelStep2Footer" Visibility="Collapsed" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button x:Name="BtnOpenFolder" Height="30" Padding="12,0" Margin="0,0,8,0" Visibility="Collapsed"
+                                        Style="{StaticResource PrimarySettingsButton}"
+                                        Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_OpenFolder]}"
+                                        Click="BtnOpenFolder_Click"/>
 
-                            <TextBlock x:Name="TxtSpeed" FontSize="11.5" Foreground="{DynamicResource TextSecondary}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <Border Grid.Row="1" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button x:Name="BtnOpenFolder" Height="30" Padding="12,0" Margin="0,0,8,0" Visibility="Collapsed"
-                                    Style="{StaticResource PrimarySettingsButton}"
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_OpenFolder]}"
-                                    Click="BtnOpenFolder_Click"/>
-
-                            <Button x:Name="BtnCloseProgress" Height="30" Padding="16,0" Width="80"
-                                    Style="{StaticResource SettingsButton}"
-                                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}"
-                                    Click="BtnCloseProgress_Click"/>
-                        </StackPanel>
+                                <Button x:Name="BtnCloseProgress" Height="30" Padding="16,0" Width="80"
+                                        Style="{StaticResource SettingsButton}"
+                                        Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}"
+                                        Click="BtnCloseProgress_Click"/>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>

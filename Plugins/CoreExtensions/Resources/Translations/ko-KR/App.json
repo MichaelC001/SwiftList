@@ -41,6 +41,7 @@
   "Settings_LocalSend_SenderCanceled": "발신자에 의해 취소됨",
   "Settings_LocalSend_ConnectionError": "연결 실패",
   "Settings_LocalSend_Declined": "수신자가 거절함",
+  "Settings_LocalSend_Busy": "상대 기기가 바쁩니다",
   "Settings_LocalSend_InvalidPin": "잘못된 PIN",
   "Settings_LocalSend_OpenFolder": "폴더 열기",
   "Settings_LocalSend_TextReceivedTitle": "텍스트 수신 완료",

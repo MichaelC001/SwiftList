@@ -10,6 +10,8 @@ public sealed class LocalSendServiceManager : IDisposable
 
     public bool IsRunning => _server != null || _discoveryService != null;
     public LocalSendDiscoveryService? DiscoveryService => _discoveryService;
+    public Func<bool>? WindowOpenCheck { get; set; }
+    public bool IsWindowOpen => WindowOpenCheck?.Invoke() == true;
 
     /// <summary>Raised (on a thread-pool thread) when a file has been fully received and saved to disk.</summary>
     public event EventHandler<(string FileId, string Path)>? FileReceived;

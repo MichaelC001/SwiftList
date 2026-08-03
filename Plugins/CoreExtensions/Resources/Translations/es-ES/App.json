@@ -41,6 +41,7 @@
   "Settings_LocalSend_SenderCanceled": "Cancelado por el remitente",
   "Settings_LocalSend_ConnectionError": "Error de conexión",
   "Settings_LocalSend_Declined": "Rechazado por el destinatario",
+  "Settings_LocalSend_Busy": "Dispositivo ocupado",
   "Settings_LocalSend_InvalidPin": "PIN no válido",
   "Settings_LocalSend_OpenFolder": "Abrir carpeta",
   "Settings_LocalSend_TextReceivedTitle": "Texto recibido",

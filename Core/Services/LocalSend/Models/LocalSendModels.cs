@@ -103,6 +103,7 @@ public sealed class LocalSendUploadRequestArgs : EventArgs
     public string SessionId { get; }
     public PrepareUploadRequestDto Dto { get; }
     public string? CustomDownloadDirectory { get; set; }
+    public HashSet<string>? SelectedFileIds { get; set; }
     private readonly Action<bool> _respond;
 
     public LocalSendUploadRequestArgs(string sessionId, PrepareUploadRequestDto dto, Action<bool> respond)
@@ -119,6 +120,7 @@ public enum LocalSendSendResult
 {
     Success,
     Declined,
+    Busy,
     InvalidPin,
     TooManyAttempts,
     Canceled,
