@@ -157,30 +157,39 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                             <ContentControl Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                 <ContentControl.Style>
-                                                     <Style TargetType="ContentControl">
-                                                         <Setter Property="Content">
-                                                             <Setter.Value>
-                                                                 <TextBlock Text="{Binding DisplayName}" ToolTip="{Binding DisplayName}" FontSize="12" Foreground="{DynamicResource TextPrimary2}" TextTrimming="CharacterEllipsis"/>
-                                                             </Setter.Value>
-                                                         </Setter>
-                                                         <Style.Triggers>
-                                                             <DataTrigger Binding="{Binding IsLink}" Value="True">
-                                                                 <Setter Property="Content">
-                                                                     <Setter.Value>
-                                                                          <TextBlock FontSize="12" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}">
-                                                                              <Hyperlink NavigateUri="{Binding LinkUrl}" Foreground="{DynamicResource AccentBlue}">
-                                                                                  <Run Text="{Binding DisplayName}"/>
-                                                                              </Hyperlink>
-                                                                          </TextBlock>
-                                                                     </Setter.Value>
-                                                                 </Setter>
-                                                             </DataTrigger>
-                                                         </Style.Triggers>
-                                                     </Style>
-                                                 </ContentControl.Style>
-                                             </ContentControl>
+                                            <!-- Normal File / Text Name -->
+                                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}" ToolTip="{Binding DisplayName}"
+                                                       FontSize="12" Foreground="{DynamicResource TextPrimary2}" TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsLink}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+                                            <!-- Hyperlink Name -->
+                                            <TextBlock Grid.Column="0" FontSize="12" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsLink}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                                <Hyperlink NavigateUri="{Binding LinkUrl}" Foreground="{DynamicResource AccentBlue}">
+                                                    <Run Text="{Binding DisplayName}"/>
+                                                </Hyperlink>
+                                            </TextBlock>
 
                                             <TextBlock Grid.Column="1"
                                                        FontSize="11.5"
