@@ -10,7 +10,7 @@
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
-        ShowInTaskbar="False"
+        ShowInTaskbar="True"
         Topmost="True">
 
     <Window.Resources>

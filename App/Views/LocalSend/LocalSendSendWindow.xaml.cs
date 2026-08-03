@@ -17,13 +17,13 @@ public partial class LocalSendSendWindow : Window
         InitializeComponent();
 
         SystemMenuBlocker.Attach(this);
-        AltTabExcluder.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
 
         _vm = new LocalSendSendViewModel(initialFiles, initialText);
         DataContext = _vm;
 
+        StateChanged += (_, _) => { if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal; };
         Closed += (_, _) => _vm.Dispose();
     }
 

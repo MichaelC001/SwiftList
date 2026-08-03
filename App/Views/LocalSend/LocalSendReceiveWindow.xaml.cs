@@ -29,9 +29,9 @@ public partial class LocalSendReceiveWindow : Window
         _requestArgs = requestArgs;
         _currentSessionId = requestArgs.SessionId;
         SystemMenuBlocker.Attach(this);
-        AltTabExcluder.Attach(this);
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
+        StateChanged += (_, _) => { if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal; };
         PopulateRequestData(requestArgs.Dto);
     }
 
@@ -236,7 +236,7 @@ public partial class LocalSendReceiveWindow : Window
             if (!string.IsNullOrEmpty(target)) BtnOpenFolder.Visibility = Visibility.Visible;
 
             var hasError = LstFiles.Items.OfType<LocalSendReceiveFileItem>().Any(i => !i.IsFinished);
-            if (!hasError)
+            if (!hasError && _requestArgs.IsAutoAccepted)
             {
                 var autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
                 autoCloseTimer.Tick += (_, _) => { autoCloseTimer.Stop(); Close(); };
