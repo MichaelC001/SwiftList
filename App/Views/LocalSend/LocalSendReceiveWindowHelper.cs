@@ -36,7 +36,13 @@ public static class LocalSendReceiveWindowHelper
         foreach (LocalSendReceiveFileItem item in items)
         {
             item.ShowProgress = true;
-            if (item.FileId == args.FileId)
+            if (args.IsAllDone || item.IsFinished)
+            {
+                item.IsFinished = true;
+                item.ProgressPercentage = 100.0;
+                item.StatusText = TranslationManager.Instance["Settings_LocalSend_Completed"];
+            }
+            else if (item.FileId == args.FileId)
             {
                 var pct = args.TotalBytes > 0 ? (double)args.BytesTransferred / args.TotalBytes * 100.0 : 0;
                 item.ProgressPercentage = Math.Min(100.0, pct);
@@ -50,10 +56,6 @@ public static class LocalSendReceiveWindowHelper
                 {
                     item.StatusText = $"{item.ProgressPercentage:F0}%";
                 }
-            }
-            else if (item.IsFinished)
-            {
-                item.StatusText = TranslationManager.Instance["Settings_LocalSend_Completed"];
             }
         }
 

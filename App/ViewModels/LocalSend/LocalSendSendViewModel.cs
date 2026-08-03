@@ -174,26 +174,35 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             string? errDetails;
             if (TargetFiles.Count > 0)
             {
+                var filesList = TargetFiles.ToList();
+                var fileSizes = filesList.Select(f => { try { return new System.IO.FileInfo(f).Length; } catch { return 0L; } }).ToList();
+                var totalSessionBytes = fileSizes.Sum();
+                var completedFilesBytes = new long[filesList.Count];
+
                 (result, errDetails) = await LocalSendServiceManager.Instance.SendFilesAsync(
-                    SelectedDevice, TargetFiles.ToList(), Pin,
+                    SelectedDevice, filesList, Pin,
                     args => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            var pct = args.TotalBytes > 0 ? (double)args.BytesSent / args.TotalBytes * 100.0 : 0;
+                            var idx = Math.Clamp(args.FileIndex - 1, 0, filesList.Count - 1);
+                            completedFilesBytes[idx] = Math.Min(args.BytesSent, fileSizes[idx]);
+                            var currentSessionSent = completedFilesBytes.Sum();
+
+                            var pct = totalSessionBytes > 0 ? (double)currentSessionSent / totalSessionBytes * 100.0 : 0;
                             ProgressPercentage = Math.Min(100.0, pct);
 
                             var elapsedSec = stopwatch.Elapsed.TotalSeconds;
                             if (elapsedSec >= 0.3 || lastBytes == 0)
                             {
-                                var bytesDelta = args.BytesSent - lastBytes;
+                                var bytesDelta = currentSessionSent - lastBytes;
                                 currentSpeed = elapsedSec > 0 && bytesDelta > 0 ? bytesDelta / elapsedSec : currentSpeed;
-                                lastBytes = args.BytesSent;
+                                lastBytes = currentSessionSent;
                                 stopwatch.Restart();
                             }
 
                             CurrentFileName = args.FileName;
                             var completedCount = (args.TotalBytes > 0 && args.BytesSent >= args.TotalBytes)
-                                ? Math.Min(args.FileIndex + 1, args.TotalFiles)
-                                : Math.Max(0, args.FileIndex);
+                                ? Math.Min(args.FileIndex, args.TotalFiles)
+                                : Math.Max(0, args.FileIndex - 1);
                             CounterText = $"({completedCount}/{args.TotalFiles})";
                             SpeedText = currentSpeed > 0 ? $"{FormatBytes((long)currentSpeed)}/s" : string.Empty;
                             StatusText = $"{args.FileName} ({completedCount}/{args.TotalFiles})";
