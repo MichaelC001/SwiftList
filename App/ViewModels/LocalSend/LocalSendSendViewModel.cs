@@ -112,6 +112,8 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     public bool IsFilesMode => _selectedMode == 0;
     public bool IsTextMode => _selectedMode == 1;
 
+    public LocalSendSendResult LastSendResult { get; private set; } = LocalSendSendResult.Success;
+
     public int CurrentStep { get => _currentStep; set => SetProperty(ref _currentStep, value); }
     public bool IsFromAction => _isFromAction;
 
@@ -234,6 +236,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
                 if (result == LocalSendSendResult.Success)
                 {
+                    LastSendResult = LocalSendSendResult.Success;
                     ProgressPercentage = 100;
                     StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Completed"];
                 }
@@ -316,6 +319,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
     private void HandleResult(LocalSendSendResult result, string? errDetails, string prefix)
     {
+        LastSendResult = result;
         switch (result)
         {
             case LocalSendSendResult.Success:

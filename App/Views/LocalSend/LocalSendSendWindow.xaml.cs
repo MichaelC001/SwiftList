@@ -5,6 +5,7 @@ using SwiftList.App.Helpers.Visuals;
 using SwiftList.App.Services;
 using SwiftList.App.Services.Theme;
 using SwiftList.App.ViewModels.LocalSend;
+using SwiftList.Core.Services.LocalSend.Models;
 
 namespace SwiftList.App.Views.LocalSend;
 
@@ -35,40 +36,76 @@ public partial class LocalSendSendWindow : Window
         UpdateStepVisibility();
     }
 
-    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (_vm.CurrentStep == 2)
-        {
-            if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Completed"]))
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
-            }
-            else if (_cancelSource == CancelSource.Self)
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-            }
-            else if (_cancelSource == CancelSource.Receiver || _vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Declined"]))
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ReceiverCanceled"];
-            }
-            else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Busy"]))
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
-            }
-            else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_InvalidPin"]))
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_InvalidPin"];
-            }
-            else if (_vm.IsSending)
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Sending"];
-            }
-            else
-            {
-                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ConnectionError"];
-            }
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => UpdateStep2UIState();
 
-            BtnCancelOrClose.Content = _vm.IsSending ? TranslationManager.Instance["Common_Cancel"] : TranslationManager.Instance["Common_Close"];
+    private void UpdateStep2UIState()
+    {
+        if (_vm.CurrentStep != 2) return;
+
+        BtnCancelOrClose.Content = _vm.IsSending ? TranslationManager.Instance["Common_Cancel"] : TranslationManager.Instance["Common_Close"];
+
+        if (_vm.IsSending)
+        {
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Sending"];
+            PrgBar.Visibility = Visibility.Visible;
+            TxtSpeed.Visibility = Visibility.Visible;
+            return;
+        }
+
+        TxtSpeed.Visibility = Visibility.Collapsed;
+
+        if (_cancelSource == CancelSource.Self)
+        {
+            TxtFileName.Visibility = Visibility.Visible;
+            TxtCounter.Visibility = Visibility.Visible;
+            PrgBar.Visibility = Visibility.Visible;
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            return;
+        }
+
+        switch (_vm.LastSendResult)
+        {
+            case LocalSendSendResult.Success:
+                TxtFileName.Visibility = Visibility.Visible;
+                TxtCounter.Visibility = Visibility.Visible;
+                PrgBar.Visibility = Visibility.Visible;
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
+                break;
+
+            case LocalSendSendResult.Declined:
+                TxtFileName.Visibility = Visibility.Visible;
+                TxtCounter.Visibility = Visibility.Visible;
+                PrgBar.Visibility = Visibility.Visible;
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ReceiverCanceled"];
+                break;
+
+            case LocalSendSendResult.Busy:
+                TxtFileName.Visibility = Visibility.Collapsed;
+                TxtCounter.Visibility = Visibility.Collapsed;
+                PrgBar.Visibility = Visibility.Collapsed;
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
+                break;
+
+            case LocalSendSendResult.InvalidPin:
+                TxtFileName.Visibility = Visibility.Collapsed;
+                TxtCounter.Visibility = Visibility.Collapsed;
+                PrgBar.Visibility = Visibility.Collapsed;
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_InvalidPin"];
+                break;
+
+            case LocalSendSendResult.TooManyAttempts:
+                TxtFileName.Visibility = Visibility.Collapsed;
+                TxtCounter.Visibility = Visibility.Collapsed;
+                PrgBar.Visibility = Visibility.Collapsed;
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_TooManyAttempts"];
+                break;
+
+            default:
+                TxtFileName.Visibility = Visibility.Collapsed;
+                TxtCounter.Visibility = Visibility.Collapsed;
+                PrgBar.Visibility = Visibility.Collapsed;
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ConnectionError"];
+                break;
         }
     }
 
@@ -208,46 +245,7 @@ public partial class LocalSendSendWindow : Window
             _vm.SendingStarted -= onSendingStarted;
         }
 
-        // Update UI states after send batch completes
-        BtnCancelOrClose.Content = TranslationManager.Instance["Common_Close"];
-        TxtSpeed.Visibility = Visibility.Collapsed;
-        TxtFileName.Visibility = Visibility.Visible;
-        TxtCounter.Visibility = Visibility.Visible;
-        PrgBar.Visibility = Visibility.Visible;
-
-        if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Completed"]))
-        {
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
-        }
-        else if (_cancelSource == CancelSource.Self)
-        {
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-        }
-        else if (_cancelSource == CancelSource.Receiver || _vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Declined"]))
-        {
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ReceiverCanceled"];
-        }
-        else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Busy"]))
-        {
-            TxtFileName.Visibility = Visibility.Collapsed;
-            TxtCounter.Visibility = Visibility.Collapsed;
-            PrgBar.Visibility = Visibility.Collapsed;
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
-        }
-        else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_InvalidPin"]))
-        {
-            TxtFileName.Visibility = Visibility.Collapsed;
-            TxtCounter.Visibility = Visibility.Collapsed;
-            PrgBar.Visibility = Visibility.Collapsed;
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_InvalidPin"];
-        }
-        else
-        {
-            TxtFileName.Visibility = Visibility.Collapsed;
-            TxtCounter.Visibility = Visibility.Collapsed;
-            PrgBar.Visibility = Visibility.Collapsed;
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ConnectionError"];
-        }
+        UpdateStep2UIState();
     }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e)
