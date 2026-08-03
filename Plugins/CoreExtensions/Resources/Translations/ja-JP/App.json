@@ -447,6 +447,7 @@
   "Tray_ShowWindow": "メインウィンドウを表示",
   "Tray_ToggleHotkeys": "ホットキーを無効化",
   "Tray_Settings": "設定",
+  "Tray_SendToOtherDevices": "他のデバイスへ送信...",
   "Tray_About": "バージョン情報",
   "Tray_CleanExit": "完全終了",
   "Tray_Exit": "終了",

@@ -45,7 +45,10 @@ public sealed class LocalSendClient : IDisposable
     public async Task<LocalSendSendResult> SendTextAsync(
         string targetIp, int targetPort, bool https, LocalSendDeviceInfo senderInfo, string text, string? pin = null, CancellationToken token = default)
     {
-        var fileId = $"text_{Guid.NewGuid():N}";
+        var rawGuid = Guid.NewGuid().ToString("D").ToLowerInvariant();
+        var fileId = $"text_{rawGuid.Replace("-", string.Empty)}";
+        var fileName = $"{rawGuid}.txt";
+
         var dto = new PrepareUploadRequestDto
         {
             Info = senderInfo,
@@ -54,7 +57,7 @@ public sealed class LocalSendClient : IDisposable
                 [fileId] = new LocalSendFileDto
                 {
                     Id = fileId,
-                    FileName = "text.txt",
+                    FileName = fileName,
                     Size = Encoding.UTF8.GetByteCount(text),
                     FileType = "text",
                     Preview = text
@@ -63,42 +66,16 @@ public sealed class LocalSendClient : IDisposable
         };
 
         var (prepResult, sessionId, tokens, usedHttps, prepErr) = await LocalSendClientHelper.PrepareUploadAsync(_httpClient, JsonOptions, targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
-        if (prepResult != LocalSendSendResult.Success || string.IsNullOrEmpty(sessionId) || tokens == null || !tokens.TryGetValue(fileId, out var fileToken))
+        if (prepResult != LocalSendSendResult.Success || string.IsNullOrEmpty(sessionId))
         {
             LastError = prepErr;
             return prepResult;
         }
 
-        var scheme = usedHttps ? "https" : "http";
-        var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
-        var uploadUrl = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/upload?sessionId={sessionId}&fileId={fileId}&token={fileToken}&fileName=text.txt";
-
-        try
-        {
-            var textBytes = Encoding.UTF8.GetBytes(text);
-            using var ms = new MemoryStream(textBytes);
-            using var content = new StreamContent(ms);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-
-            var resp = await _httpClient.PostAsync(uploadUrl, content, token).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode)
-            {
-                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
-                return resp.StatusCode == System.Net.HttpStatusCode.Forbidden ? LocalSendSendResult.Declined : LocalSendSendResult.Error;
-            }
-            return LocalSendSendResult.Success;
-        }
-        catch (OperationCanceledException)
-        {
-            _ = CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None);
-            return LocalSendSendResult.Canceled;
-        }
-        catch (Exception ex)
-        {
-            _ = CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None);
-            Logger.Log($"[LocalSendClient] SendText upload error: {ex.GetType().Name} - {ex.Message}");
-            return LocalSendSendResult.Canceled;
-        }
+        // According to LocalSend protocol & official app behavior: text messages are delivered
+        // via the Preview field in prepare-upload. Once prepare-upload responds Success,
+        // the receiver has accepted and displayed the text. Return Success immediately.
+        return LocalSendSendResult.Success;
     }
 
     public async Task<LocalSendSendResult> SendFilesAsync(

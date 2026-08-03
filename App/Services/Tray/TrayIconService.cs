@@ -23,6 +23,7 @@ public class TrayIconService : IDisposable
 
     private System.Windows.Controls.ContextMenu? _wpfContextMenu;
     private System.Windows.Controls.MenuItem? _wpfItemShowWindow;
+    private System.Windows.Controls.MenuItem? _wpfItemSendToOtherDevices;
     private System.Windows.Controls.MenuItem? _wpfItemToggleHotkeys;
     private System.Windows.Controls.MenuItem? _wpfItemSettings;
     private System.Windows.Controls.MenuItem? _wpfItemAbout;
@@ -134,6 +135,12 @@ public class TrayIconService : IDisposable
             else ShowSearchWindow();
         };
 
+        _wpfItemSendToOtherDevices = new System.Windows.Controls.MenuItem
+        {
+            Icon = CreateIcon("\uE709", "MenuText")
+        };
+        _wpfItemSendToOtherDevices.Click += (s, e) => ShowSendToOtherDevicesWindow();
+
         _wpfItemToggleHotkeys = new System.Windows.Controls.MenuItem();
         _wpfItemToggleHotkeys.Click += (s, e) => ToggleHotkeys();
 
@@ -162,6 +169,7 @@ public class TrayIconService : IDisposable
         _wpfItemExit.Click += (s, e) => Application.Current.Shutdown();
 
         _wpfContextMenu.Items.Add(_wpfItemShowWindow);
+        _wpfContextMenu.Items.Add(_wpfItemSendToOtherDevices);
         _wpfContextMenu.Items.Add(_wpfItemToggleHotkeys);
         _wpfContextMenu.Items.Add(_wpfItemSettings);
         _wpfContextMenu.Items.Add(new System.Windows.Controls.Separator());
@@ -255,6 +263,12 @@ public class TrayIconService : IDisposable
             InitializeWpfContextMenu();
         }
         UpdateCleanExitVisibility();
+
+        if (_wpfItemSendToOtherDevices != null)
+        {
+            var isLocalSendEnabled = UserSettings.Load().LocalSend.Enabled;
+            _wpfItemSendToOtherDevices.Visibility = isLocalSendEnabled ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
 
     // Applies a live change to the "hide tray icon" setting: toggles the actual NotifyIcon and hands
@@ -271,11 +285,24 @@ public class TrayIconService : IDisposable
     private void UpdateMenuTexts()
     {
         _wpfItemShowWindow?.Header = TranslationManager.Instance["Tray_ShowWindow"];
+        _wpfItemSendToOtherDevices?.Header = TranslationManager.Instance["Tray_SendToOtherDevices"];
         _wpfItemSettings?.Header = TranslationManager.Instance["Tray_Settings"];
         _wpfItemAbout?.Header = TranslationManager.Instance["Tray_About"];
         _wpfItemCleanExit?.Header = TranslationManager.Instance["Tray_CleanExit"];
         _wpfItemExit?.Header = TranslationManager.Instance["Tray_Exit"];
         UpdateHotkeysMenuState();
+    }
+
+    private static void ShowSendToOtherDevicesWindow()
+    {
+        try
+        {
+            Helpers.LocalSend.LocalSendAppEventHandler.OpenSendWindow();
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"[TrayIconService] Failed to show LocalSend send window: {ex.Message}", LogLevel.Error);
+        }
     }
 
     private void ToggleHotkeys()

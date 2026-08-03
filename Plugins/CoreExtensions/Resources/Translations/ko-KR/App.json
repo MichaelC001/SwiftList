@@ -447,6 +447,7 @@
   "Tray_ShowWindow": "메인 창 표시",
   "Tray_ToggleHotkeys": "단축키 비활성화",
   "Tray_Settings": "설정",
+  "Tray_SendToOtherDevices": "다른 기기로 전송...",
   "Tray_About": "정보",
   "Tray_CleanExit": "완전히 종료",
   "Tray_Exit": "종료",

@@ -447,6 +447,7 @@
   "Tray_ShowWindow": "Mostrar Ventana Principal",
   "Tray_ToggleHotkeys": "Desactivar Atajos de Teclado",
   "Tray_Settings": "Configuración",
+  "Tray_SendToOtherDevices": "Enviar a otros dispositivos...",
   "Tray_About": "Acerca de",
   "Tray_CleanExit": "Salida Limpia",
   "Tray_Exit": "Salir",

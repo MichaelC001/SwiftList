@@ -14,15 +14,32 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     private bool _isSending;
     private double _progressPercentage;
     private string? _customStatusText;
+    private int _currentStep;
+    private bool _isFromAction;
     private CancellationTokenSource? _cts;
 
     public event EventHandler? SendSuccessCompleted;
 
     public LocalSendSendViewModel(IEnumerable<string>? initialFiles = null, string? initialText = null)
     {
+        var hasFiles = initialFiles != null && initialFiles.Any();
+        var hasText = !string.IsNullOrEmpty(initialText);
+        _isFromAction = hasFiles || hasText;
+        _currentStep = _isFromAction ? 1 : 0;
+        _selectedMode = hasText && !hasFiles ? 1 : 0;
+
         TargetFiles = new ObservableCollection<string>(initialFiles ?? Array.Empty<string>());
         _textToSend = initialText ?? string.Empty;
         DiscoveredDevices = new ReadOnlyObservableCollection<LocalSendSendDeviceItem>(_discoveredDevices);
+
+        if (hasFiles)
+        {
+            foreach (var f in initialFiles!)
+            {
+                var isDir = System.IO.Directory.Exists(f);
+                CollectedItems.Add(new LocalSendCollectedItem(f, isDir));
+            }
+        }
 
         CancelCommand = new RelayCommand(ExecuteCancel);
         TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
@@ -62,10 +79,81 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     public event EventHandler? SendingStarted;
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(nameof(StatusText));
 
+    private int _selectedMode; // 0 = Files, 1 = Text
+    public int SelectedMode
+    {
+        get => _selectedMode;
+        set
+        {
+            if (SetProperty(ref _selectedMode, value))
+            {
+                if (_selectedMode == 1)
+                {
+                    TargetFiles.Clear();
+                }
+                OnPropertyChanged(nameof(IsFilesMode));
+                OnPropertyChanged(nameof(IsTextMode));
+                OnPropertyChanged(nameof(CanGoNextStep));
+            }
+        }
+    }
+
+    public bool IsFilesMode => _selectedMode == 0;
+    public bool IsTextMode => _selectedMode == 1;
+
+    public int CurrentStep { get => _currentStep; set => SetProperty(ref _currentStep, value); }
+    public bool IsFromAction => _isFromAction;
+
+    public ObservableCollection<LocalSendCollectedItem> CollectedItems { get; } = new();
     public ObservableCollection<string> TargetFiles { get; }
     public ReadOnlyObservableCollection<LocalSendSendDeviceItem> DiscoveredDevices { get; }
 
-    public string TextToSend { get => _textToSend; set => SetProperty(ref _textToSend, value); }
+    public string TextToSend
+    {
+        get => _textToSend;
+        set { if (SetProperty(ref _textToSend, value)) OnPropertyChanged(nameof(CanGoNextStep)); }
+    }
+
+    public bool CanGoNextStep => IsFilesMode ? CollectedItems.Count > 0 : !string.IsNullOrWhiteSpace(_textToSend);
+
+    public void AddPaths(IEnumerable<string> paths)
+    {
+        SelectedMode = 0; // Auto switch to Files mode when dropping/adding files
+        foreach (var p in paths)
+        {
+            if (string.IsNullOrEmpty(p)) continue;
+            if (CollectedItems.Any(i => string.Equals(i.Path, p, StringComparison.OrdinalIgnoreCase))) continue;
+            var isDir = System.IO.Directory.Exists(p);
+            if (isDir || System.IO.File.Exists(p))
+            {
+                CollectedItems.Add(new LocalSendCollectedItem(p, isDir));
+            }
+        }
+        OnPropertyChanged(nameof(CanGoNextStep));
+    }
+
+    public void RemoveCollectedItem(LocalSendCollectedItem item)
+    {
+        CollectedItems.Remove(item);
+        OnPropertyChanged(nameof(CanGoNextStep));
+    }
+
+    public void ProceedToStep1()
+    {
+        TargetFiles.Clear();
+        if (IsFilesMode)
+        {
+            _textToSend = string.Empty;
+            foreach (var item in CollectedItems)
+            {
+                TargetFiles.Add(item.Path);
+            }
+        }
+        CurrentStep = 1;
+    }
+
+    public void ReturnToStep0() => CurrentStep = 0;
+
     public bool IsSending { get => _isSending; private set => SetProperty(ref _isSending, value); }
     public double ProgressPercentage { get => _progressPercentage; set => SetProperty(ref _progressPercentage, value); }
 
@@ -123,7 +211,14 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
             LocalSendSendResult result;
             string? errDetails;
 
-            if (TargetFiles.Count > 0)
+            var isSendingText = IsTextMode || (TargetFiles.Count == 0 && !string.IsNullOrWhiteSpace(TextToSend));
+
+            if (isSendingText)
+            {
+                (result, errDetails) = await LocalSendServiceManager.Instance.SendTextAsync(
+                    item.Device, TextToSend, item.Pin, _cts?.Token ?? CancellationToken.None);
+            }
+            else
             {
                 var filesList = TargetFiles.ToList();
                 var firstFile = filesList.FirstOrDefault();
@@ -161,11 +256,6 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                         SendingStarted?.Invoke(this, EventArgs.Empty);
                     })),
                     _cts?.Token ?? CancellationToken.None);
-            }
-            else
-            {
-                (result, errDetails) = await LocalSendServiceManager.Instance.SendTextAsync(
-                    item.Device, TextToSend, item.Pin, _cts?.Token ?? CancellationToken.None);
             }
 
             HandleResult(result, errDetails, prefix);

@@ -447,6 +447,7 @@
   "Tray_ShowWindow": "Show Main Window",
   "Tray_ToggleHotkeys": "Disable Hotkeys",
   "Tray_Settings": "Settings",
+  "Tray_SendToOtherDevices": "Send to other devices...",
   "Tray_About": "About",
   "Tray_CleanExit": "Clean Exit",
   "Tray_Exit": "Exit",

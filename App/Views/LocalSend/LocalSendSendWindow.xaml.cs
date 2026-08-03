@@ -22,9 +22,97 @@ public partial class LocalSendSendWindow : Window
 
         _vm = new LocalSendSendViewModel(initialFiles, initialText);
         DataContext = _vm;
+        _vm.PropertyChanged += Vm_PropertyChanged;
 
         StateChanged += (_, _) => { if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal; };
         Closed += (_, _) => _vm.Dispose();
+
+        UpdateStepVisibility();
+    }
+
+    private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(_vm.CurrentStep))
+        {
+            UpdateStepVisibility();
+        }
+        else if (e.PropertyName == nameof(_vm.SelectedMode))
+        {
+            UpdateModeVisibility();
+        }
+    }
+
+    private void UpdateStepVisibility()
+    {
+        GridStep0.Visibility = _vm.CurrentStep == 0 ? Visibility.Visible : Visibility.Collapsed;
+        GridStep1.Visibility = _vm.CurrentStep == 1 ? Visibility.Visible : Visibility.Collapsed;
+        GridStep2.Visibility = _vm.CurrentStep == 2 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateModeVisibility();
+    }
+
+    private void UpdateModeVisibility()
+    {
+        PanelFilesMode.Visibility = _vm.IsFilesMode ? Visibility.Visible : Visibility.Collapsed;
+        PanelTextMode.Visibility = _vm.IsTextMode ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void RadioModeFiles_Click(object sender, RoutedEventArgs e) => _vm.SelectedMode = 0;
+    private void RadioModeText_Click(object sender, RoutedEventArgs e) => _vm.SelectedMode = 1;
+
+    private void BtnAddFiles_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Multiselect = true,
+            Title = "选择要发送的文件"
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            _vm.AddPaths(dlg.FileNames);
+        }
+    }
+
+    private void BtnAddFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dlg = new FolderBrowserDialog
+        {
+            Description = "选择要发送的文件夹",
+            UseDescriptionForTitle = true
+        };
+        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK && !string.IsNullOrEmpty(dlg.SelectedPath))
+        {
+            _vm.AddPaths(new[] { dlg.SelectedPath });
+        }
+    }
+
+    private void BtnRemoveCollectedItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn && btn.DataContext is LocalSendCollectedItem item)
+        {
+            _vm.RemoveCollectedItem(item);
+        }
+    }
+
+    private void BtnNextStep_Click(object sender, RoutedEventArgs e) => _vm.ProceedToStep1();
+
+    private void Window_DragOver(object sender, System.Windows.DragEventArgs e)
+    {
+        if (_vm.CurrentStep == 0 && e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+        {
+            e.Effects = System.Windows.DragDropEffects.Copy;
+            e.Handled = true;
+        }
+    }
+
+    private void Window_Drop(object sender, System.Windows.DragEventArgs e)
+    {
+        if (_vm.CurrentStep == 0 && e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+        {
+            if (e.Data.GetData(System.Windows.DataFormats.FileDrop) is string[] paths)
+            {
+                _vm.AddPaths(paths);
+            }
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -58,8 +146,7 @@ public partial class LocalSendSendWindow : Window
         if (selectedDevices.Count == 0) return;
 
         // Switch to Step 2 Progress UI
-        GridStep1.Visibility = Visibility.Collapsed;
-        GridStep2.Visibility = Visibility.Visible;
+        _vm.CurrentStep = 2;
         TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Waiting"];
         PrgBar.Visibility = Visibility.Collapsed;
 

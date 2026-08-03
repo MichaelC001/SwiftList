@@ -59,14 +59,20 @@ public static class LocalSendAppEventHandler
         _activeSendWindow?.HandleSessionCanceled(sessionId);
     }));
 
-    private static void OnSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+    private static void OnSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => OpenSendWindow(e.Files, e.Text);
+
+    public static void OpenSendWindow(IEnumerable<string>? files = null, string? text = null) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
     {
         if (_activeSendWindow != null && _activeSendWindow.IsLoaded)
         {
             _activeSendWindow.Activate();
+            if (_activeSendWindow.WindowState == System.Windows.WindowState.Minimized)
+            {
+                _activeSendWindow.WindowState = System.Windows.WindowState.Normal;
+            }
             return;
         }
-        _activeSendWindow = new LocalSendSendWindow(e.Files, e.Text);
+        _activeSendWindow = new LocalSendSendWindow(files, text);
         _isSendWindowOpen = true;
         _activeSendWindow.Closed += (_, _) => { _activeSendWindow = null; _isSendWindowOpen = false; };
         _activeSendWindow.Show();

@@ -447,6 +447,7 @@
   "Tray_ShowWindow": "显示主窗口",
   "Tray_ToggleHotkeys": "禁用快捷键",
   "Tray_Settings": "设置",
+  "Tray_SendToOtherDevices": "发送到其他设备...",
   "Tray_About": "关于",
   "Tray_CleanExit": "干净退出",
   "Tray_Exit": "退出",
