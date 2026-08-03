@@ -74,6 +74,10 @@ public partial class LocalSendReceiveWindow : Window
         var sizeFormatted = LocalSendServerHelper.FormatBytes(totalBytes);
         var msgFormat = TranslationManager.Instance["Settings_LocalSend_UploadRequestMsg"];
         TxtSummary.Text = string.Format(msgFormat, _senderAlias, selected.Count, sizeFormatted);
+
+        var hasSelection = selected.Count > 0;
+        BtnSaveTo.IsEnabled = hasSelection;
+        BtnAcceptDefault.IsEnabled = hasSelection;
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
