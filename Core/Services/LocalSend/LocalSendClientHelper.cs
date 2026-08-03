@@ -58,6 +58,11 @@ internal static class LocalSendClientHelper
                 {
                     return (LocalSendSendResult.Busy, null, null, tryHttps, "409 Conflict (Busy: Blocked by another session)");
                 }
+                if (resp.StatusCode == System.Net.HttpStatusCode.NoContent || (int)resp.StatusCode == 204)
+                {
+                    // Official LocalSend spec: HTTP 204 No Content signifies "Read and close" for pure text message transfers.
+                    return (LocalSendSendResult.Success, "message_read", new Dictionary<string, string>(), tryHttps, null);
+                }
                 if (!resp.IsSuccessStatusCode)
                 {
                     lastError = $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";

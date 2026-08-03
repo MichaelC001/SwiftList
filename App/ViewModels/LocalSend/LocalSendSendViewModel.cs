@@ -201,7 +201,6 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
     private async Task<LocalSendSendResult> SendToSingleDeviceAsync(LocalSendSendDeviceItem item, string prefix)
     {
-        StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Waiting"];
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         long lastBytes = 0;
         double currentSpeed = 0;
@@ -215,11 +214,27 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 
             if (isSendingText)
             {
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Waiting"];
+                CurrentFileName = "Text";
+                CounterText = "(1/1)";
+
                 (result, errDetails) = await LocalSendServiceManager.Instance.SendTextAsync(
                     item.Device, TextToSend, item.Pin, _cts?.Token ?? CancellationToken.None);
+
+                if (result == LocalSendSendResult.Success)
+                {
+                    ProgressPercentage = 100;
+                    StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Completed"];
+                }
+                else
+                {
+                    HandleResult(result, errDetails, prefix);
+                }
+                return result;
             }
             else
             {
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Waiting"];
                 var filesList = TargetFiles.ToList();
                 var firstFile = filesList.FirstOrDefault();
                 CurrentFileName = string.IsNullOrEmpty(firstFile) ? string.Empty : System.IO.Path.GetFileName(firstFile);

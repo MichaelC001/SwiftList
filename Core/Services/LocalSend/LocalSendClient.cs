@@ -65,16 +65,15 @@ public sealed class LocalSendClient : IDisposable
             }
         };
 
-        var (prepResult, sessionId, tokens, usedHttps, prepErr) = await LocalSendClientHelper.PrepareUploadAsync(_httpClient, JsonOptions, targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
-        if (prepResult != LocalSendSendResult.Success || string.IsNullOrEmpty(sessionId))
+        var (prepResult, sessionId, tokens, usedHttps, prepErr) = await LocalSendClientHelper.PrepareUploadAsync(
+            _httpClient, JsonOptions, targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
+
+        if (prepResult != LocalSendSendResult.Success)
         {
             LastError = prepErr;
             return prepResult;
         }
 
-        // According to LocalSend protocol & official app behavior: text messages are delivered
-        // via the Preview field in prepare-upload. Once prepare-upload responds Success,
-        // the receiver has accepted and displayed the text. Return Success immediately.
         return LocalSendSendResult.Success;
     }
 
