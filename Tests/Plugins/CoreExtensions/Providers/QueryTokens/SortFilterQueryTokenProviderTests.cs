@@ -26,6 +26,9 @@ public sealed class SortFilterQueryTokenProviderTests
     [DataRow("c")]
     [DataRow("m")]
     [DataRow("a")]
+    [DataRow("f")]
+    [DataRow("F")]
+    [DataRow("-f")]
     public void CanHandle_SortTokens_ReturnsTrue(string token) => Assert.IsTrue(Provider.CanHandle(token));
 
     [TestMethod]
@@ -126,5 +129,34 @@ public sealed class SortFilterQueryTokenProviderTests
         var sorted = await Provider.ApplyAsync("s-", results);
 
         CollectionAssert.AreEqual(new[] { "big", "small" }, sorted.Select(r => r.Name).ToList());
+    }
+
+    [TestMethod]
+    public async Task ApplyAsync_FilterDirectories_KeepsOnlyDirectories()
+    {
+        var results = new ISearchResult[]
+        {
+            new FakeResult { Name = "folder1", IsDir = true },
+            new FakeResult { Name = "file1", IsDir = false },
+            new FakeResult { Name = "folder2", IsDir = true },
+        };
+
+        var filtered = await Provider.ApplyAsync("f", results);
+
+        CollectionAssert.AreEqual(new[] { "folder1", "folder2" }, filtered.Select(r => r.Name).ToList());
+    }
+
+    [TestMethod]
+    public async Task ApplyAsync_FilterNonDirectories_KeepsOnlyFiles()
+    {
+        var results = new ISearchResult[]
+        {
+            new FakeResult { Name = "folder1", IsDir = true },
+            new FakeResult { Name = "file1", IsDir = false },
+        };
+
+        var filtered = await Provider.ApplyAsync("-f", results);
+
+        CollectionAssert.AreEqual(new[] { "file1" }, filtered.Select(r => r.Name).ToList());
     }
 }
