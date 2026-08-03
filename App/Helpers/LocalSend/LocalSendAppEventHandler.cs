@@ -21,10 +21,10 @@ public static class LocalSendAppEventHandler
     private static LocalSendSendWindow? _activeSendWindow;
     private static LocalSendProgressArgs? _pendingProgressArgs;
     private static bool _isProgressDispatchPending;
+    private static volatile bool _isReceiveWindowOpen;
+    private static volatile bool _isSendWindowOpen;
 
-    public static bool IsAnyWindowOpen =>
-        (_activeReceiveWindow != null && _activeReceiveWindow.IsLoaded) ||
-        (_activeSendWindow != null && _activeSendWindow.IsLoaded);
+    public static bool IsAnyWindowOpen => _isReceiveWindowOpen || _isSendWindowOpen;
 
     public static void Initialize(UserSettings settings)
     {
@@ -101,15 +101,17 @@ public static class LocalSendAppEventHandler
             return;
         }
         _activeSendWindow = new LocalSendSendWindow(e.Files, e.Text);
-        _activeSendWindow.Closed += (_, _) => _activeSendWindow = null;
+        _isSendWindowOpen = true;
+        _activeSendWindow.Closed += (_, _) => { _activeSendWindow = null; _isSendWindowOpen = false; };
         _activeSendWindow.Show();
         _activeSendWindow.Activate();
     }));
 
     private static void OnUploadRequested(object? sender, LocalSendUploadRequestArgs e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                                                                                                {
-                                                                                                    _activeReceiveWindow = new LocalSendReceiveWindow(e);
-                                                                                                    _activeReceiveWindow.Closed += (_, _) => _activeReceiveWindow = null;
-                                                                                                    _activeReceiveWindow.ShowDialog();
-                                                                                                }));
+    {
+        _activeReceiveWindow = new LocalSendReceiveWindow(e);
+        _isReceiveWindowOpen = true;
+        _activeReceiveWindow.Closed += (_, _) => { _activeReceiveWindow = null; _isReceiveWindowOpen = false; };
+        _activeReceiveWindow.ShowDialog();
+    }));
 }

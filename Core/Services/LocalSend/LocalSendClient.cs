@@ -158,16 +158,13 @@ public sealed class LocalSendClient : IDisposable
                     return LocalSendSendResult.Declined;
                 }
             }
-            catch (OperationCanceledException)
-            {
-                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
-                return LocalSendSendResult.Canceled;
-            }
             catch (Exception ex)
             {
-                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
-                // When receiver cancels or closes mid-transfer, TCP socket is reset/closed by peer (SocketException/IOException/HttpRequestException).
-                // Map peer disconnection directly to Declined/Canceled rather than a raw network error.
+                _ = CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None);
+                if (token.IsCancellationRequested)
+                {
+                    return LocalSendSendResult.Canceled;
+                }
                 Logger.Log($"[LocalSendClient] Transfer interrupted by receiver: {ex.GetType().Name} - {ex.Message}");
                 LastError = "Declined or canceled by receiver";
                 return LocalSendSendResult.Declined;
@@ -184,7 +181,8 @@ public sealed class LocalSendClient : IDisposable
             var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
             var scheme = https ? "https" : "http";
             var url = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/cancel?sessionId={sessionId}";
-            await _httpClient.PostAsync(url, null, token).ConfigureAwait(false);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            await _httpClient.PostAsync(url, null, cts.Token).ConfigureAwait(false);
         }
         catch { }
     }
@@ -252,10 +250,8 @@ public sealed class LocalSendClient : IDisposable
             }
             catch (Exception ex)
             {
-                // Receiver declined/closed prompt window or disconnected stream
-                Logger.Log($"[LocalSendClient] PrepareUpload interrupted by receiver: {ex.GetType().Name} - {ex.Message}");
-                LastError = "Declined or canceled by receiver";
-                return (LocalSendSendResult.Declined, null, null, tryHttps);
+                LastError = $"{ex.GetType().Name}: {ex.Message}";
+                Logger.Log($"[LocalSendClient] PrepareUpload scheme {(tryHttps ? "https" : "http")} failed: {ex.Message}", LogLevel.Debug);
             }
         }
 
