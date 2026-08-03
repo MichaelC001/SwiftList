@@ -45,6 +45,27 @@ public partial class ResultsControl : System.Windows.Controls.UserControl
                 LstResults.SelectedItem = item.Content;
             }
         };
+        void HandleMiddleClickPreview(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == System.Windows.Input.MouseButton.Middle)
+            {
+                var parentWindow = Window.GetWindow(this);
+                if (parentWindow != null && parentWindow.GetType().Name != "InlineSearchWindow")
+                {
+                    var listBox = sender as System.Windows.Controls.ListBox;
+                    var item = FindVisualParent<ListBoxItem>(e.OriginalSource as DependencyObject);
+                    if (item?.Content is AppSearchResult result && result.CanPreview)
+                    {
+                        listBox?.SelectedItem = result;
+                        Services.QuickLookManager.Instance.Toggle(parentWindow, result.FullPath);
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        LstResults.MouseDown += HandleMiddleClickPreview;
+        LstGridResults.MouseDown += HandleMiddleClickPreview;
 
         // Dynamically load custom GridView columns from ResultColumnProviders
         Loaded += (s, e) =>

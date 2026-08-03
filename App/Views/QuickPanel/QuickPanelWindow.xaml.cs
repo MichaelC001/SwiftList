@@ -272,9 +272,23 @@ public partial class QuickPanelWindow : Window,
 
     private void ItemsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
+        // Control.MouseDoubleClickEvent fires for ANY button's double-click (left, right, or middle) --
+        // guard so double-right-clicking only opens the action flyout without launching the file.
+        if (e.ChangedButton != MouseButton.Left) return;
         if (sender is not System.Windows.Controls.ListBox list) return;
 
         _activeList = list;
         OpenSelected();
+    }
+
+    private void ItemsList_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.ListBox list) return;
+
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            _activeList = list;
+            if (TogglePreview()) e.Handled = true;
+        }
     }
 }
