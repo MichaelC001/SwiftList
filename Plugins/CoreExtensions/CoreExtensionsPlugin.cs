@@ -16,6 +16,7 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
             new OpenResultAsAdminAction(),
             new LocateInExplorerAction(),
             new CopyPathAction(),
+            new LocalSendAction(),
             new CutFileAction(),
             new CopyFileAction(),
             new PasteFileAction(),
@@ -24,8 +25,7 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
             new OpenCommandPromptAction(),
             new OpenAdminCommandPromptAction(),
             new TouchAction(),
-            new MkdirAction(),
-            new LocalSendAction()
+            new MkdirAction()
         };
 
     public IEnumerable<IDynamicActionProvider> GetDynamicActionProviders() => new IDynamicActionProvider[]

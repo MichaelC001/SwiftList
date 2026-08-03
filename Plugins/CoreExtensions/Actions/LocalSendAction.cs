@@ -14,7 +14,7 @@ public class LocalSendAction : ISearchResultAction
 
     public string Description => TranslationService.Get("Action_LocalSend");
 
-    public string Hotkey => "Ctrl+Shift+L";
+    public string Hotkey => string.Empty;
 
     public ImageSource? Icon => VectorIconHelper.CreateVectorIcon(
         "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",

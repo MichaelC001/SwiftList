@@ -180,6 +180,7 @@ public static class LocalSendServerHelper
     {
         try
         {
+            var tags = new List<string>();
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)
             {
@@ -188,11 +189,11 @@ public static class LocalSendServerHelper
                     var ipStr = ip.ToString();
                     var lastDot = ipStr.LastIndexOf('.');
                     if (lastDot > 0 && lastDot < ipStr.Length - 1)
-                    {
-                        return $"#{ipStr[(lastDot + 1)..]}";
-                    }
+                        tags.Add(ipStr[(lastDot + 1)..]);
                 }
             }
+            if (tags.Count > 0)
+                return "#" + string.Join(" / #", tags);
         }
         catch { }
 
