@@ -61,4 +61,19 @@ public static class LocalSendReceiveWindowHelper
 
         return sessionPercentage;
     }
+
+    public static void UpdateItemLanguage(IEnumerable<LocalSendReceiveFileItem> items)
+    {
+        foreach (var item in items)
+        {
+            if (item.IsFinished)
+            {
+                item.StatusText = TranslationManager.Instance["Settings_LocalSend_Completed"];
+            }
+            else if (item.IsCanceled)
+            {
+                item.StatusText = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            }
+        }
+    }
 }

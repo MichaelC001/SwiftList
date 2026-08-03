@@ -58,6 +58,8 @@ public partial class LocalSendReceiveWindow : Window
                 TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Receiving"];
             }
         }
+
+        LocalSendReceiveWindowHelper.UpdateItemLanguage(_fileItems);
     }
 
     private void PopulateRequestData(PrepareUploadRequestDto dto)
@@ -279,6 +281,7 @@ public partial class LocalSendReceiveWindow : Window
         var canceledText = TranslationManager.Instance["Settings_LocalSend_Canceled"];
         foreach (var item in _fileItems.Where(i => !i.IsFinished))
         {
+            item.IsCanceled = true;
             item.StatusText = canceledText;
             item.ShowProgress = false;
         }

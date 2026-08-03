@@ -38,6 +38,14 @@ public sealed class LocalSendReceiveFileItem : INotifyPropertyChanged
         set { if (_isFinished != value) { _isFinished = value; OnPropertyChanged(); } }
     }
 
+    private bool _isCanceled;
+
+    public bool IsCanceled
+    {
+        get => _isCanceled;
+        set { if (_isCanceled != value) { _isCanceled = value; OnPropertyChanged(); } }
+    }
+
     public bool ShowProgress
     {
         get => _showProgress;
