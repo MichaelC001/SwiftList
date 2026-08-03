@@ -45,6 +45,7 @@ public partial class LocalSendReceiveWindow : Window
         {
             FileId = kv.Key,
             FileName = kv.Value.FileName,
+            DisplayName = !string.IsNullOrWhiteSpace(kv.Value.Preview) ? kv.Value.Preview.Trim() : kv.Value.FileName,
             Size = kv.Value.Size,
             SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
         }).ToList();

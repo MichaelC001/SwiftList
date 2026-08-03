@@ -157,8 +157,8 @@
                                             </Grid.ColumnDefinitions>
 
                                             <TextBlock Grid.Column="0"
-                                                       Text="{Binding FileName}"
-                                                       ToolTip="{Binding FileName}"
+                                                       Text="{Binding DisplayName}"
+                                                       ToolTip="{Binding DisplayName}"
                                                        FontSize="12"
                                                        Foreground="{DynamicResource TextPrimary2}"
                                                        TextTrimming="CharacterEllipsis"

@@ -16,6 +16,7 @@ public sealed class LocalSendReceiveFileItem : INotifyPropertyChanged
 
     public required string FileId { get; init; }
     public required string FileName { get; init; }
+    public required string DisplayName { get; init; }
     public required long Size { get; init; }
     public required string SizeText { get; init; }
 
