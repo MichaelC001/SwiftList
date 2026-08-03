@@ -28,6 +28,7 @@ La ventana de Configuración tiene diez secciones en su barra lateral izquierda:
 | [General](./general) | Comportamiento de inicio, actualizaciones, idioma, diseño de la barra de búsqueda y tamaño de la ventana de vista previa. |
 | [Atajos](./hotkeys-page) | Atajos globales, atajos de acción por plugin y la lista negra de procesos. |
 | [Plugins](./plugins) | Plugins instalados y los interruptores de habilitar/deshabilitar por componente. |
+| [LocalSend](./localsend) | Configuración de transferencia LAN entre dispositivos para archivos, carpetas y texto plano. |
 | [Favoritos](./favorites) | Accesos directos con nombre personalizado a carpetas, archivos y URL. |
 | [Historial](./history) | Historial de búsqueda e historial de palabras clave de la ventana rápida. |
 | [Panel Rápido](./quick-panel) | El panel flotante acoplado sobre la ventana en primer plano: sus espacios de trabajo, las fuentes de cada uno, las pestañas que aportan los plugins, y a qué aplicaciones pertenece cada espacio. |

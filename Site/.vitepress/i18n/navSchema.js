@@ -25,6 +25,7 @@ export const navSchema = [
           { id: 'ugSettingsHistory', slug: 'user-guide/settings/history' },
           { id: 'ugSettingsQuickPanel', slug: 'user-guide/settings/quick-panel' },
           { id: 'ugSettingsPlugins', slug: 'user-guide/settings/plugins' },
+          { id: 'ugSettingsLocalSend', slug: 'user-guide/settings/localsend' },
           { id: 'ugSettingsServiceStatus', slug: 'user-guide/settings/service-status' },
           { id: 'ugSettingsAppearance', slug: 'user-guide/settings/appearance' },
           { id: 'ugSettingsAbout', slug: 'user-guide/settings/about' },

@@ -27,6 +27,7 @@ The Settings window has ten sections in its left sidebar:
 | [General](./general) | Startup behavior, updates, language, search bar layout, and preview window size. |
 | [Hotkeys](./hotkeys-page) | Global hotkeys, per-plugin action hotkeys, and the process blacklist. |
 | [Plugins](./plugins) | Installed plugins and per-component enable/disable toggles. |
+| [LocalSend](./localsend) | Cross-device LAN file, folder, and plain text transfer settings (compatible with official LocalSend clients). |
 | [Favorites](./favorites) | Custom-named shortcuts to folders, files, and URLs. |
 | [History](./history) | Search history and quick-window keyword history. |
 | [Quick Panel](./quick-panel) | The floating panel docked over the window in front: its workspaces, their sources, the tabs plugins contribute, and which apps each workspace belongs to. |
