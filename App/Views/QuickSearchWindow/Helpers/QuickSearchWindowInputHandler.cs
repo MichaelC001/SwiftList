@@ -87,6 +87,12 @@ public class QuickSearchWindowInputHandler
             e.Handled = true;
             return;
         }
+        if (UserSettings.Load().LocalSend.Enabled && WpfUiHelper.MatchesHotkey(settings.LocalSendSendWindowHotkey, Keyboard.Modifiers, actualKey))
+        {
+            SwiftList.App.Helpers.LocalSend.LocalSendAppEventHandler.OpenSendWindow();
+            e.Handled = true;
+            return;
+        }
         if (actualKey == Key.Enter)
         {
             // An actively-composing IME (e.g. Sogou/Microsoft Pinyin in "Enter commits the raw typed

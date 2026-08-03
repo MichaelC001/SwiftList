@@ -173,6 +173,16 @@
                 Value="{Binding OpenFullWindowHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 RequireModifier="True" DefaultValue="Ctrl+F"/>
         </Grid>
+        <Grid x:Name="RowLocalSendSendWindow" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="HotkeyLabel"/>
+                <ColumnDefinition Width="200"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Hotkeys_LocalSendSendWindow]}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+            <ctrl:HotkeyRecorderControl Grid.Column="1" Width="200" Height="26"
+                Value="{Binding LocalSendSendWindowHotkey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                RequireModifier="True" DefaultValue="Ctrl+S"/>
+        </Grid>
         <Grid x:Name="RowStayOpen" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="HotkeyLabel"/>

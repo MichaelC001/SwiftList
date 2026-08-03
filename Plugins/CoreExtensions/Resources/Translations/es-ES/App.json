@@ -511,6 +511,7 @@
   "Hotkeys_KeywordHistoryNext": "Siguiente Entrada del Historial de Palabras Clave",
   "Hotkeys_KeywordHistoryDelete": "Eliminar Entrada Actual del Historial de Palabras Clave",
   "Hotkeys_OpenFullWindow": "Abrir Ventana Completa",
+  "Hotkeys_LocalSendSendWindow": "Abrir ventana de envío",
   "Hotkeys_QuickPanel": "Panel rápido",
   "Hotkeys_StayOpen": "Mantener la Ventana Abierta",
   "Hotkeys_QuickNavTitle": "Activador de Navegación Rápida",

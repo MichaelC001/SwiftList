@@ -511,6 +511,7 @@
   "Hotkeys_KeywordHistoryNext": "다음 키워드 기록 항목",
   "Hotkeys_KeywordHistoryDelete": "현재 키워드 기록 항목 삭제",
   "Hotkeys_OpenFullWindow": "전체 창 열기",
+  "Hotkeys_LocalSendSendWindow": "전송 창 열기",
   "Hotkeys_QuickPanel": "퀵 패널",
   "Hotkeys_StayOpen": "창 유지하기",
   "Hotkeys_QuickNavTitle": "빠른 탐색 트리거",

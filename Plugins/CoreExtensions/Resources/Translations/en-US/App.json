@@ -511,6 +511,7 @@
   "Hotkeys_KeywordHistoryNext": "Next Keyword History Entry",
   "Hotkeys_KeywordHistoryDelete": "Delete Current Keyword History Entry",
   "Hotkeys_OpenFullWindow": "Open Full Window",
+  "Hotkeys_LocalSendSendWindow": "Open Send Window",
   "Hotkeys_QuickPanel": "Quick panel",
   "Hotkeys_StayOpen": "Keep Window Open",
   "Hotkeys_QuickNavTitle": "Quick Navigation Trigger",

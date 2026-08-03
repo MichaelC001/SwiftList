@@ -36,6 +36,7 @@ public class HotkeySettingsViewModel : ViewModelBase
         _keywordHistoryNextHotkey = hotkeys.KeywordHistoryNextHotkey;
         _keywordHistoryDeleteHotkey = hotkeys.KeywordHistoryDeleteHotkey;
         _openFullWindowHotkey = hotkeys.OpenFullWindowHotkey;
+        _localSendSendWindowHotkey = hotkeys.LocalSendSendWindowHotkey;
         _stayOpenHotkey = hotkeys.StayOpenHotkey;
         _quickPanelHotkey = hotkeys.QuickPanelHotkey;
 
@@ -243,6 +244,13 @@ public class HotkeySettingsViewModel : ViewModelBase
         set => SetProperty(ref _stayOpenHotkey, value);
     }
 
+    private string _localSendSendWindowHotkey;
+    public string LocalSendSendWindowHotkey
+    {
+        get => _localSendSendWindowHotkey;
+        set => SetProperty(ref _localSendSendWindowHotkey, value);
+    }
+
     public void Apply()
     {
         var hotkeys = _userSettings.Hotkeys;
@@ -264,6 +272,7 @@ public class HotkeySettingsViewModel : ViewModelBase
         hotkeys.KeywordHistoryNextHotkey = KeywordHistoryNextHotkey;
         hotkeys.KeywordHistoryDeleteHotkey = KeywordHistoryDeleteHotkey;
         hotkeys.OpenFullWindowHotkey = OpenFullWindowHotkey;
+        hotkeys.LocalSendSendWindowHotkey = LocalSendSendWindowHotkey;
         hotkeys.StayOpenHotkey = StayOpenHotkey;
         hotkeys.QuickPanelHotkey = QuickPanelHotkey;
 

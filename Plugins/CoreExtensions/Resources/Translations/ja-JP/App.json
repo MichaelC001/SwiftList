@@ -511,6 +511,7 @@
   "Hotkeys_KeywordHistoryNext": "次のキーワード履歴項目",
   "Hotkeys_KeywordHistoryDelete": "現在のキーワード履歴項目を削除",
   "Hotkeys_OpenFullWindow": "フルウィンドウを開く",
+  "Hotkeys_LocalSendSendWindow": "送信ウィンドウを開く",
   "Hotkeys_QuickPanel": "クイックパネル",
   "Hotkeys_StayOpen": "ウィンドウを閉じない",
   "Hotkeys_QuickNavTitle": "クイックナビゲーションのトリガー",

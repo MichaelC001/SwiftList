@@ -93,6 +93,9 @@ public class HotkeyPageSettings
     // action as the Quick Window's own expand ("Open More") button.
     public string OpenFullWindowHotkey { get; set; } = "Ctrl+F";
 
+    // Opens the LocalSend send window directly from the Quick Window.
+    public string LocalSendSendWindowHotkey { get; set; } = "Ctrl+S";
+
     // Stops the Quick Window auto-hiding when it loses focus, for the current summon only -- for
     // assembling a query out of text copied from several other windows, which otherwise means the window
     // (and with it the half-typed query) disappearing on every switch away. See #197. Scoped to the one

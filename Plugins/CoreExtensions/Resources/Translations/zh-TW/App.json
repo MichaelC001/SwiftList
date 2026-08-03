@@ -511,6 +511,7 @@
   "Hotkeys_KeywordHistoryNext": "下一條關鍵字記錄",
   "Hotkeys_KeywordHistoryDelete": "刪除當前關鍵字記錄",
   "Hotkeys_OpenFullWindow": "開啟完整視窗",
+  "Hotkeys_LocalSendSendWindow": "開啟傳送視窗",
   "Hotkeys_QuickPanel": "快速面板",
   "Hotkeys_StayOpen": "保持視窗不消失",
   "Hotkeys_QuickNavTitle": "快捷導航觸發",
