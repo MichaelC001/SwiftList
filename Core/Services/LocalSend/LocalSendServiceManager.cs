@@ -22,9 +22,6 @@ public sealed class LocalSendServiceManager : IDisposable
     /// <summary>Raised (on a thread-pool thread) when a session is canceled.</summary>
     public event EventHandler<string>? SessionCanceled;
 
-    /// <summary>Raised (on a thread-pool thread) when text or a link is received.</summary>
-    public event EventHandler<(string SenderAlias, string Text, bool IsLink)>? TextReceived;
-
     /// <summary>Raised (on a thread-pool thread) when an upload request requires user confirmation.</summary>
     public event EventHandler<LocalSendUploadRequestArgs>? UploadRequested;
 
@@ -71,7 +68,6 @@ public sealed class LocalSendServiceManager : IDisposable
         _server.FileReceived += (s, e) => FileReceived?.Invoke(this, e);
         _server.ProgressChanged += (s, e) => ProgressChanged?.Invoke(this, e);
         _server.SessionCanceled += (s, e) => SessionCanceled?.Invoke(this, e);
-        _server.TextReceived += (s, e) => TextReceived?.Invoke(this, e);
         _server.UploadRequested += (s, e) => UploadRequested?.Invoke(this, e);
         _discoveryService.Start(53317);
     }

@@ -14,27 +14,9 @@ public sealed class LocalSendReceiveFileItem : INotifyPropertyChanged
     private bool _isFinished;
     private bool _showProgress;
 
-    private string _displayName = string.Empty;
     public required string FileId { get; init; }
     public required string FileName { get; init; }
-    public required string DisplayName
-    {
-        get => _displayName;
-        set { if (_displayName != value) { _displayName = value; OnPropertyChanged(); } }
-    }
-    private string? _textContent;
-    public string? LinkUrl { get; init; }
-    public bool IsLink => !string.IsNullOrEmpty(LinkUrl);
-    public string? TextContent
-    {
-        get => _textContent;
-        set { if (_textContent != value) { _textContent = value; OnPropertyChanged(); } }
-    }
-    public bool HasText => !string.IsNullOrEmpty(TextContent);
-    public bool IsTextItem { get; init; }
-    public string GroupHeader => IsTextItem
-        ? Services.TranslationManager.Instance["Settings_LocalSend_TextReceivedTitle"]
-        : Services.TranslationManager.Instance["Settings_LocalSend_Files"];
+    public required string DisplayName { get; init; }
     public required long Size { get; init; }
     public required string SizeText { get; init; }
 

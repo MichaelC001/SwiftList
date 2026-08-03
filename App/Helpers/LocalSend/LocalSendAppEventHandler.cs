@@ -3,7 +3,6 @@ using SwiftList.Core;
 using SwiftList.Core.Services.LocalSend;
 using SwiftList.Core.Services.LocalSend.Models;
 using Application = System.Windows.Application;
-using Clipboard = System.Windows.Clipboard;
 
 namespace SwiftList.App.Helpers.LocalSend;
 
@@ -29,7 +28,6 @@ public static class LocalSendAppEventHandler
         manager.ApplySettings(settings);
         manager.ProgressChanged += OnProgressChanged;
         manager.SessionCanceled += OnSessionCanceled;
-        manager.TextReceived += OnTextReceived;
         manager.UploadRequested += OnUploadRequested;
         manager.SendRequested += OnSendRequested;
     }
@@ -56,11 +54,6 @@ public static class LocalSendAppEventHandler
     }
 
     private static void OnSessionCanceled(object? sender, string sessionId) => Application.Current.Dispatcher.BeginInvoke(new Action(() => _activeReceiveWindow?.HandleSessionCanceled(sessionId)));
-
-    private static void OnTextReceived(object? sender, (string SenderAlias, string Text, bool IsLink) e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-    {
-        try { Clipboard.SetText(e.Text); } catch { }
-    }));
 
     private static void OnSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
     {

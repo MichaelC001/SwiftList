@@ -51,19 +51,6 @@ public static class LocalSendReceiveWindowHelper
                     item.IsFinished = true;
                     item.ProgressPercentage = 100.0;
                     item.StatusText = TranslationManager.Instance["Settings_LocalSend_Completed"];
-                    if (item.IsTextItem && !string.IsNullOrEmpty(args.SavedPath) && File.Exists(args.SavedPath))
-                    {
-                        try
-                        {
-                            var txt = File.ReadAllText(args.SavedPath).Trim();
-                            if (!string.IsNullOrEmpty(txt))
-                            {
-                                item.DisplayName = txt;
-                                item.TextContent = txt;
-                            }
-                        }
-                        catch { }
-                    }
                 }
                 else
                 {

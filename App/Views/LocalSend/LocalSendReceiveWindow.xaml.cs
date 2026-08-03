@@ -7,7 +7,6 @@ using SwiftList.App.Services;
 using SwiftList.App.Services.Theme;
 using SwiftList.Core.Services.LocalSend;
 using SwiftList.Core.Services.LocalSend.Models;
-using System.Windows.Data;
 using System.Windows.Threading;
 
 namespace SwiftList.App.Views.LocalSend;
@@ -42,34 +41,17 @@ public partial class LocalSendReceiveWindow : Window
         var deviceLabel = TranslationManager.Instance["Settings_LocalSend_Device"];
         TxtSender.Text = $"{deviceLabel}: {_senderAlias}";
 
-        _fileItems = dto.Files.Select(kv =>
-        {
-            var pText = kv.Value.Preview?.Trim();
-            var isTextItem = string.Equals(kv.Value.FileType, "text", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(pText) || kv.Value.FileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
-            var isLink = Uri.TryCreate(pText, UriKind.Absolute, out var u) && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps);
-            var isFileLink = Uri.TryCreate(kv.Value.FileName, UriKind.Absolute, out var u2) && (u2.Scheme == Uri.UriSchemeHttp || u2.Scheme == Uri.UriSchemeHttps);
-            var linkUrl = isLink ? pText : (isFileLink ? kv.Value.FileName : null);
-            var isGuid = Guid.TryParse(System.IO.Path.GetFileNameWithoutExtension(kv.Value.FileName), out _);
-            var displayName = !string.IsNullOrWhiteSpace(pText) ? pText : kv.Value.FileName;
-            return new LocalSendReceiveFileItem { FileId = kv.Key, FileName = kv.Value.FileName, DisplayName = displayName, LinkUrl = linkUrl, TextContent = pText, IsTextItem = isTextItem, Size = kv.Value.Size, SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size) };
+        _fileItems = dto.Files.Select(kv => new LocalSendReceiveFileItem {
+            FileId = kv.Key,
+            FileName = kv.Value.FileName,
+            DisplayName = kv.Value.FileName,
+            Size = kv.Value.Size,
+            SizeText = LocalSendServerHelper.FormatBytes(kv.Value.Size)
         }).ToList();
 
-        var view = (ListCollectionView)CollectionViewSource.GetDefaultView(_fileItems);
-        view.GroupDescriptions.Clear();
-        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(LocalSendReceiveFileItem.GroupHeader)));
-
-        LstFiles.ItemsSource = view;
+        LstFiles.ItemsSource = _fileItems;
         LstFiles.SelectAll();
         UpdateSummaryText();
-    }
-
-    private void HyperlinkCopy_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: LocalSendReceiveFileItem item }) { try { System.Windows.Clipboard.SetText(item.TextContent ?? item.DisplayName); } catch { } }
-    }
-    private void HyperlinkOpen_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: LocalSendReceiveFileItem item } && !string.IsNullOrEmpty(item.LinkUrl)) { try { Process.Start(new ProcessStartInfo(item.LinkUrl) { UseShellExecute = true }); } catch { } }
     }
 
     private void LstFiles_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) => UpdateSummaryText();
@@ -82,23 +64,17 @@ public partial class LocalSendReceiveWindow : Window
 
     private void UpdateSummaryText()
     {
-        var selectedFiles = LstFiles.SelectedItems.OfType<LocalSendReceiveFileItem>().Where(i => !i.IsTextItem).ToList();
+        var selectedFiles = LstFiles.SelectedItems.OfType<LocalSendReceiveFileItem>().ToList();
         var totalBytes = selectedFiles.Sum(i => i.Size);
         var sizeFormatted = LocalSendServerHelper.FormatBytes(totalBytes);
         var msgFormat = TranslationManager.Instance["Settings_LocalSend_UploadRequestMsg"];
         TxtSummary.Text = string.Format(msgFormat, _senderAlias, selectedFiles.Count, sizeFormatted);
 
-        var hasFiles = _fileItems.Any(i => !i.IsTextItem);
-        var hasSelection = selectedFiles.Count > 0 || !hasFiles;
+        var hasSelection = selectedFiles.Count > 0;
         BtnSaveTo.IsEnabled = hasSelection;
         BtnAcceptDefault.IsEnabled = hasSelection;
     }
 
-    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
-    {
-        try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); } catch { }
-        e.Handled = true;
-    }
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) DragMove(); }
 
     protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
@@ -186,14 +162,14 @@ public partial class LocalSendReceiveWindow : Window
 
     private void SwitchToProgressStep()
     {
-        var fileOnlyItems = LstFiles.SelectedItems.OfType<LocalSendReceiveFileItem>().Where(i => !i.IsTextItem).ToList();
-        if (fileOnlyItems.Count == 0)
+        var selectedItems = LstFiles.SelectedItems.OfType<LocalSendReceiveFileItem>().ToList();
+        if (selectedItems.Count == 0)
         {
             _isCompleted = true;
             Close();
             return;
         }
-        LstFiles.ItemsSource = fileOnlyItems;
+        LstFiles.ItemsSource = selectedItems;
         LstFiles.UnselectAll();
         LstFiles.IsHitTestVisible = false;
 
@@ -247,6 +223,7 @@ public partial class LocalSendReceiveWindow : Window
         if (isAllDone)
         {
             _inactivityTimer?.Stop();
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
             _lastSavedPath = args.SavedPath;
             _lastRootSavedPath = args.RootSavedPath;
             BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
@@ -263,7 +240,6 @@ public partial class LocalSendReceiveWindow : Window
         if (GridStep1Footer.Visibility == Visibility.Visible) ShowSenderCanceledInStep1();
         else { TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_SenderCanceled"]; BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"]; }
     }));
-
     private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
     {
         var target = LocalSendReceiveWindowHelper.ResolveFolderTarget(_lastRootSavedPath, _lastSavedPath);
@@ -274,12 +250,8 @@ public partial class LocalSendReceiveWindow : Window
     {
         if (!_isCompleted && !string.IsNullOrEmpty(_currentSessionId))
         {
-            _isCompleted = true;
-            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-            TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
-            LocalSendServiceManager.Instance.CancelSession(_currentSessionId);
-            return;
+            _isCompleted = true; TxtWindowTitle.Text = TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"]; LocalSendServiceManager.Instance.CancelSession(_currentSessionId); return;
         }
         Close();
     }

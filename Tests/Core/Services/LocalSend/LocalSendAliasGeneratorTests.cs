@@ -70,40 +70,6 @@ public class LocalSendAliasGeneratorTests
     }
 
     [TestMethod]
-    public void CheckAndNotifyTextReceived_ValidText_TriggersEvent()
-    {
-        using var server = new LocalSendServer();
-        var triggered = false;
-        var isLinkResult = false;
-        server.TextReceived += (s, e) =>
-        {
-            triggered = true;
-            isLinkResult = e.IsLink;
-        };
-
-        var dto = new PrepareUploadRequestDto
-        {
-            Info = new LocalSendDeviceInfo(),
-            Files = new Dictionary<string, LocalSendFileDto>
-            {
-                ["f1"] = new LocalSendFileDto
-                {
-                    Id = "f1",
-                    FileName = "sample.txt",
-                    FileType = "text",
-                    Preview = "https://localsend.org"
-                }
-            }
-        };
-
-        var result = LocalSendServerHelper.CheckAndNotifyTextReceived(server, dto, "f1", "sample.txt", "TestSender");
-
-        Assert.IsTrue(result);
-        Assert.IsTrue(triggered);
-        Assert.IsTrue(isLinkResult);
-    }
-
-    [TestMethod]
     public async Task RequestUserAcceptanceAsync_UserAccepts_ReturnsTrue()
     {
         using var server = new LocalSendServer();
