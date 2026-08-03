@@ -55,6 +55,10 @@ public partial class LocalSendSendWindow : Window
             {
                 TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
             }
+            else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_InvalidPin"]))
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_InvalidPin"];
+            }
             else if (_vm.IsSending)
             {
                 TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Sending"];
@@ -229,6 +233,13 @@ public partial class LocalSendSendWindow : Window
             TxtCounter.Visibility = Visibility.Collapsed;
             PrgBar.Visibility = Visibility.Collapsed;
             TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
+        }
+        else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_InvalidPin"]))
+        {
+            TxtFileName.Visibility = Visibility.Collapsed;
+            TxtCounter.Visibility = Visibility.Collapsed;
+            PrgBar.Visibility = Visibility.Collapsed;
+            TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_InvalidPin"];
         }
         else
         {
