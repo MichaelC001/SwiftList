@@ -19,8 +19,8 @@ public partial class QuickLookManager
 
         try
         {
-            _window.Width = rect.OuterWidth;
-            _window.Height = rect.OuterHeight;
+            _window.Width = _sessionWidth ?? rect.OuterWidth;
+            _window.Height = _sessionHeight ?? rect.OuterHeight;
 
             // Clear any still-running/held slide-in animation before touching Left directly -- WPF keeps
             // an animated dependency property pinned to the animation's value until the clock is cleared,

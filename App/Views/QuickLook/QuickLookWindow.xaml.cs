@@ -77,6 +77,25 @@ public partial class QuickLookWindow : Window
                 _overlay.Show(host);
             }
         };
+
+        Loaded += (s, e) =>
+        {
+            if (PresentationSource.FromVisual(this) is HwndSource source)
+            {
+                source.AddHook(WndProc);
+            }
+        };
+    }
+
+    private const int WM_EXITSIZEMOVE = 0x0232;
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WM_EXITSIZEMOVE)
+        {
+            Services.QuickLookManager.Instance.SetUserResizedDimensions(Width, Height);
+        }
+        return IntPtr.Zero;
     }
 
     private void ReleasePreview()

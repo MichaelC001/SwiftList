@@ -18,6 +18,14 @@ public partial class QuickLookManager
     private Views.QuickLook.QuickLookWindow? _window;
     private Window? _owner;
     private bool _userWantsPreview;
+    private double? _sessionWidth;
+    private double? _sessionHeight;
+
+    public void SetUserResizedDimensions(double width, double height)
+    {
+        _sessionWidth = width;
+        _sessionHeight = height;
+    }
     // Tracked separately (not just "is _owner non-null") since external-preview mode attaches
     // LocationChanged/SizeChanged but deliberately NOT Deactivated -- see ShowOrUpdate's own comment.
     private bool _ownerTrackingAttached;
