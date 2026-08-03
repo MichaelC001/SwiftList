@@ -116,7 +116,7 @@
 
                     <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
-                    <DockPanel Margin="0,0,0,12">
+                    <DockPanel x:Name="RowLocalSendEnable" Margin="0,0,0,12">
                         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Enable]}"
                                        FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}"/>
@@ -128,7 +128,7 @@
 
                     <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
-                    <Grid Margin="0,0,0,12">
+                    <Grid x:Name="RowLocalSendDeviceAlias" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="220"/>
@@ -176,7 +176,7 @@
                         </Grid>
                     </Grid>
 
-                    <Grid Margin="0,0,0,12">
+                    <Grid x:Name="RowLocalSendDiscoveryTimeout" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="100"/>
@@ -193,7 +193,7 @@
 
                     <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
-                    <Grid Margin="0,0,0,12">
+                    <Grid x:Name="RowLocalSendReceivePin" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="120"/>
@@ -210,7 +210,7 @@
 
                     <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
-                    <DockPanel Margin="0,0,0,12">
+                    <DockPanel x:Name="RowLocalSendEnableHttps" Margin="0,0,0,12">
                         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_EnableHttps]}"
                                        FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}"/>
@@ -222,7 +222,7 @@
 
                     <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
 
-                    <DockPanel Margin="0,0,0,12">
+                    <DockPanel x:Name="RowLocalSendQuickSave" Margin="0,0,0,12">
                         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_QuickSave]}"
                                        FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary}"/>
@@ -232,7 +232,7 @@
                         <CheckBox DockPanel.Dock="Right" IsChecked="{Binding QuickSave}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                     </DockPanel>
 
-                    <Grid Margin="0,0,0,4">
+                    <Grid x:Name="RowLocalSendDownloadDir" Margin="0,0,0,4">
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Setter Property="Visibility" Value="Collapsed"/>
