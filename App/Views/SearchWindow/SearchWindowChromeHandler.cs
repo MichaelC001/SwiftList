@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using SwiftList.App.Helpers.Visuals;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace SwiftList.App.Views.SearchWindow;
@@ -23,16 +24,9 @@ public class SearchWindowChromeHandler
             {
                 ToggleMaximize();
             }
-            else if (_window.WindowState == WindowState.Normal)
+            else
             {
-                try
-                {
-                    _window.DragMove();
-                }
-                catch (InvalidOperationException)
-                {
-                    // Ignore standard DragMove state exceptions
-                }
+                WindowMaximizedDragHelper.DragMoveOrRestore(_window, e);
             }
         }
     }

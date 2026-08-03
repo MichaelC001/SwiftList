@@ -186,10 +186,7 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        // Only while restored: DragMove on a maximized window throws, and there is nowhere to drag it
-        // to anyway. Same guard the full search window's chrome handler uses.
-        if (WindowState == WindowState.Normal)
-            DragMove();
+        WindowMaximizedDragHelper.DragMoveOrRestore(this, e);
     }
 
     private void BtnMinimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
