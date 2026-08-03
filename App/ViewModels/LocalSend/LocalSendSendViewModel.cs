@@ -77,7 +77,14 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
     }));
 
     public event EventHandler? SendingStarted;
-    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(nameof(StatusText));
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (CurrentStep == 0)
+        {
+            StatusText = TranslationManager.Instance["Settings_LocalSend_SelectDeviceHint"];
+        }
+        OnPropertyChanged(nameof(StatusText));
+    }
 
     private int _selectedMode; // 0 = Files, 1 = Text
     public int SelectedMode

@@ -32,7 +32,32 @@ public partial class LocalSendReceiveWindow : Window
         ThemedWindowIconHelper.Apply(this);
         ThemedWindowIconHelper.Apply(TitleBarLogo, this);
         StateChanged += (_, _) => { if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal; };
+        TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
+        Closed += (_, _) => TranslationManager.Instance.PropertyChanged -= OnLanguageChanged;
         PopulateRequestData(requestArgs.Dto);
+    }
+
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        var deviceLabel = TranslationManager.Instance["Settings_LocalSend_Device"];
+        TxtSender.Text = $"{deviceLabel}: {_senderAlias}";
+
+        if (GridStep1Footer.Visibility == Visibility.Visible)
+        {
+            UpdateSummaryText();
+        }
+        else
+        {
+            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"];
+            if (_isCompleted)
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
+            }
+            else
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Receiving"];
+            }
+        }
     }
 
     private void PopulateRequestData(PrepareUploadRequestDto dto)

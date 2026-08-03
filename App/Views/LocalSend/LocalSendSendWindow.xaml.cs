@@ -25,9 +25,47 @@ public partial class LocalSendSendWindow : Window
         _vm.PropertyChanged += Vm_PropertyChanged;
 
         StateChanged += (_, _) => { if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal; };
-        Closed += (_, _) => _vm.Dispose();
+        TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
+        Closed += (_, _) =>
+        {
+            TranslationManager.Instance.PropertyChanged -= OnLanguageChanged;
+            _vm.Dispose();
+        };
 
         UpdateStepVisibility();
+    }
+
+    private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (_vm.CurrentStep == 2)
+        {
+            if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Completed"]))
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Completed"];
+            }
+            else if (_cancelSource == CancelSource.Self)
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            }
+            else if (_cancelSource == CancelSource.Receiver || _vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Declined"]))
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ReceiverCanceled"];
+            }
+            else if (_vm.StatusText.Contains(TranslationManager.Instance["Settings_LocalSend_Busy"]))
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Busy"];
+            }
+            else if (_vm.IsSending)
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Sending"];
+            }
+            else
+            {
+                TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_ConnectionError"];
+            }
+
+            BtnCancelOrClose.Content = _vm.IsSending ? TranslationManager.Instance["Common_Cancel"] : TranslationManager.Instance["Common_Close"];
+        }
     }
 
     private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
