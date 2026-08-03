@@ -122,14 +122,22 @@ internal static class ShellImageListNative
 
     public static IntPtr GetHiResHIcon(IntPtr pidl, int size)
     {
-        var shfi = new SHFILEINFO();
-        if (SHGetFileInfoPidl(pidl, 0, ref shfi, (uint)Marshal.SizeOf(shfi), SHGFI_SYSICONINDEX | SHGFI_PIDL) != IntPtr.Zero)
+        if (pidl == IntPtr.Zero) return IntPtr.Zero;
+        try
         {
-            var h = FromImageList(shfi.iIcon, size);
-            if (h != IntPtr.Zero) return h;
+            var shfi = new SHFILEINFO();
+            if (SHGetFileInfoPidl(pidl, 0, ref shfi, (uint)Marshal.SizeOf(shfi), SHGFI_SYSICONINDEX | SHGFI_PIDL) != IntPtr.Zero)
+            {
+                var h = FromImageList(shfi.iIcon, size);
+                if (h != IntPtr.Zero) return h;
+            }
+            var fb = new SHFILEINFO();
+            return SHGetFileInfoPidl(pidl, 0, ref fb, (uint)Marshal.SizeOf(fb), SHGFI_ICON | SHGFI_LARGEICON | SHGFI_PIDL) != IntPtr.Zero ? fb.hIcon : IntPtr.Zero;
         }
-        var fb = new SHFILEINFO();
-        return SHGetFileInfoPidl(pidl, 0, ref fb, (uint)Marshal.SizeOf(fb), SHGFI_ICON | SHGFI_LARGEICON | SHGFI_PIDL) != IntPtr.Zero ? fb.hIcon : IntPtr.Zero;
+        catch
+        {
+            return IntPtr.Zero;
+        }
     }
 
     private static IntPtr FromImageList(int iIcon, int size)

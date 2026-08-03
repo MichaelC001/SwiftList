@@ -179,44 +179,13 @@ public static class ShellIconHelper
 
             if (isVirtualItem || (isUniqueIconType && isDir && Directory.Exists(checkPath)))
             {
-                var pidl = IntPtr.Zero;
-                var hr = ShellIconNativeMethods.SHParseDisplayName(checkPath, IntPtr.Zero, out pidl, 0, out var sfgaoOut);
-                if (hr == 0 && pidl != IntPtr.Zero)
+                // Safely load system shell icon by path instead of dangerous PIDL extraction
+                // which triggers crashy third-party Shell extensions (e.g. CIconAndThumbnailOplockWrapper)
+                var hiRes = ShellImageListInterop.TryGetIcon(checkPath, 0, 0);
+                if (hiRes != null)
                 {
-                    try
-                    {
-                        var hiRes = ShellImageListInterop.TryGetIconPidl(pidl);
-                        if (hiRes != null)
-                        {
-                            _iconCache[cacheKey] = hiRes;
-                            return hiRes;
-                        }
-
-                        var flags = ShellIconNativeMethods.SHGFI_ICON | ShellIconNativeMethods.SHGFI_LARGEICON | ShellIconNativeMethods.SHGFI_PIDL;
-                        var res = ShellIconNativeMethods.SHGetFileInfoW(pidl, 0, ref shfi, (uint)Marshal.SizeOf(shfi), flags);
-                        if (res != IntPtr.Zero && shfi.hIcon != IntPtr.Zero)
-                        {
-                            var bitmapSource = Imaging.CreateBitmapSourceFromHIcon(
-                                shfi.hIcon,
-                                Int32Rect.Empty,
-                                BitmapSizeOptions.FromEmptyOptions());
-                            bitmapSource.Freeze();
-                            _iconCache[cacheKey] = bitmapSource;
-                            return bitmapSource;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Core.Logger.Log($"[ShellIconHelper] Failed to get PIDL shell icon for {path}: {ex.Message}", Core.LogLevel.Warn);
-                    }
-                    finally
-                    {
-                        if (shfi.hIcon != IntPtr.Zero)
-                        {
-                            ShellIconNativeMethods.DestroyIcon(shfi.hIcon);
-                        }
-                        ShellIconNativeMethods.CoTaskMemFree(pidl);
-                    }
+                    _iconCache[cacheKey] = hiRes;
+                    return hiRes;
                 }
             }
 
