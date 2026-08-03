@@ -123,7 +123,7 @@ internal static class LocalSendServerHandler
 
             if (!string.IsNullOrEmpty(sessionId))
             {
-                server.CancelSession(sessionId);
+                server.CancelSession(sessionId, notifySender: false);
             }
             else
             {

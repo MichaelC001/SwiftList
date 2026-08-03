@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using SwiftList.App.Helpers;
 using SwiftList.App.Services;
-using SwiftList.Core;
 using SwiftList.Core.Services.LocalSend;
 using SwiftList.Core.Services.LocalSend.Models;
 
@@ -10,28 +9,23 @@ namespace SwiftList.App.ViewModels.LocalSend;
 
 public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
 {
-    private readonly ObservableCollection<LocalSendDeviceInfo> _discoveredDevices = new();
-    private LocalSendDeviceInfo? _selectedDevice;
-    private string _pin = string.Empty;
+    private readonly ObservableCollection<LocalSendSendDeviceItem> _discoveredDevices = new();
     private string _textToSend = string.Empty;
     private bool _isSending;
     private double _progressPercentage;
-    private string? _statusKey;
     private string? _customStatusText;
     private CancellationTokenSource? _cts;
+
+    public event EventHandler? SendSuccessCompleted;
 
     public LocalSendSendViewModel(IEnumerable<string>? initialFiles = null, string? initialText = null)
     {
         TargetFiles = new ObservableCollection<string>(initialFiles ?? Array.Empty<string>());
         _textToSend = initialText ?? string.Empty;
+        DiscoveredDevices = new ReadOnlyObservableCollection<LocalSendSendDeviceItem>(_discoveredDevices);
 
-        DiscoveredDevices = new ReadOnlyObservableCollection<LocalSendDeviceInfo>(_discoveredDevices);
-
-        SendCommand = new RelayCommand(ExecuteSendAsync, () => !IsSending && SelectedDevice != null && (TargetFiles.Count > 0 || !string.IsNullOrWhiteSpace(TextToSend)));
         CancelCommand = new RelayCommand(ExecuteCancel);
-
         TranslationManager.Instance.PropertyChanged += OnLanguageChanged;
-        LocalSendServiceManager.Instance.SessionCanceled += OnSessionCanceled;
 
         var discovery = LocalSendServiceManager.Instance.DiscoveryService;
         if (discovery != null)
@@ -41,129 +35,77 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void OnSessionCanceled(object? sender, string sessionId) => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                                                                             {
-                                                                                 if (IsSending)
-                                                                                 {
-                                                                                     _cts?.Cancel();
-                                                                                     HandleResult(LocalSendSendResult.Declined, null);
-                                                                                 }
-                                                                             }));
+    private void OnDiscoveredDevicesChanged(object? sender, EventArgs e) => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+    {
+        var discovery = LocalSendServiceManager.Instance.DiscoveryService;
+        if (discovery == null) return;
+        var currentIps = discovery.DiscoveredDevices.Select(d => d.IpAddress).ToHashSet();
+
+        for (var i = _discoveredDevices.Count - 1; i >= 0; i--)
+        {
+            if (!currentIps.Contains(_discoveredDevices[i].IpAddress)) _discoveredDevices.RemoveAt(i);
+        }
+        foreach (var dev in discovery.DiscoveredDevices)
+        {
+            if (!_discoveredDevices.Any(item => item.IpAddress == dev.IpAddress))
+            {
+                _discoveredDevices.Add(new LocalSendSendDeviceItem { Device = dev });
+            }
+        }
+    }));
 
     private void OnLanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(nameof(StatusText));
 
     public ObservableCollection<string> TargetFiles { get; }
-    public ReadOnlyObservableCollection<LocalSendDeviceInfo> DiscoveredDevices { get; }
+    public ReadOnlyObservableCollection<LocalSendSendDeviceItem> DiscoveredDevices { get; }
 
-    public LocalSendDeviceInfo? SelectedDevice
-    {
-        get => _selectedDevice;
-        set
-        {
-            if (SetProperty(ref _selectedDevice, value))
-            {
-                OnPropertyChanged(nameof(HasSelectedDevice));
-            }
-        }
-    }
-
-    public bool HasSelectedDevice => SelectedDevice != null;
-
-    public string Pin
-    {
-        get => _pin;
-        set => SetProperty(ref _pin, value);
-    }
-
-    public string TextToSend
-    {
-        get => _textToSend;
-        set => SetProperty(ref _textToSend, value);
-    }
-
-    public bool IsSending
-    {
-        get => _isSending;
-        private set
-        {
-            if (SetProperty(ref _isSending, value))
-            {
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
-    }
-
-    public double ProgressPercentage
-    {
-        get => _progressPercentage;
-        private set => SetProperty(ref _progressPercentage, value);
-    }
-
-    public string StatusText
-    {
-        get
-        {
-            if (!string.IsNullOrEmpty(_customStatusText))
-                return _customStatusText;
-            if (!string.IsNullOrEmpty(_statusKey))
-                return TranslationManager.Instance[_statusKey];
-            return string.Empty;
-        }
-        private set
-        {
-            _statusKey = null;
-            _customStatusText = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public void SetStatusKey(string key)
-    {
-        _customStatusText = null;
-        _statusKey = key;
-        OnPropertyChanged(nameof(StatusText));
-    }
-
-    public ICommand SendCommand { get; }
-    public ICommand CancelCommand { get; }
-
-    private void OnDiscoveredDevicesChanged(object? sender, EventArgs e) => System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                                                                                 {
-                                                                                     _discoveredDevices.Clear();
-                                                                                     var discovery = LocalSendServiceManager.Instance.DiscoveryService;
-                                                                                     if (discovery != null)
-                                                                                     {
-                                                                                         foreach (var dev in discovery.DiscoveredDevices)
-                                                                                         {
-                                                                                             _discoveredDevices.Add(dev);
-                                                                                         }
-                                                                                     }
-                                                                                     if (SelectedDevice == null && _discoveredDevices.Count > 0)
-                                                                                     {
-                                                                                         SelectedDevice = _discoveredDevices[0];
-                                                                                     }
-                                                                                 }));
+    public string TextToSend { get => _textToSend; set => SetProperty(ref _textToSend, value); }
+    public bool IsSending { get => _isSending; private set => SetProperty(ref _isSending, value); }
+    public double ProgressPercentage { get => _progressPercentage; set => SetProperty(ref _progressPercentage, value); }
 
     private string _currentFileName = string.Empty;
     private string _counterText = string.Empty;
     private string _speedText = string.Empty;
-    private bool _hasSentOrCanceled;
-
     public string CurrentFileName { get => _currentFileName; private set => SetProperty(ref _currentFileName, value); }
     public string CounterText { get => _counterText; private set => SetProperty(ref _counterText, value); }
     public string SpeedText { get => _speedText; private set => SetProperty(ref _speedText, value); }
-    public bool HasSentOrCanceled { get => _hasSentOrCanceled; private set => SetProperty(ref _hasSentOrCanceled, value); }
 
-    private async void ExecuteSendAsync()
+    public string StatusText
     {
-        if (SelectedDevice == null) return;
+        get => _customStatusText ?? string.Empty;
+        set { _customStatusText = value; OnPropertyChanged(); }
+    }
+
+    public async Task StartSendBatchAsync(List<LocalSendSendDeviceItem> selectedDevices)
+    {
+        if (selectedDevices == null || selectedDevices.Count == 0) return;
 
         IsSending = true;
-        HasSentOrCanceled = true;
         _cts = new CancellationTokenSource();
         ProgressPercentage = 0;
-        SetStatusKey("Settings_LocalSend_Sending");
+        StatusText = TranslationManager.Instance["Settings_LocalSend_Sending"];
 
+        var allSuccess = true;
+        for (var dIdx = 0; dIdx < selectedDevices.Count; dIdx++)
+        {
+            if (_cts.IsCancellationRequested) break;
+            var deviceItem = selectedDevices[dIdx];
+            var devHeader = selectedDevices.Count > 1 ? $"[{dIdx + 1}/{selectedDevices.Count}] {deviceItem.Alias}: " : string.Empty;
+
+            var res = await SendToSingleDeviceAsync(deviceItem, devHeader);
+            if (res != LocalSendSendResult.Success) allSuccess = false;
+        }
+
+        IsSending = false;
+        if (allSuccess && !_cts.IsCancellationRequested)
+        {
+            StatusText = TranslationManager.Instance["Settings_LocalSend_Completed"];
+            SendSuccessCompleted?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private async Task<LocalSendSendResult> SendToSingleDeviceAsync(LocalSendSendDeviceItem item, string prefix)
+    {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         long lastBytes = 0;
         double currentSpeed = 0;
@@ -172,6 +114,7 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
         {
             LocalSendSendResult result;
             string? errDetails;
+
             if (TargetFiles.Count > 0)
             {
                 var filesList = TargetFiles.ToList();
@@ -180,104 +123,96 @@ public sealed class LocalSendSendViewModel : ViewModelBase, IDisposable
                 var completedFilesBytes = new long[filesList.Count];
 
                 (result, errDetails) = await LocalSendServiceManager.Instance.SendFilesAsync(
-                    SelectedDevice, filesList, Pin,
+                    item.Device, filesList, item.Pin,
                     args => System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        var idx = Math.Clamp(args.FileIndex - 1, 0, filesList.Count - 1);
+                        completedFilesBytes[idx] = Math.Min(args.BytesSent, fileSizes[idx]);
+                        var currentSessionSent = completedFilesBytes.Sum();
+                        var pct = totalSessionBytes > 0 ? (double)currentSessionSent / totalSessionBytes * 100.0 : 0;
+                        ProgressPercentage = Math.Min(100.0, pct);
+
+                        var elapsedSec = stopwatch.Elapsed.TotalSeconds;
+                        if (elapsedSec >= 0.3 || lastBytes == 0)
                         {
-                            var idx = Math.Clamp(args.FileIndex - 1, 0, filesList.Count - 1);
-                            completedFilesBytes[idx] = Math.Min(args.BytesSent, fileSizes[idx]);
-                            var currentSessionSent = completedFilesBytes.Sum();
+                            var bytesDelta = currentSessionSent - lastBytes;
+                            currentSpeed = elapsedSec > 0 && bytesDelta > 0 ? bytesDelta / elapsedSec : currentSpeed;
+                            lastBytes = currentSessionSent;
+                            stopwatch.Restart();
+                        }
 
-                            var pct = totalSessionBytes > 0 ? (double)currentSessionSent / totalSessionBytes * 100.0 : 0;
-                            ProgressPercentage = Math.Min(100.0, pct);
-
-                            var elapsedSec = stopwatch.Elapsed.TotalSeconds;
-                            if (elapsedSec >= 0.3 || lastBytes == 0)
-                            {
-                                var bytesDelta = currentSessionSent - lastBytes;
-                                currentSpeed = elapsedSec > 0 && bytesDelta > 0 ? bytesDelta / elapsedSec : currentSpeed;
-                                lastBytes = currentSessionSent;
-                                stopwatch.Restart();
-                            }
-
-                            CurrentFileName = args.FileName;
-                            var completedCount = (args.TotalBytes > 0 && args.BytesSent >= args.TotalBytes)
-                                ? Math.Min(args.FileIndex, args.TotalFiles)
-                                : Math.Max(0, args.FileIndex - 1);
-                            CounterText = $"({completedCount}/{args.TotalFiles})";
-                            SpeedText = currentSpeed > 0 ? $"{FormatBytes((long)currentSpeed)}/s" : string.Empty;
-                            StatusText = $"{args.FileName} ({completedCount}/{args.TotalFiles})";
-                        })),
-                    _cts.Token);
+                        CurrentFileName = args.FileName;
+                        var completedCount = (args.TotalBytes > 0 && args.BytesSent >= args.TotalBytes)
+                            ? Math.Min(args.FileIndex, args.TotalFiles)
+                            : Math.Max(0, args.FileIndex - 1);
+                        CounterText = $"({completedCount}/{args.TotalFiles})";
+                        SpeedText = currentSpeed > 0 ? $"{FormatBytes((long)currentSpeed)}/s" : string.Empty;
+                        StatusText = $"{prefix}{args.FileName} ({completedCount}/{args.TotalFiles})";
+                    })),
+                    _cts?.Token ?? CancellationToken.None);
             }
             else
             {
                 (result, errDetails) = await LocalSendServiceManager.Instance.SendTextAsync(
-                    SelectedDevice, TextToSend, Pin, _cts.Token);
+                    item.Device, TextToSend, item.Pin, _cts?.Token ?? CancellationToken.None);
             }
 
-            HandleResult(result, errDetails);
+            HandleResult(result, errDetails, prefix);
+            return result;
         }
-        catch (OperationCanceledException) when (_cts?.IsCancellationRequested == true)
+        catch (OperationCanceledException)
         {
-            SetStatusKey("Settings_LocalSend_Canceled");
+            StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            return LocalSendSendResult.Canceled;
+        }
+        catch (ObjectDisposedException)
+        {
+            StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
+            return LocalSendSendResult.Canceled;
         }
         catch (Exception ex)
         {
-            Logger.Log($"[LocalSendSendViewModel] Send error: {ex.Message}", LogLevel.Error);
-            StatusText = $"{TranslationManager.Instance["Settings_LocalSend_ConnectionError"]} ({ex.Message})";
-        }
-        finally
-        {
-            IsSending = false;
+            StatusText = prefix + $"{TranslationManager.Instance["Settings_LocalSend_ConnectionError"]} ({ex.Message})";
+            return LocalSendSendResult.Error;
         }
     }
 
-    private void HandleResult(LocalSendSendResult result, string? errDetails)
+    private void HandleResult(LocalSendSendResult result, string? errDetails, string prefix)
     {
         switch (result)
         {
             case LocalSendSendResult.Success:
-                SetStatusKey("Settings_LocalSend_Completed");
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Completed"];
                 break;
             case LocalSendSendResult.Declined:
-                SetStatusKey("Settings_LocalSend_Declined");
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Declined"];
                 break;
             case LocalSendSendResult.Busy:
-                SetStatusKey("Settings_LocalSend_Busy");
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Busy"];
                 break;
             case LocalSendSendResult.InvalidPin:
-                SetStatusKey("Settings_LocalSend_InvalidPin");
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_InvalidPin"];
                 break;
             case LocalSendSendResult.Canceled:
-                SetStatusKey("Settings_LocalSend_Canceled");
+                StatusText = prefix + TranslationManager.Instance["Settings_LocalSend_Canceled"];
                 break;
             default:
                 var suffix = string.IsNullOrEmpty(errDetails) ? result.ToString() : errDetails;
-                StatusText = $"{TranslationManager.Instance["Settings_LocalSend_ConnectionError"]} ({suffix})";
+                StatusText = prefix + $"{TranslationManager.Instance["Settings_LocalSend_ConnectionError"]} ({suffix})";
                 break;
         }
     }
 
-    private void ExecuteCancel()
-    {
-        _cts?.Cancel();
-        IsSending = false;
-    }
+    public ICommand CancelCommand { get; }
+    private void ExecuteCancel() { try { _cts?.Cancel(); } catch (ObjectDisposedException) { } }
 
     private static string FormatBytes(long bytes)
     {
         if (bytes < 1024) return $"{bytes} B";
         if (bytes < 1024 * 1024) return $"{(double)bytes / 1024:F1} KB";
-        if (bytes < 1024 * 1024 * 1024) return $"{(double)bytes / (1024 * 1024):F1} MB";
-        return $"{(double)bytes / (1024 * 1024 * 1024):F2} GB";
+        if (bytes < 1024 * 1024 * 1024) return $"{(double)bytes / (1024.0 * 1024.0):F1} MB";
+        return $"{(double)bytes / (1024.0 * 1024.0 * 1024.0):F1} GB";
     }
 
-    public void Dispose()
-    {
-        TranslationManager.Instance.PropertyChanged -= OnLanguageChanged;
-        LocalSendServiceManager.Instance.SessionCanceled -= OnSessionCanceled;
-        var discovery = LocalSendServiceManager.Instance.DiscoveryService;
-        discovery?.DeviceListChanged -= OnDiscoveredDevicesChanged;
-        _cts?.Dispose();
-    }
+    public void Dispose() { try { _cts?.Cancel(); } catch (ObjectDisposedException) { } }
 }

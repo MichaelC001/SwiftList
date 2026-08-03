@@ -250,6 +250,13 @@ public partial class LocalSendReceiveWindow : Window
     public void HandleSessionCanceled(string sessionId) => Dispatcher.BeginInvoke(new Action(() =>
     {
         _isCompleted = true; _inactivityTimer?.Stop();
+        TxtWindowTitle.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+        var canceledText = TranslationManager.Instance["Settings_LocalSend_Canceled"];
+        foreach (var item in _fileItems.Where(i => !i.IsFinished))
+        {
+            item.StatusText = canceledText;
+            item.ShowProgress = false;
+        }
         if (GridStep1Footer.Visibility == Visibility.Visible) ShowSenderCanceledInStep1();
         else { TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_SenderCanceled"]; BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"]; }
     }));
@@ -264,7 +271,7 @@ public partial class LocalSendReceiveWindow : Window
         if (!_isCompleted && !string.IsNullOrEmpty(_currentSessionId))
         {
             _isCompleted = true; TxtWindowTitle.Text = TxtSpeed.Text = TranslationManager.Instance["Settings_LocalSend_Canceled"];
-            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"]; LocalSendServiceManager.Instance.CancelSession(_currentSessionId); return;
+            BtnCloseProgress.Content = TranslationManager.Instance["Common_Close"]; LocalSendServiceManager.Instance.CancelSession(_currentSessionId, notifySender: true); return;
         }
         Close();
     }

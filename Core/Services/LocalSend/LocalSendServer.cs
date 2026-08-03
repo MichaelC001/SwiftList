@@ -103,10 +103,10 @@ public sealed class LocalSendServer : IDisposable
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<string, byte>> _sessionCompletedFiles = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentDictionary<string, long>> _sessionTransferredBytes = new();
 
-    public void CancelSession(string sessionId)
+    public void CancelSession(string sessionId, bool notifySender = false)
     {
         if (string.IsNullOrEmpty(sessionId)) return;
-        if (_activeSessions.TryGetValue(sessionId, out var prepareDto))
+        if (notifySender && _activeSessions.TryGetValue(sessionId, out var prepareDto))
         {
             _ = Task.Run(() => LocalSendServerHelper.NotifySenderCanceledAsync(prepareDto.Info, sessionId));
         }
@@ -216,7 +216,7 @@ public sealed class LocalSendServer : IDisposable
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[LocalSendServer] Error writing upload stream for {fileName}: {ex.Message}");
+            Logger.Log($"[LocalSendServer] Error writing upload stream for {fileName}: {ex.GetType().Name} - {ex.Message}", LogLevel.Error);
         }
         finally
         {
@@ -225,7 +225,7 @@ public sealed class LocalSendServer : IDisposable
 
         if (!isSuccess)
         {
-            CancelSession(sessionId);
+            CancelSession(sessionId, notifySender: false);
             return;
         }
 

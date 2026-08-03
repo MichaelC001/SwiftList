@@ -53,7 +53,11 @@ public static class LocalSendAppEventHandler
         }
     }
 
-    private static void OnSessionCanceled(object? sender, string sessionId) => Application.Current.Dispatcher.BeginInvoke(new Action(() => _activeReceiveWindow?.HandleSessionCanceled(sessionId)));
+    private static void OnSessionCanceled(object? sender, string sessionId) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+    {
+        _activeReceiveWindow?.HandleSessionCanceled(sessionId);
+        _activeSendWindow?.HandleSessionCanceled(sessionId);
+    }));
 
     private static void OnSendRequested(object? sender, (IReadOnlyList<string>? Files, string? Text) e) => Application.Current.Dispatcher.BeginInvoke(new Action(() =>
     {

@@ -72,7 +72,7 @@ public sealed class LocalSendServiceManager : IDisposable
         _discoveryService.Start(53317);
     }
 
-    public void CancelSession(string sessionId) => _server?.CancelSession(sessionId);
+    public void CancelSession(string sessionId, bool notifySender = false) => _server?.CancelSession(sessionId, notifySender);
     public void UnregisterSession(string sessionId) => _server?.UnregisterSession(sessionId);
     public bool IsSessionCanceled(string sessionId) => _server?.IsSessionCanceled(sessionId) == true;
 

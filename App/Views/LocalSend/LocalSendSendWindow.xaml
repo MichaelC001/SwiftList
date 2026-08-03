@@ -4,7 +4,7 @@
         xmlns:services="clr-namespace:SwiftList.App.Services"
         xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
         Title="LocalSend"
-        Height="390" Width="460" MinWidth="420" MinHeight="310"
+        Height="400" Width="480" MinWidth="420" MinHeight="320"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
@@ -21,9 +21,9 @@
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="ThemeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                <Setter Property="Height" Value="30"/>
-                <Setter Property="Padding" Value="8,0"/>
-                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Height" Value="26"/>
+                <Setter Property="Padding" Value="6,0"/>
+                <Setter Property="FontSize" Value="11.5"/>
                 <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
@@ -32,7 +32,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
-                            <Border x:Name="border" CornerRadius="6" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <Border x:Name="border" CornerRadius="4" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                                 <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -72,191 +72,169 @@
                     <Grid>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
                             <Image x:Name="TitleBarLogo" Width="18" Height="18" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_SendWindowTitle]}"
+                            <TextBlock x:Name="TxtWindowTitle" Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_SendWindowTitle]}"
                                        FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary2}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- STEP 1: Select Target Device & Options -->
-                <Grid x:Name="GridSendStep" Grid.Row="1">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsSending}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                <!-- STEP 1: Device List Selection with per-item PIN -->
+                <Grid x:Name="GridStep1" Grid.Row="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="54"/>
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="16,14,16,12">
-                        <StackPanel>
-                            <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Device]}"
-                                       FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary2}" Margin="0,0,0,6"/>
-                            <Border Background="{DynamicResource FieldBackground}"
-                                    BorderBrush="{DynamicResource BorderColor}"
-                                    BorderThickness="1" CornerRadius="8">
-                                <ListBox ItemsSource="{Binding DiscoveredDevices}" SelectedItem="{Binding SelectedDevice}"
-                                         MaxHeight="150" MinHeight="80"
-                                         Background="Transparent" BorderThickness="0" Margin="4"
-                                         HorizontalContentAlignment="Stretch"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ListBoxItem">
-                                                        <Grid>
-                                                            <Rectangle x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
-                                                                       RadiusX="1.5" RadiusY="1.5" Fill="Transparent" Margin="2,4"/>
-                                                            <Border x:Name="ItemBorder"
-                                                                    Background="Transparent"
-                                                                    CornerRadius="6"
-                                                                    Padding="8,6"
-                                                                    Margin="8,2,2,2">
-                                                                <ContentPresenter/>
-                                                            </Border>
-                                                        </Grid>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                                            </Trigger>
-                                                            <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource SelectedBackground}"/>
-                                                                <Setter TargetName="AccentBar" Property="Fill" Value="{DynamicResource AccentBarColor}"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="4,3">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                                                <TextBlock Grid.Column="0" Text="{Binding Alias}"
-                                                           ToolTip="{Binding Alias}"
-                                                           FontSize="12.5" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextPrimary2}"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Row="0" Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Device]}"
+                                   FontSize="13" FontWeight="Medium" Foreground="{DynamicResource TextPrimary2}" Margin="0,0,0,8"/>
 
-                                                <TextBlock Grid.Column="1" Text="{Binding IpAddress}"
-                                                           FontSize="11" Foreground="{DynamicResource TextSecondary}"
-                                                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
-                            </Border>
-                        </StackPanel>
+                        <Border Grid.Row="1" Background="{DynamicResource FieldBackground}"
+                                BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1" CornerRadius="8">
+                            <ListBox x:Name="LstDevices" ItemsSource="{Binding DiscoveredDevices}"
+                                     SelectionMode="Multiple"
+                                     SelectionChanged="LstDevices_SelectionChanged"
+                                     Background="Transparent" BorderThickness="0" Margin="4"
+                                     HorizontalContentAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Grid>
+                                                        <Rectangle x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
+                                                                   RadiusX="1.5" RadiusY="1.5" Fill="Transparent" Margin="2,4"/>
+                                                        <Border x:Name="ItemBorder"
+                                                                Background="Transparent"
+                                                                CornerRadius="6"
+                                                                Padding="8,6"
+                                                                Margin="8,2,2,2">
+                                                            <ContentPresenter/>
+                                                        </Border>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverBackground}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource SelectedBackground}"/>
+                                                            <Setter TargetName="AccentBar" Property="Fill" Value="{DynamicResource AccentBarColor}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="100"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding Alias}"
+                                                       ToolTip="{Binding Alias}"
+                                                       FontSize="12.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimary2}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding IpAddress}"
+                                                       FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                                            <TextBox Grid.Column="2" Text="{Binding Pin, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_TargetPin]}"
+                                                     Style="{StaticResource ThemeTextBoxStyle}" Height="26"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
                     </Grid>
 
-                    <Grid Grid.Row="1" Margin="16,0,16,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="140"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_TargetPin]}"
-                                   FontSize="13" Foreground="{DynamicResource TextPrimary2}" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding Pin, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEnabled="{Binding HasSelectedDevice}"
-                                 Style="{StaticResource ThemeTextBoxStyle}" Height="30"/>
-                    </Grid>
+                    <!-- Step 1 Footer -->
+                    <Border Grid.Row="1" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
+                        <Grid VerticalAlignment="Center">
+                            <Button x:Name="BtnToggleSelectAll" Content="全选"
+                                    Click="BtnToggleSelectAll_Click" Style="{StaticResource SettingsButton}"
+                                    HorizontalAlignment="Left" Width="70" Height="30"/>
 
-                    <Border Grid.Row="2" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Close]}"
-                                    Click="BtnClose_Click" Style="{StaticResource SettingsButton}"
-                                    Margin="0,0,8,0" Width="80" Height="30"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}"
+                                        Click="BtnClose_Click" Style="{StaticResource SettingsButton}"
+                                        Margin="0,0,8,0" Width="80" Height="30"/>
 
-                            <Button Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Send]}"
-                                    Command="{Binding SendCommand}" Style="{StaticResource PrimarySettingsButton}"
-                                    IsDefault="True" Width="85" Height="30"/>
-                        </StackPanel>
+                                <Button x:Name="BtnSend" Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_LocalSend_Send]}"
+                                        Click="BtnSend_Click" Style="{StaticResource PrimarySettingsButton}"
+                                        IsDefault="True" Width="85" Height="30" IsEnabled="False"/>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
 
                 <!-- STEP 2: Transfer Progress -->
-                <Grid x:Name="GridProgressStep" Grid.Row="1">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsSending}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding HasSentOrCanceled}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                <Grid x:Name="GridStep2" Grid.Row="1" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="54"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="20,16,20,14">
+                    <Grid Grid.Row="0" Margin="20,16,20,12">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{Binding StatusText}"
-                                       FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary2}"
-                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding StatusText}" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="TxtStatus" Text="{Binding StatusText}"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary2}" Margin="0,0,0,12"/>
 
-                            <!-- File Name & Right-Aligned Counter Row -->
-                            <Grid Margin="0,0,0,6">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Column="0" Text="{Binding CurrentFileName}"
-                                           ToolTip="{Binding CurrentFileName}"
-                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}"
-                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
-                                           Margin="0,0,12,0"/>
-
-                                <TextBlock Grid.Column="1" Text="{Binding CounterText}"
-                                           FontSize="11.5" Foreground="{DynamicResource TextSecondary}"
-                                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock x:Name="TxtFileName" Text="{Binding CurrentFileName}"
+                                           FontSize="12.5" Foreground="{DynamicResource TextSecondary}"
+                                           TextTrimming="CharacterEllipsis" HorizontalAlignment="Left" Width="300"/>
+                                <TextBlock x:Name="TxtCounter" Text="{Binding CounterText}"
+                                           FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                           HorizontalAlignment="Right"/>
                             </Grid>
 
-                            <ProgressBar Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" Height="6" Margin="0,0,0,10"/>
+                            <ProgressBar Value="{Binding ProgressPercentage, Mode=OneWay}" Maximum="100" Height="6"
+                                         Foreground="{DynamicResource AccentBlue}" Background="{DynamicResource ControlBackground}"
+                                         BorderThickness="0" Margin="0,0,0,12">
+                                <ProgressBar.Template>
+                                    <ControlTemplate TargetType="ProgressBar">
+                                        <Grid x:Name="TemplateRoot">
+                                            <Border CornerRadius="3" Background="{TemplateBinding Background}"/>
+                                            <Border x:Name="PART_Track"/>
+                                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="3" Background="{TemplateBinding Foreground}"/>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </ProgressBar.Template>
+                            </ProgressBar>
 
-                            <TextBlock Text="{Binding SpeedText}" FontSize="11.5" Foreground="{DynamicResource TextSecondary}"/>
+                            <TextBlock x:Name="TxtSpeed" Text="{Binding SpeedText}"
+                                       FontSize="12" Foreground="{DynamicResource AccentBlue}"
+                                       HorizontalAlignment="Left"/>
                         </StackPanel>
                     </Grid>
 
+                    <!-- Step 2 Footer -->
                     <Border Grid.Row="1" Background="{DynamicResource FooterBg}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0" Padding="16,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button x:Name="BtnProgressAction" Width="80" Height="30" Click="BtnClose_Click">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource SettingsButton}">
-                                        <Setter Property="Content" Value="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Close]}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSending}" Value="True">
-                                                <Setter Property="Content" Value="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}"/>
-                                                <Setter Property="Command" Value="{Binding CancelCommand}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                            <Button x:Name="BtnCancelOrClose" Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Common_Cancel]}"
+                                    Command="{Binding CancelCommand}" Click="BtnCancelOrClose_Click" Style="{StaticResource SettingsButton}"
+                                    Width="80" Height="30"/>
                         </StackPanel>
                     </Border>
                 </Grid>

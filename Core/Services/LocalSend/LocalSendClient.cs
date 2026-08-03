@@ -62,8 +62,43 @@ public sealed class LocalSendClient : IDisposable
             }
         };
 
-        var (result, _, _, _) = await PrepareUploadAsync(targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
-        return result;
+        var (prepResult, sessionId, tokens, usedHttps, prepErr) = await LocalSendClientHelper.PrepareUploadAsync(_httpClient, JsonOptions, targetIp, targetPort, https, dto, pin, token).ConfigureAwait(false);
+        if (prepResult != LocalSendSendResult.Success || string.IsNullOrEmpty(sessionId) || tokens == null || !tokens.TryGetValue(fileId, out var fileToken))
+        {
+            LastError = prepErr;
+            return prepResult;
+        }
+
+        var scheme = usedHttps ? "https" : "http";
+        var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
+        var uploadUrl = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/upload?sessionId={sessionId}&fileId={fileId}&token={fileToken}&fileName=text.txt";
+
+        try
+        {
+            var textBytes = Encoding.UTF8.GetBytes(text);
+            using var ms = new MemoryStream(textBytes);
+            using var content = new StreamContent(ms);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+
+            var resp = await _httpClient.PostAsync(uploadUrl, content, token).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode)
+            {
+                await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
+                return resp.StatusCode == System.Net.HttpStatusCode.Forbidden ? LocalSendSendResult.Declined : LocalSendSendResult.Error;
+            }
+            return LocalSendSendResult.Success;
+        }
+        catch (OperationCanceledException)
+        {
+            _ = CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None);
+            return LocalSendSendResult.Canceled;
+        }
+        catch (Exception ex)
+        {
+            _ = CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None);
+            Logger.Log($"[LocalSendClient] SendText upload error: {ex.GetType().Name} - {ex.Message}");
+            return LocalSendSendResult.Canceled;
+        }
     }
 
     public async Task<LocalSendSendResult> SendFilesAsync(
@@ -103,15 +138,18 @@ public sealed class LocalSendClient : IDisposable
                 Id = id,
                 FileName = fi.Name,
                 Size = fi.Length,
-                FileType = GetFileType(fi.Extension)
+                FileType = LocalSendClientHelper.GetFileType(fi.Extension)
             };
             pathMap[id] = path;
         }
 
         var prepareDto = new PrepareUploadRequestDto { Info = senderInfo, Files = filesDict };
-        var (prepResult, sessionId, tokens, usedHttps) = await PrepareUploadAsync(targetIp, targetPort, https, prepareDto, pin, token).ConfigureAwait(false);
+        var (prepResult, sessionId, tokens, usedHttps, prepErr) = await LocalSendClientHelper.PrepareUploadAsync(_httpClient, JsonOptions, targetIp, targetPort, https, prepareDto, pin, token).ConfigureAwait(false);
         if (prepResult != LocalSendSendResult.Success || string.IsNullOrEmpty(sessionId) || tokens == null)
+        {
+            LastError = prepErr;
             return prepResult;
+        }
 
         var scheme = usedHttps ? "https" : "http";
         var totalFiles = filesDict.Count;
@@ -143,6 +181,7 @@ public sealed class LocalSendClient : IDisposable
                 var resp = await _httpClient.PostAsync(uploadUrl, content, token).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
+                    Logger.Log($"[LocalSendClient] Upload failed for {fileDto.FileName}: HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}", LogLevel.Error);
                     await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
                     if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
                     {
@@ -158,15 +197,27 @@ public sealed class LocalSendClient : IDisposable
                     return LocalSendSendResult.Declined;
                 }
             }
-            catch (Exception ex)
+            catch (OperationCanceledException ocex)
             {
-                _ = CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None);
                 if (token.IsCancellationRequested)
                 {
+                    await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
+                    Logger.Log($"[LocalSendClient] Transfer canceled by sender for {fileDto.FileName}", LogLevel.Info);
                     return LocalSendSendResult.Canceled;
                 }
-                Logger.Log($"[LocalSendClient] Transfer interrupted by receiver: {ex.GetType().Name} - {ex.Message}");
-                LastError = "Declined or canceled by receiver";
+                Logger.Log($"[LocalSendClient] Transfer declined/canceled by receiver for {fileDto.FileName}: {ocex.Message}", LogLevel.Warn);
+                LastError = "Declined by receiver";
+                return LocalSendSendResult.Declined;
+            }
+            catch (Exception ex)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    await CancelSessionAsync(cleanIp, targetPort, usedHttps, sessionId, CancellationToken.None).ConfigureAwait(false);
+                    return LocalSendSendResult.Canceled;
+                }
+                Logger.Log($"[LocalSendClient] Transfer interrupted by receiver for {fileDto.FileName}: {ex.GetType().Name} - {ex.Message}", LogLevel.Warn);
+                LastError = "Declined by receiver";
                 return LocalSendSendResult.Declined;
             }
         }
@@ -181,96 +232,18 @@ public sealed class LocalSendClient : IDisposable
             var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
             var scheme = https ? "https" : "http";
             var url = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/cancel?sessionId={sessionId}";
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            await _httpClient.PostAsync(url, null, cts.Token).ConfigureAwait(false);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var json = JsonSerializer.Serialize(new { sessionId }, JsonOptions);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            await _httpClient.PostAsync(url, content, cts.Token).ConfigureAwait(false);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logger.Log($"[LocalSendClient] Failed to send /cancel POST: {ex.Message}", LogLevel.Warn);
+        }
     }
 
     public string? LastError { get; private set; }
-
-    private async Task<(LocalSendSendResult Result, string? SessionId, Dictionary<string, string>? Tokens, bool UsedHttps)> PrepareUploadAsync(
-        string targetIp, int targetPort, bool https, PrepareUploadRequestDto dto, string? pin, CancellationToken token)
-    {
-        var cleanIp = LocalSendServerHelper.CleanIpAddress(targetIp);
-        var schemesToTry = new[] { https, !https };
-
-        foreach (var tryHttps in schemesToTry)
-        {
-            try
-            {
-                var scheme = tryHttps ? "https" : "http";
-                var pinQuery = string.IsNullOrEmpty(pin) ? string.Empty : $"?pin={Uri.EscapeDataString(pin)}";
-                var prepareUrl = $"{scheme}://{cleanIp}:{targetPort}/api/localsend/v2/prepare-upload{pinQuery}";
-                var json = JsonSerializer.Serialize(dto, JsonOptions);
-                using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var resp = await _httpClient.PostAsync(prepareUrl, content, token).ConfigureAwait(false);
-                if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                {
-                    LastError = "403 Forbidden (Declined)";
-                    return (LocalSendSendResult.Declined, null, null, tryHttps);
-                }
-                if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    LastError = "401 Unauthorized (Invalid PIN)";
-                    return (LocalSendSendResult.InvalidPin, null, null, tryHttps);
-                }
-                if ((int)resp.StatusCode == 429)
-                {
-                    LastError = "429 Too Many Attempts";
-                    return (LocalSendSendResult.TooManyAttempts, null, null, tryHttps);
-                }
-                if (resp.StatusCode == System.Net.HttpStatusCode.Conflict || (int)resp.StatusCode == 409)
-                {
-                    LastError = "409 Conflict (Busy: Blocked by another session)";
-                    return (LocalSendSendResult.Busy, null, null, tryHttps);
-                }
-                if (!resp.IsSuccessStatusCode)
-                {
-                    LastError = $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";
-                    continue;
-                }
-
-                var respJson = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-                var respDto = JsonSerializer.Deserialize<PrepareUploadResponseDto>(respJson, JsonOptions);
-                if (respDto == null || string.IsNullOrEmpty(respDto.SessionId))
-                {
-                    LastError = "Invalid prepare-upload response payload";
-                    continue;
-                }
-
-                LastError = null;
-                return (LocalSendSendResult.Success, respDto.SessionId, respDto.Files, tryHttps);
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested)
-            {
-                LastError = "Canceled by user";
-                return (LocalSendSendResult.Canceled, null, null, https);
-            }
-            catch (Exception ex)
-            {
-                LastError = $"{ex.GetType().Name}: {ex.Message}";
-                Logger.Log($"[LocalSendClient] PrepareUpload scheme {(tryHttps ? "https" : "http")} failed: {ex.Message}", LogLevel.Debug);
-            }
-        }
-
-        return (LocalSendSendResult.Error, null, null, https);
-    }
-
-    private static string GetFileType(string extension) => extension.ToLowerInvariant() switch
-    {
-        ".apk" => "apk",
-        ".pdf" => "pdf",
-        ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg" or ".ico"
-            or ".heic" or ".heif" or ".tiff" or ".tif" or ".psd" or ".raw" or ".arw" or ".cr2" or ".nef" or ".dng" => "image",
-        ".mp4" or ".mkv" or ".avi" or ".mov" or ".webm" or ".flv" or ".wmv" or ".m4v"
-            or ".3gp" or ".3g2" or ".ts" or ".mts" or ".m2ts" or ".vob" or ".rm" or ".rmvb" => "video",
-        ".txt" or ".md" or ".markdown" or ".json" or ".csv" or ".log" or ".xml" or ".html" or ".htm"
-            or ".css" or ".js" or ".ts" or ".py" or ".c" or ".cpp" or ".h" or ".cs" or ".java"
-            or ".sh" or ".bat" or ".cmd" or ".ps1" or ".yaml" or ".yml" or ".toml" or ".ini" or ".conf" => "text",
-        _ => "other"
-    };
 
     public void Dispose() => _httpClient.Dispose();
 }
