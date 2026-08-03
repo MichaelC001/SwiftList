@@ -21,6 +21,7 @@
   "Settings_History": "歷史紀錄",
   "Settings_Favorites": "我的最愛",
   "Settings_QuickPanel": "快速面板",
+  "Settings_LocalSend": "局域網傳輸",
   "Settings_LocalSend_Title": "局域網傳輸",
   "Settings_LocalSend_SendTitle": "傳送檔案 / 文字",
   "Settings_LocalSend_SendWindowTitle": "傳送至其他裝置...",

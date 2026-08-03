@@ -21,6 +21,7 @@
   "Settings_History": "履歴",
   "Settings_Favorites": "お気に入り",
   "Settings_QuickPanel": "クイックパネル",
+  "Settings_LocalSend": "LocalSend",
   "Settings_LocalSend_Title": "LAN転送",
   "Settings_LocalSend_SendTitle": "ファイル / テキストの送信",
   "Settings_LocalSend_SendWindowTitle": "他のデバイスへ送信...",

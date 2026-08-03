@@ -21,6 +21,7 @@
   "Settings_History": "기록",
   "Settings_Favorites": "즐겨찾기",
   "Settings_QuickPanel": "빠른 패널",
+  "Settings_LocalSend": "LocalSend",
   "Settings_LocalSend_Title": "로컬 네트워크 전송",
   "Settings_LocalSend_SendTitle": "파일 / 텍스트 전송",
   "Settings_LocalSend_SendWindowTitle": "다른 기기로 전송...",

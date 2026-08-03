@@ -21,6 +21,7 @@
   "Settings_History": "History",
   "Settings_Favorites": "Favorites",
   "Settings_QuickPanel": "Quick Panel",
+  "Settings_LocalSend": "LocalSend",
   "Settings_LocalSend_Title": "LAN Transfer",
   "Settings_LocalSend_SendTitle": "Send Files / Text",
   "Settings_LocalSend_SendWindowTitle": "Send to other devices...",
