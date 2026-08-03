@@ -103,6 +103,8 @@ public partial class QuickLookManager
     public void Reset()
     {
         _userWantsPreview = false;
+        _sessionWidth = null;
+        _sessionHeight = null;
         Hide();
     }
 
