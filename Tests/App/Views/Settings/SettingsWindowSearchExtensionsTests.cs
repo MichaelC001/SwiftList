@@ -80,4 +80,34 @@ public sealed class SettingsWindowSearchExtensionsTests
         Assert.IsTrue(pluginVm.IsConfigTab);
         Assert.AreEqual(g2Vm, pluginVm.SelectedConfigGroup);
     }
+
+    [TestMethod]
+    public void ActivateResult_SwitchesToDetailsTab_WhenComponentIsRevealed()
+    {
+        var settings = new UserSettings();
+        var component = new PluginComponentViewModel("c1", PluginComponentType.Action, "MyComponent", true);
+        var pluginVm = new PluginInfoViewModel(
+            name: "TestPlugin",
+            version: "1.0.0",
+            dllFileName: "TestPlugin.dll",
+            sdkVersion: "1.5.0",
+            components: new List<PluginComponentViewModel> { component },
+            configFields: new List<PluginConfigFieldViewModel>(),
+            description: "Test plugin description");
+
+        pluginVm.IsConfigTab = true; // start on Config tab
+
+        var settingsVm = new SettingsViewModel();
+        settingsVm.Plugins.Plugins.Clear();
+        settingsVm.Plugins.Plugins.Add(pluginVm);
+
+        var results = SettingsWindowSearchExtensions.BuildAllEntries(vm: settingsVm);
+        var componentItem = results.FirstOrDefault(r => r.Label == "MyComponent");
+
+        Assert.IsNotNull(componentItem);
+        componentItem.Activate?.Invoke(settingsVm);
+
+        Assert.AreEqual(pluginVm, settingsVm.Plugins.SelectedPlugin);
+        Assert.IsFalse(pluginVm.IsConfigTab, "Expected IsConfigTab to be false when revealing a component.");
+    }
 }

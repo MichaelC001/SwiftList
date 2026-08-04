@@ -81,7 +81,11 @@ internal static class SettingsWindowSearchExtensions
             var capturedPlugin = plugin;
             // Selecting is what showing a plugin means now that the page is a list beside a detail pane;
             // it used to expand that plugin's card in a column of all of them.
-            void RevealPlugin(SettingsViewModel settings) => settings.Plugins.SelectedPlugin = capturedPlugin;
+            void RevealPlugin(SettingsViewModel settings)
+            {
+                settings.Plugins.SelectedPlugin = capturedPlugin;
+                capturedPlugin.IsConfigTab = false;
+            }
 
             results.Add(new SettingsSearchResultItem(plugin.Name, pluginsSectionLabel, "Plugins", RevealPlugin,
                 Reveal: new SettingsSearchDynamicReveal("PluginsList", capturedPlugin)));
