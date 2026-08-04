@@ -42,6 +42,25 @@ public partial class PluginConfigFieldRowTemplate : ResourceDictionary
             return;
         }
 
+        if (e.OriginalSource is DependencyObject depObj)
+        {
+            var listBox = FindParent<System.Windows.Controls.ListBox>(depObj);
+            if (listBox != null)
+            {
+                var listScroller = FindChild<System.Windows.Controls.ScrollViewer>(listBox);
+                if (listScroller != null && listScroller.ScrollableHeight > 0)
+                {
+                    if (e.Delta < 0)
+                        listScroller.LineDown();
+                    else
+                        listScroller.LineUp();
+
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
         e.Handled = true;
         var bubbled = new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
         {
@@ -49,6 +68,28 @@ public partial class PluginConfigFieldRowTemplate : ResourceDictionary
             Source = sender,
         };
         (scrollViewer.Parent as UIElement)?.RaiseEvent(bubbled);
+    }
+
+    private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        var parent = VisualTreeHelper.GetParent(child);
+        while (parent != null && parent is not T)
+        {
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+        return parent as T;
+    }
+
+    private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T typedChild) return typedChild;
+            var subChild = FindChild<T>(child);
+            if (subChild != null) return subChild;
+        }
+        return null;
     }
 
     // Keeps an array field's master list column exactly as tall as its detail panel, so only the

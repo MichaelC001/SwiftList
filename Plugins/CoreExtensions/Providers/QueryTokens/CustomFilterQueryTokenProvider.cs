@@ -42,7 +42,7 @@ public class CustomFilterQueryTokenProvider : IQueryTokenProvider
         }
 
         if (matchedRules.Count == 0)
-            return Task.FromResult(results);
+            return Task.FromResult<IReadOnlyList<ISearchResult>>(Array.Empty<ISearchResult>());
 
         var combinedRule = string.Join("; ", matchedRules);
         var filtered = ApplyRule(combinedRule, results);
