@@ -99,6 +99,42 @@ public sealed class MftParserTests
         Assert.AreEqual(28uL, indexes[1]);
     }
 
+    [TestMethod]
+    public void ParseAttributeListRecordIndexes_NonResidentAttributeList_ParsesClustersAndExtractsIndexes()
+    {
+        const int a = 32;
+        var buf = new byte[128];
+        WriteUInt16(buf, 0x14, a);
+        WriteUInt32(buf, a, 0x20); // $ATTRIBUTE_LIST
+        WriteUInt32(buf, a + 4, 64);
+        buf[a + 8] = 1; // non-resident
+        WriteUInt16(buf, a + 0x20, 48); // mpOff (relative to a, so p = 32 + 48 = 80)
+        WriteInt64(buf, a + 0x30, 0x18); // realSize = 24 bytes
+
+        // Data run at offset 80: len=1 cluster, lcn=10
+        buf[80] = 0x11;
+        buf[81] = 1; // runLen = 1 cluster
+        buf[82] = 10; // LCN delta = +10
+
+        // Attribute list entry buffer (24 bytes): $DATA (0x80), mftRef = 99
+        var attrListBuffer = new byte[24];
+        WriteUInt32(attrListBuffer, 0, 0x80);
+        WriteUInt16(attrListBuffer, 4, 0x18);
+        WriteInt64(attrListBuffer, 0x10, 99);
+
+        var readCalled = false;
+        var indexes = MftParser.ParseAttributeListRecordIndexes(buf, 0x80, (off, targetBuf, count) =>
+        {
+            readCalled = true;
+            attrListBuffer.CopyTo(targetBuf, 0);
+            return true;
+        }, 4096);
+
+        Assert.IsTrue(readCalled);
+        Assert.HasCount(1, indexes);
+        Assert.AreEqual(99uL, indexes[0]);
+    }
+
 
     [TestMethod]
     public void ParseDataRuns_NoDataAttribute_ReturnsEmpty()

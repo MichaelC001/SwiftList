@@ -66,8 +66,8 @@ internal static class MftParser
         }
     }
 
-    /// <summary>Parses resident $ATTRIBUTE_LIST (0x20) entries to find record indexes of extension records holding <paramref name="targetAttrType"/>.</summary>
-    internal static List<ulong> ParseAttributeListRecordIndexes(byte[] rec, uint targetAttrType)
+    /// <summary>Parses resident and non-resident $ATTRIBUTE_LIST (0x20) entries to find record indexes of extension records holding <paramref name="targetAttrType"/>.</summary>
+    internal static List<ulong> ParseAttributeListRecordIndexes(byte[] rec, uint targetAttrType, Func<long, byte[], int, bool>? readAt = null, uint bytesPerCluster = 0)
     {
         var records = new List<ulong>();
         int a = BitConverter.ToUInt16(rec, 0x14);
@@ -88,26 +88,90 @@ internal static class MftParser
                     var vl = BitConverter.ToUInt32(rec, a + 0x10);
                     var p = a + vo;
                     var end = p + (int)vl;
-                    while (p + 0x18 <= end && p + 0x18 <= rec.Length)
+                    if (end <= rec.Length)
                     {
-                        var entryType = BitConverter.ToUInt32(rec, p);
-                        var entryLen = BitConverter.ToUInt16(rec, p + 0x04);
-                        if (entryLen < 0x18)
-                            break;
-                        if (entryType == targetAttrType)
+                        ParseAttributeListEntries(rec.AsSpan(p, (int)vl), targetAttrType, records);
+                    }
+                }
+                else if (readAt != null && bytesPerCluster > 0 && a + 0x38 <= rec.Length)
+                {
+                    var realSize = BitConverter.ToInt64(rec, a + 0x30);
+                    if (realSize > 0 && realSize <= 16 * 1024 * 1024) // sanity cap 16MB for attribute list
+                    {
+                        var attrExtents = new List<(long lcn, long clusters)>();
+                        ParseDataRunsFromAttribute(rec, a, attrExtents);
+                        var attrBuf = new byte[realSize];
+                        long readOffset = 0;
+                        var success = true;
+                        foreach (var (lcn, clusters) in attrExtents)
                         {
-                            var mftRef = BitConverter.ToUInt64(rec, p + 0x10);
-                            var recIdx = mftRef & 0xFFFFFFFFFFFF;
-                            if (recIdx > 0 && !records.Contains(recIdx))
-                                records.Add(recIdx);
+                            var bytesToRead = (int)Math.Min(clusters * bytesPerCluster, realSize - readOffset);
+                            if (bytesToRead <= 0) break;
+                            var tempBuf = new byte[bytesToRead];
+                            if (!readAt(lcn * bytesPerCluster, tempBuf, bytesToRead))
+                            {
+                                success = false;
+                                break;
+                            }
+                            Array.Copy(tempBuf, 0, attrBuf, readOffset, bytesToRead);
+                            readOffset += bytesToRead;
                         }
-                        p += entryLen;
+                        if (success && readOffset > 0)
+                        {
+                            ParseAttributeListEntries(attrBuf.AsSpan(0, (int)readOffset), targetAttrType, records);
+                        }
                     }
                 }
             }
             a += (int)len;
         }
         return records;
+    }
+
+    internal static void ParseDataRunsFromAttribute(byte[] rec, int attrOffset, List<(long lcn, long clusters)> extents)
+    {
+        var len = BitConverter.ToUInt32(rec, attrOffset + 4);
+        int mpOff = BitConverter.ToUInt16(rec, attrOffset + 0x20);
+        var p = attrOffset + mpOff;
+        long lcn = 0;
+        while (p < attrOffset + len && p < rec.Length && rec[p] != 0)
+        {
+            var hdr = rec[p++];
+            var lenBytes = hdr & 0x0F;
+            var offBytes = (hdr >> 4) & 0x0F;
+            if (lenBytes == 0 || p + lenBytes > rec.Length)
+                break;
+            var runLen = ReadLE(rec, p, lenBytes);
+            p += lenBytes;
+            if (offBytes == 0)
+                continue;
+            if (p + offBytes > rec.Length)
+                break;
+            var runOff = ReadSignedLE(rec, p, offBytes);
+            p += offBytes;
+            lcn += runOff;
+            extents.Add((lcn, runLen));
+        }
+    }
+
+    private static void ParseAttributeListEntries(ReadOnlySpan<byte> buffer, uint targetAttrType, List<ulong> records)
+    {
+        var p = 0;
+        while (p + 0x18 <= buffer.Length)
+        {
+            var entryType = BitConverter.ToUInt32(buffer.Slice(p, 4));
+            var entryLen = BitConverter.ToUInt16(buffer.Slice(p + 0x04, 2));
+            if (entryLen < 0x18 || p + entryLen > buffer.Length)
+                break;
+            if (entryType == targetAttrType)
+            {
+                var mftRef = BitConverter.ToUInt64(buffer.Slice(p + 0x10, 8));
+                var recIdx = mftRef & 0xFFFFFFFFFFFF;
+                if (recIdx > 0 && !records.Contains(recIdx))
+                    records.Add(recIdx);
+            }
+            p += entryLen;
+        }
     }
 
 

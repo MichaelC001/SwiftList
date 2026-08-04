@@ -39,8 +39,8 @@ internal static class MftIndexScanner
         MftParser.ApplyFixup(rec0, bytesPerSector, 0, (int)recordSize);
         var extents = MftParser.ParseDataRuns(rec0);
 
-        // Check if $MFT has an $ATTRIBUTE_LIST pointing to extension records containing more $DATA runs
-        var extRecIndexes = MftParser.ParseAttributeListRecordIndexes(rec0, 0x80);
+        // Check if $MFT has an $ATTRIBUTE_LIST (resident or non-resident) pointing to extension records containing more $DATA runs
+        var extRecIndexes = MftParser.ParseAttributeListRecordIndexes(rec0, 0x80, (off, targetBuf, count) => ReadAt(handle, off, targetBuf, count), bytesPerCluster);
         foreach (var extRecIdx in extRecIndexes)
         {
             var extRecOff = GetMftRecordVolumeOffset(extRecIdx, extents, bytesPerCluster, recordSize);
@@ -76,9 +76,9 @@ internal static class MftIndexScanner
         {
             var extBytes = clusters * bytesPerCluster;
             var off = lcn * bytesPerCluster;
-            while (extBytes > 0 && processed < mftValidLen)
+            while (extBytes > 0)
             {
-                var chunk = (int)Math.Min(Math.Min(ChunkBytes, extBytes), mftValidLen - processed);
+                var chunk = (int)Math.Min(ChunkBytes, extBytes);
                 chunk -= chunk % (int)recordSize;
                 if (chunk <= 0)
                     break;
