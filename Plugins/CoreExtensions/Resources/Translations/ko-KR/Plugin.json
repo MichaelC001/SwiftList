@@ -218,5 +218,10 @@
   "CoreExtensions_Config_CustomFilters_KeywordDesc": "검색 시 :@키워드 형식으로 입력하여 필터 규칙을 적용합니다.",
   "CoreExtensions_Config_CustomFilters_RuleLabel": "필터 규칙",
   "CoreExtensions_Config_CustomFilters_RuleDesc": "확장자 또는 와일드카드 규칙(예: *.doc; *.pdf 또는 doc,docx,pdf)을 지원합니다.",
-  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": ":@로 시작하는 사용자 지정 필터 토큰을 구문 분석하고 결과 규칙에 따라 필터링합니다."
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": ":@로 시작하는 사용자 지정 필터 토큰을 구문 분석하고 결과 규칙에 따라 필터링합니다.",
+  "CoreExtensions_Config_QueryTokensGroupLabel": "쿼리 토큰 설정",
+  "CoreExtensions_Config_PathExclusionPrefixLabel": "경로 제외 접두사 문자",
+  "CoreExtensions_Config_PathExclusionPrefixDesc": "경로 부분 일치 토큰의 접두사 문자 (기본값: :).",
+  "CoreExtensions_Config_CustomFilterPrefixLabel": "카테고리 필터 접두사 문자",
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "사용자 지정 카테고리 필터의 접두사 문자 (기본값: @)."
 }

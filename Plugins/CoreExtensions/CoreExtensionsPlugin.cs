@@ -138,6 +138,35 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
             },
             new PluginConfigField
             {
+                Key = "QueryTokensGroup",
+                LabelKey = "CoreExtensions_Config_QueryTokensGroupLabel",
+                FieldType = ConfigFieldType.Group,
+                SubFields = new List<PluginConfigField>
+                {
+                    new PluginConfigField
+                    {
+                        Key = Providers.QueryTokens.PathExclusionQueryTokenProvider.SettingKey,
+                        LabelKey = "CoreExtensions_Config_PathExclusionPrefixLabel",
+                        DescriptionKey = "CoreExtensions_Config_PathExclusionPrefixDesc",
+                        FieldType = ConfigFieldType.Text,
+                        DefaultValue = ":",
+                        MaxLength = 1,
+                        RequireNonEmpty = true
+                    },
+                    new PluginConfigField
+                    {
+                        Key = Providers.QueryTokens.CustomFilterQueryTokenProvider.PrefixSettingKey,
+                        LabelKey = "CoreExtensions_Config_CustomFilterPrefixLabel",
+                        DescriptionKey = "CoreExtensions_Config_CustomFilterPrefixDesc",
+                        FieldType = ConfigFieldType.Text,
+                        DefaultValue = "@",
+                        MaxLength = 1,
+                        RequireNonEmpty = true
+                    }
+                }
+            },
+            new PluginConfigField
+            {
                 Key = "CustomFiltersGroup",
                 LabelKey = "CoreExtensions_Config_CustomFiltersGroupLabel",
                 FieldType = ConfigFieldType.Group,

@@ -24,6 +24,7 @@ public class GeneralSettingsViewModel : ViewModelBase
     private bool _defaultFileManagerEnabled;
     private string _defaultFileManagerPath;
     private string _defaultFileManagerParameter;
+    private string _globalTokenPrefix;
 
     // Tab navigation for the System/Layout/Preview Window split of this page.
     private string _selectedTab = "System";
@@ -59,6 +60,7 @@ public class GeneralSettingsViewModel : ViewModelBase
         _defaultFileManagerEnabled = userSettings.DefaultFileManager.Enabled;
         _defaultFileManagerPath = userSettings.DefaultFileManager.Path;
         _defaultFileManagerParameter = userSettings.DefaultFileManager.Parameter;
+        _globalTokenPrefix = userSettings.GlobalTokenPrefix;
 
         _selectedLogLevel = LogLevelOptions.FirstOrDefault(o => o.Value == SettingsOptionGenerator.NormalizeLogLevel(_userSettings.LogLevel))
                             ?? LogLevelOptions[2]; // Default to Info
@@ -167,6 +169,17 @@ public class GeneralSettingsViewModel : ViewModelBase
         set => SetProperty(ref _hideTrayIcon, value);
     }
 
+    public string GlobalTokenPrefix
+    {
+        get => _globalTokenPrefix;
+        set
+        {
+            var val = value ?? ":";
+            if (val.Length > 1) val = val[..1];
+            SetProperty(ref _globalTokenPrefix, val);
+        }
+    }
+
     // See GitHub issue #180 -- redirects "open a folder" (and "open containing folder") to a
     // user-configured third-party file manager instead of the shell's own association.
     public bool DefaultFileManagerEnabled
@@ -233,6 +246,7 @@ public class GeneralSettingsViewModel : ViewModelBase
         // plugin catalog, favorites and highlighting immediately rather than only after a restart.
         SearchContext.DefaultFuzzyMatchEnabled = _enableFuzzyMatch;
         _userSettings.HideTrayIcon = _hideTrayIcon;
+        _userSettings.GlobalTokenPrefix = string.IsNullOrWhiteSpace(_globalTokenPrefix) ? ":" : _globalTokenPrefix;
         _userSettings.LogLevel = LogLevel;
         _userSettings.DefaultFileManager.Enabled = _defaultFileManagerEnabled;
         _userSettings.DefaultFileManager.Path = _defaultFileManagerPath;

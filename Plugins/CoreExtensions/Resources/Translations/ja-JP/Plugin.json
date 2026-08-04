@@ -218,5 +218,10 @@
   "CoreExtensions_Config_CustomFilters_KeywordDesc": "検索時に :@キーワード の形式で入力してフィルタールールを適用します。",
   "CoreExtensions_Config_CustomFilters_RuleLabel": "フィルタールール",
   "CoreExtensions_Config_CustomFilters_RuleDesc": "拡張子またはワイルドカードルール（例: *.doc; *.pdf または doc,docx,pdf）に対応します。",
-  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": ":@ で始まるカスタムフィルター文字を解析し、ワイルドカードと拡張子ルールに基づいて結果を絞り込みます。"
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": ":@ で始まるカスタムフィルター文字を解析し、ワイルドカードと拡張子ルールに基づいて結果を絞り込みます。",
+  "CoreExtensions_Config_QueryTokensGroupLabel": "クエリトークン設定",
+  "CoreExtensions_Config_PathExclusionPrefixLabel": "パス除外プレフィックス文字",
+  "CoreExtensions_Config_PathExclusionPrefixDesc": "パス部分一致トークンのプレフィックス文字（デフォルト: :）。",
+  "CoreExtensions_Config_CustomFilterPrefixLabel": "カテゴリフィルタープレフィックス文字",
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "カスタムカテゴリフィルターのプレフィックス文字（デフォルト: @）。"
 }

@@ -2,12 +2,18 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SwiftList.Plugins.CoreExtensions.Models;
 using SwiftList.Plugins.CoreExtensions.Providers.QueryTokens;
 using SwiftList.PluginSdk.Abstractions;
+using SwiftList.PluginSdk.Services;
 
 namespace SwiftList.Plugins.CoreExtensions.Tests.Providers.QueryTokens;
 
 [TestClass]
+[DoNotParallelize]
 public class CustomFilterQueryTokenProviderTests
 {
+    [TestInitialize]
+    [TestCleanup]
+    public void Reset() => PluginSettingsService.GetSettingFunc = null;
+
     private sealed class FakeSearchResult : ISearchResult
     {
         public string Name { get; set; } = string.Empty;
@@ -29,6 +35,15 @@ public class CustomFilterQueryTokenProviderTests
         Assert.IsFalse(provider.CanHandle("@"));
         Assert.IsFalse(provider.CanHandle("doc"));
         Assert.IsFalse(provider.CanHandle(".doc"));
+    }
+
+    [TestMethod]
+    public void CanHandle_CustomPrefix_ReturnsTrue()
+    {
+        PluginSettingsService.GetSettingFunc = (pluginId, key, fallback) => key == CustomFilterQueryTokenProvider.PrefixSettingKey ? "!" : fallback;
+        var provider = new CustomFilterQueryTokenProvider();
+        Assert.IsTrue(provider.CanHandle("!doc"));
+        Assert.IsFalse(provider.CanHandle("@doc"));
     }
 
     [TestMethod]

@@ -12,13 +12,21 @@ namespace SwiftList.Plugins.CoreExtensions.Providers.QueryTokens;
 // fallback included, instead of a hand-rolled substring check.
 public class PathExclusionQueryTokenProvider : IQueryTokenProvider
 {
+    public const string PluginId = "SwiftList.Plugins.CoreExtensions";
+    public const string SettingKey = "PathExclusionPrefix";
+
     public string Name => TranslationService.Get("CoreExtensions_PathExclusionProvider_Name");
 
-    public bool CanHandle(string token) => token.Length > 1 && token[0] == ':';
+    public bool CanHandle(string token)
+    {
+        var prefix = GetPrefix();
+        return token.Length > prefix.Length && token.StartsWith(prefix);
+    }
 
     public Task<IReadOnlyList<ISearchResult>> ApplyAsync(string token, IReadOnlyList<ISearchResult> results)
     {
-        var pattern = token[1..];
+        var prefix = GetPrefix();
+        var pattern = token.Length > prefix.Length && token.StartsWith(prefix) ? token[prefix.Length..] : token;
         if (string.IsNullOrWhiteSpace(pattern))
             return Task.FromResult(results);
 
@@ -26,10 +34,17 @@ public class PathExclusionQueryTokenProvider : IQueryTokenProvider
         return Task.FromResult<IReadOnlyList<ISearchResult>>(filtered);
     }
 
-    // The pattern this token actually fuzzy-matches against a path segment -- same text AnySegmentMatches
-    // tests, so the host can highlight it too (e.g. "Rename" lighting up alongside the main keyword for
-    // a "<keyword> ::rena" query, instead of only ever showing why the primary keyword matched).
-    public string? GetHighlightText(string token) => token.Length > 1 ? token[1..] : null;
+    public string? GetHighlightText(string token)
+    {
+        var prefix = GetPrefix();
+        return token.Length > prefix.Length && token.StartsWith(prefix) ? token[prefix.Length..] : null;
+    }
+
+    private static string GetPrefix()
+    {
+        var prefix = PluginSettingsService.GetSetting(PluginId, SettingKey, ":");
+        return string.IsNullOrEmpty(prefix) ? ":" : prefix;
+    }
 
     // Splitting the full path covers every ancestor folder AND the file's own leaf name in one pass --
     // "keep if any path component matches" needs no special-casing between the two.

@@ -5,8 +5,13 @@ using SwiftList.Plugins.CoreExtensions.Providers.QueryTokens;
 namespace SwiftList.Plugins.CoreExtensions.Tests.Providers.QueryTokens;
 
 [TestClass]
+[DoNotParallelize]
 public sealed class PathExclusionQueryTokenProviderCanHandleTests
 {
+    [TestInitialize]
+    [TestCleanup]
+    public void Reset() => PluginSettingsService.GetSettingFunc = null;
+
     [TestMethod]
     public void CanHandle_ColonPrefixedToken_ReturnsTrue() => Assert.IsTrue(new PathExclusionQueryTokenProvider().CanHandle(":rena"));
 
@@ -21,6 +26,15 @@ public sealed class PathExclusionQueryTokenProviderCanHandleTests
 
     [TestMethod]
     public void GetHighlightText_JustColon_ReturnsNull() => Assert.IsNull(new PathExclusionQueryTokenProvider().GetHighlightText(":"));
+
+    [TestMethod]
+    public void CanHandle_CustomPrefix_ReturnsTrue()
+    {
+        PluginSettingsService.GetSettingFunc = (pluginId, key, fallback) => key == PathExclusionQueryTokenProvider.SettingKey ? "#" : fallback;
+        Assert.IsTrue(new PathExclusionQueryTokenProvider().CanHandle("#rena"));
+        Assert.IsFalse(new PathExclusionQueryTokenProvider().CanHandle(":rena"));
+        Assert.AreEqual("rena", new PathExclusionQueryTokenProvider().GetHighlightText("#rena"));
+    }
 }
 
 // FuzzyMatchService.IsMatchFunc is a shared static delegate (null by default -- IsMatch always returns

@@ -62,6 +62,15 @@ public sealed class SearchQuerySortParserTests
     }
 
     [TestMethod]
+    public void Strip_CustomPrefixChar_ExtractsTokensAndTrimsQuery()
+    {
+        var result = SearchQuerySortParser.Strip("readme #a,b,c", out var tokens, '#');
+
+        Assert.AreEqual("readme", result);
+        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, tokens.ToArray());
+    }
+
+    [TestMethod]
     public void StripExclusionBypass_LeadingAsterisk_IsStrippedAndFlagged()
     {
         var result = SearchQuerySortParser.StripExclusionBypass("*readme", out var bypass);

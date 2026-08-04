@@ -6,7 +6,7 @@ namespace SwiftList.Core.SearchIndex.Query;
 // gets misread out of the middle of an otherwise-unrelated search term.
 public static class SearchQuerySortParser
 {
-    public static string Strip(string query, out IReadOnlyList<string> tokens)
+    public static string Strip(string query, out IReadOnlyList<string> tokens, char prefixChar = ':')
     {
         tokens = Array.Empty<string>();
 
@@ -14,7 +14,7 @@ public static class SearchQuerySortParser
         var lastSpaceIndex = trimmed.LastIndexOf(' ');
         var lastToken = lastSpaceIndex >= 0 ? trimmed[(lastSpaceIndex + 1)..] : trimmed;
 
-        if (lastToken.Length < 2 || lastToken[0] != ':')
+        if (lastToken.Length < 2 || lastToken[0] != prefixChar)
             return query;
 
         var parts = lastToken[1..].Split(',');

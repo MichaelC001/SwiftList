@@ -218,5 +218,10 @@
   "CoreExtensions_Config_CustomFilters_KeywordDesc": "Prefix with :@ in search to apply this filter rule (e.g. type doc to use :@doc).",
   "CoreExtensions_Config_CustomFilters_RuleLabel": "Filter Rule",
   "CoreExtensions_Config_CustomFilters_RuleDesc": "Supports file extensions or wildcard rules (e.g. *.doc; *.pdf or doc,docx,pdf), separated by semicolon or comma.",
-  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": "Parses custom filter tokens starting with :@ and filters search results based on wildcard or extension rules."
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": "Parses custom filter tokens starting with :@ and filters search results based on wildcard or extension rules.",
+  "CoreExtensions_Config_QueryTokensGroupLabel": "Query Token Settings",
+  "CoreExtensions_Config_PathExclusionPrefixLabel": "Path Exclusion Prefix",
+  "CoreExtensions_Config_PathExclusionPrefixDesc": "Prefix character for path fuzzy-matching tokens (default :).",
+  "CoreExtensions_Config_CustomFilterPrefixLabel": "Custom Filter Prefix",
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "Prefix character for custom filter tokens (default @)."
 }

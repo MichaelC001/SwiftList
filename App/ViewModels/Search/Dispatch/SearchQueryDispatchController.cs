@@ -48,7 +48,8 @@ internal sealed class SearchQueryDispatchController
 
     public void OnAdvancedQueryChanged(string query)
     {
-        var strippedTrailing = SearchQuerySortParser.Strip(query, out var tokens);
+        var globalPrefixChar = GetGlobalTokenPrefixChar();
+        var strippedTrailing = SearchQuerySortParser.Strip(query, out var tokens, globalPrefixChar);
         _queryTokens = tokens;
         var cleanQuery = SearchQuerySortParser.StripExclusionBypass(strippedTrailing, out var bypassExclusions);
 
@@ -178,5 +179,11 @@ internal sealed class SearchQueryDispatchController
         _getAllResults().Clear();
         _applyFiltersAndRender(false, 0);
         _setLoadingPanelVisibility(Visibility.Collapsed);
+    }
+
+    private static char GetGlobalTokenPrefixChar()
+    {
+        var prefix = UserSettings.Load().GlobalTokenPrefix;
+        return !string.IsNullOrEmpty(prefix) ? prefix[0] : ':';
     }
 }

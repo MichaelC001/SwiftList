@@ -116,6 +116,23 @@
                 <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[General_EnableFuzzyMatchDesc]}"
                            Style="{StaticResource SettingsHintText}" TextWrapping="Wrap"/>
 
+                <Grid x:Name="RowGlobalTokenPrefix" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="GeneralLabel"/>
+                        <ColumnDefinition Width="Auto" MinWidth="60"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[General_GlobalTokenPrefix]}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1"
+                             Style="{StaticResource SettingsTextBox}"
+                             Width="36" Height="26" MaxLength="1"
+                             TextAlignment="Center"
+                             HorizontalContentAlignment="Center"
+                             Text="{Binding General.GlobalTokenPrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center"/>
+                </Grid>
+                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[General_GlobalTokenPrefixDesc]}"
+                           Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                 <Grid x:Name="RowLogLevel" Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="GeneralLabel"/>

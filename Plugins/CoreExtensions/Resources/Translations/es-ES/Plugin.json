@@ -218,5 +218,10 @@
   "CoreExtensions_Config_CustomFilters_KeywordDesc": "Anteponga :@ en la búsqueda para aplicar esta regla de filtro.",
   "CoreExtensions_Config_CustomFilters_RuleLabel": "Regla de filtro",
   "CoreExtensions_Config_CustomFilters_RuleDesc": "Admite extensiones o comodines (ej. *.doc; *.pdf o doc,docx,pdf).",
-  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": "Analiza tokens de filtro personalizados que comienzan con :@ y filtra resultados de búsqueda."
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": "Analiza tokens de filtro personalizados que comienzan con :@ y filtra resultados de búsqueda.",
+  "CoreExtensions_Config_QueryTokensGroupLabel": "Configuración de tokens de consulta",
+  "CoreExtensions_Config_PathExclusionPrefixLabel": "Prefijo de exclusión de ruta",
+  "CoreExtensions_Config_PathExclusionPrefixDesc": "Carácter de prefijo para tokens de coincidencia difusa de ruta (predeterminado :).",
+  "CoreExtensions_Config_CustomFilterPrefixLabel": "Prefijo de filtro personalizado",
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "Carácter de prefijo para tokens de filtro de categoría personalizados (predeterminado @)."
 }

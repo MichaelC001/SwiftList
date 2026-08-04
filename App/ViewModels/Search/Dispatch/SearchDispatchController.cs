@@ -58,7 +58,8 @@ internal sealed class SearchDispatchController
 
     public void DispatchSearch(string value)
     {
-        var strippedTrailing = SearchQuerySortParser.Strip(value, out var tokens);
+        var globalPrefixChar = GetGlobalTokenPrefixChar();
+        var strippedTrailing = SearchQuerySortParser.Strip(value, out var tokens, globalPrefixChar);
         _queryTokens = tokens;
         var cleanQuery = SearchQuerySortParser.StripExclusionBypass(strippedTrailing, out var bypassExclusions);
         _bypassExclusions = bypassExclusions;
@@ -172,7 +173,8 @@ internal sealed class SearchDispatchController
             return;
         }
 
-        var strippedTrailing = SearchQuerySortParser.Strip(query, out var tokens);
+        var globalPrefixChar = GetGlobalTokenPrefixChar();
+        var strippedTrailing = SearchQuerySortParser.Strip(query, out var tokens, globalPrefixChar);
         _queryTokens = tokens;
         var cleanQuery = SearchQuerySortParser.StripExclusionBypass(strippedTrailing, out var bypassExclusions);
         _bypassExclusions = bypassExclusions;
@@ -278,4 +280,10 @@ internal sealed class SearchDispatchController
 
     private static bool IsGenuineInstantResult(AppSearchResult r) =>
         r.ResultKind == "InstantResult" && r.SourceProvider is PluginSdk.Abstractions.Plugins.IInstantResultProvider;
+
+    private static char GetGlobalTokenPrefixChar()
+    {
+        var prefix = UserSettings.Load().GlobalTokenPrefix;
+        return !string.IsNullOrEmpty(prefix) ? prefix[0] : ':';
+    }
 }

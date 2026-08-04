@@ -140,7 +140,8 @@ public static class AppSearchPipeService
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            var strippedTrailing = SearchQuerySortParser.Strip(query, out var tokens);
+            var globalPrefixChar = GetGlobalTokenPrefixChar();
+            var strippedTrailing = SearchQuerySortParser.Strip(query, out var tokens, globalPrefixChar);
             var cleanQuery = SearchQuerySortParser.StripExclusionBypass(strippedTrailing, out var bypassExclusions);
 
             if (tokens.Count > 0)
@@ -255,5 +256,11 @@ public static class AppSearchPipeService
             if (written <= FlushEveryResultUntil || written % FlushEveryResults == 0)
                 await pipe.FlushAsync();
         }
+    }
+
+    private static char GetGlobalTokenPrefixChar()
+    {
+        var prefix = UserSettings.Load().GlobalTokenPrefix;
+        return !string.IsNullOrEmpty(prefix) ? prefix[0] : ':';
     }
 }

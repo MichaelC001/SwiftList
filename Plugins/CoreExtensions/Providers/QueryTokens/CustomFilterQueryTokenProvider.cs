@@ -1,4 +1,3 @@
-using System.IO;
 using System.IO.Enumeration;
 using SwiftList.Plugins.CoreExtensions.Models;
 using SwiftList.PluginSdk.Abstractions;
@@ -11,20 +10,26 @@ public class CustomFilterQueryTokenProvider : IQueryTokenProvider
 {
     public const string PluginId = "SwiftList.Plugins.CoreExtensions";
     public const string SettingKey = "CustomFilters";
+    public const string PrefixSettingKey = "CustomFilterPrefix";
 
     public string Name => TranslationService.Get("CoreExtensions_CustomFilterProvider_Name");
 
-    public bool CanHandle(string token) => token.Length > 1 && token[0] == '@';
+    public bool CanHandle(string token)
+    {
+        var prefix = GetPrefix();
+        return token.Length > prefix.Length && token.StartsWith(prefix);
+    }
 
     public Task<IReadOnlyList<ISearchResult>> ApplyAsync(string token, IReadOnlyList<ISearchResult> results)
     {
         if (results == null || results.Count == 0)
             return Task.FromResult<IReadOnlyList<ISearchResult>>(Array.Empty<ISearchResult>());
 
-        if (token.Length <= 1 || token[0] != '@')
+        var prefix = GetPrefix();
+        if (token.Length <= prefix.Length || !token.StartsWith(prefix))
             return Task.FromResult(results);
 
-        var rawKeywords = token[1..].Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var rawKeywords = token[prefix.Length..].Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (rawKeywords.Length == 0)
             return Task.FromResult(results);
 
@@ -46,7 +51,7 @@ public class CustomFilterQueryTokenProvider : IQueryTokenProvider
 
         var combinedRule = string.Join("; ", matchedRules);
         var filtered = ApplyRule(combinedRule, results);
-        return Task.FromResult<IReadOnlyList<ISearchResult>>(filtered);
+        return Task.FromResult(filtered);
     }
 
     public string? GetHighlightText(string token) => null;
@@ -103,5 +108,11 @@ public class CustomFilterQueryTokenProvider : IQueryTokenProvider
             return results;
 
         return results.Where(r => subRules.Any(ruleFunc => ruleFunc(r))).ToList();
+    }
+
+    private static string GetPrefix()
+    {
+        var prefix = PluginSettingsService.GetSetting(PluginId, PrefixSettingKey, "@");
+        return string.IsNullOrEmpty(prefix) ? "@" : prefix;
     }
 }
