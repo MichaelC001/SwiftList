@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using SwiftList.Core;
-using SwiftList.Core.Services.QuickPanel;
+using SwiftList.App.Services.QuickPanel;
 
 namespace SwiftList.App.ViewModels.QuickPanel;
 

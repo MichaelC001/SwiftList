@@ -27,6 +27,7 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
         {
             _path = folder.Path,
             _kind = folder.Kind,
+            _sortByModified = folder.SortByModified || folder.Kind == QuickPanelSourceKind.AllByModified,
             _recursive = folder.Recursive,
             _filterPattern = folder.FilterPattern,
             _maxItems = folder.MaxItems,
@@ -169,8 +170,9 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
     private static IReadOnlyList<QuickPanelSourceKindOption> BuildKindOptions() => new[]
     {
         new QuickPanelSourceKindOption(QuickPanelSourceKind.RecentFiles, TranslationManager.Instance["QuickPanel_KindRecentFiles"]),
-        new QuickPanelSourceKindOption(QuickPanelSourceKind.AllByModified, TranslationManager.Instance["QuickPanel_KindAllByModified"]),
-        new QuickPanelSourceKindOption(QuickPanelSourceKind.Launcher, TranslationManager.Instance["QuickPanel_KindLauncher"]),
+        new QuickPanelSourceKindOption(QuickPanelSourceKind.All, TranslationManager.Instance["QuickPanel_KindAll"]),
+        new QuickPanelSourceKindOption(QuickPanelSourceKind.FoldersOnly, TranslationManager.Instance["QuickPanel_KindFoldersOnly"]),
+        new QuickPanelSourceKindOption(QuickPanelSourceKind.FilesOnly, TranslationManager.Instance["QuickPanel_KindFilesOnly"]),
     };
 
     /// <summary>Rebuilds the labels after a language switch, keeping the selected value.</summary>
@@ -194,6 +196,13 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
 
     /// <summary>The age limit only means anything for a recent-files source, so the field hides otherwise.</summary>
     public bool IsRecentFiles => Kind == QuickPanelSourceKind.RecentFiles;
+
+    private bool _sortByModified;
+    public bool SortByModified
+    {
+        get => _sortByModified;
+        set => SetProperty(ref _sortByModified, value);
+    }
 
     private bool _recursive;
     public bool Recursive
@@ -244,6 +253,7 @@ public class QuickPanelSourceRowViewModel : ViewModelBase
             return;
         _folder.Path = Path.Trim().Trim('"');
         _folder.Kind = Kind;
+        _folder.SortByModified = SortByModified;
         _folder.Recursive = Recursive;
         _folder.FilterPattern = string.IsNullOrWhiteSpace(FilterPattern) ? "*" : FilterPattern.Trim();
         _folder.MaxItems = MaxItems;

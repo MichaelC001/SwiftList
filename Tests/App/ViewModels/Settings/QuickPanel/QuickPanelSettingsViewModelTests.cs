@@ -206,7 +206,8 @@ public sealed class QuickPanelSettingsViewModelTests
 
         var values = row.KindOptions.Select(o => o.Value).ToList();
 
-        CollectionAssert.AreEquivalent(Enum.GetValues<QuickPanelSourceKind>(), values);
+        var expected = new[] { QuickPanelSourceKind.RecentFiles, QuickPanelSourceKind.All, QuickPanelSourceKind.FoldersOnly, QuickPanelSourceKind.FilesOnly };
+        CollectionAssert.AreEquivalent(expected, values);
         Assert.IsTrue(row.KindOptions.All(o => !string.IsNullOrWhiteSpace(o.Label)));
     }
 

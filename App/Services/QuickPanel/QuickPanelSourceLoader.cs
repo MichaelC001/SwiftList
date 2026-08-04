@@ -1,6 +1,7 @@
+using SwiftList.Core;
 using SwiftList.Core.Services.Search;
 
-namespace SwiftList.Core.Services.QuickPanel;
+namespace SwiftList.App.Services.QuickPanel;
 
 /// <summary>
 /// Turns one configured quick panel source into the entries it should show. Every kind is answered
@@ -28,7 +29,17 @@ public static class QuickPanelSourceLoader
         var results = new List<SearchResult>();
         await IndexedDirectoryEnumerator.EnumerateAsync(source.Path, source.Recursive, source.FilterPattern,
             result => results.Add(result), limit: 0, token).ConfigureAwait(false);
-        return Order(results, source.Kind, source.MaxItems);
+
+        if (source.Kind == QuickPanelSourceKind.FoldersOnly)
+        {
+            results = results.Where(r => r.IsDir).ToList();
+        }
+        else if (source.Kind == QuickPanelSourceKind.FilesOnly)
+        {
+            results = results.Where(r => !r.IsDir).ToList();
+        }
+
+        return Order(results, source.Kind, source.SortByModified, source.MaxItems);
     }
 
     /// <summary>
@@ -36,8 +47,12 @@ public static class QuickPanelSourceLoader
     /// from the index query itself.
     /// </summary>
     internal static List<SearchResult> Order(List<SearchResult> results, QuickPanelSourceKind kind, int maxItems)
+        => Order(results, kind, sortByModified: kind == QuickPanelSourceKind.AllByModified, maxItems);
+
+    internal static List<SearchResult> Order(List<SearchResult> results, QuickPanelSourceKind kind, bool sortByModified, int maxItems)
     {
-        IEnumerable<SearchResult> ordered = kind == QuickPanelSourceKind.AllByModified
+        var useModifiedSort = sortByModified || kind == QuickPanelSourceKind.AllByModified;
+        IEnumerable<SearchResult> ordered = useModifiedSort
             ? results.OrderByDescending(r => r.Metadata.Modified)
             : results.OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase);
         return (maxItems > 0 ? ordered.Take(maxItems) : ordered).ToList();

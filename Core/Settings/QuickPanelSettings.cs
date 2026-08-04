@@ -19,6 +19,12 @@ public enum QuickPanelSourceKind
     /// than its age limit: this one never hides a file, it only decides what to show first.
     /// </summary>
     AllByModified,
+    /// <summary>All files and folders in the directory.</summary>
+    All,
+    /// <summary>Only subdirectories / folders.</summary>
+    FoldersOnly,
+    /// <summary>Only files.</summary>
+    FilesOnly,
 }
 
 /// <summary>
@@ -159,6 +165,7 @@ public class QuickPanelTab
             Id = f.Id,
             Path = f.Path,
             Kind = f.Kind,
+            SortByModified = f.SortByModified,
             Recursive = f.Recursive,
             FilterPattern = f.FilterPattern,
             MaxItems = f.MaxItems,
@@ -192,6 +199,8 @@ public class QuickPanelFolderSource
     public string Path { get; set; } = string.Empty;
 
     public QuickPanelSourceKind Kind { get; set; } = QuickPanelSourceKind.RecentFiles;
+
+    public bool SortByModified { get; set; }
 
     public bool Recursive { get; set; }
 
@@ -248,13 +257,17 @@ public class QuickPanelGroupPreference
     public QuickPanelSortMode Sort { get; set; } = QuickPanelSortMode.ModifiedDescending;
 
     /// <summary>
-    /// The order a source starts in when the user has never overridden it. Taken from the kind because
-    /// the kind IS an order choice -- "everything, by name" and "everything, newest first" differ in
-    /// nothing else -- so a group with no stored preference must not contradict the dropdown that
-    /// configured it.
+    /// The order a source starts in when the user has never overridden it.
     /// </summary>
     public static QuickPanelSortMode DefaultSortFor(QuickPanelSourceKind kind)
-        => kind == QuickPanelSourceKind.Launcher ? QuickPanelSortMode.NameAscending : QuickPanelSortMode.ModifiedDescending;
+        => (kind == QuickPanelSourceKind.AllByModified || kind == QuickPanelSourceKind.RecentFiles)
+            ? QuickPanelSortMode.ModifiedDescending
+            : QuickPanelSortMode.NameAscending;
+
+    public static QuickPanelSortMode DefaultSortFor(QuickPanelFolderSource source)
+        => (source.SortByModified || source.Kind == QuickPanelSourceKind.AllByModified || source.Kind == QuickPanelSourceKind.RecentFiles)
+            ? QuickPanelSortMode.ModifiedDescending
+            : QuickPanelSortMode.NameAscending;
 
     public bool ThumbnailView { get; set; } = true;
 

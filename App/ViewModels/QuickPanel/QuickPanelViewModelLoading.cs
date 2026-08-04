@@ -255,10 +255,7 @@ public partial class QuickPanelViewModel
             TitleOf(source, preference),
             source.Path,
             items,
-            // Not preference.Sort: the kind already IS the order choice, and nothing writes the stored
-            // sort yet. Once the panel persists what the user does to a group, the stored value becomes
-            // the override and this becomes its fallback.
-            QuickPanelGroupPreference.DefaultSortFor(source.Kind),
+            QuickPanelGroupPreference.DefaultSortFor(source),
             // The settings page owns this one: the header's own toggle overrides it for the session it
             // is pressed in, and this is what the group opens as.
             preference?.ThumbnailView ?? true,

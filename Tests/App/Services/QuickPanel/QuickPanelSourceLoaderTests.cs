@@ -1,6 +1,7 @@
-using SwiftList.Core.Services.QuickPanel;
+using SwiftList.App.Services.QuickPanel;
+using SwiftList.Core;
 
-namespace SwiftList.Core.Tests.Services.QuickPanel;
+namespace SwiftList.App.Tests.Services.QuickPanel;
 
 // Covers the two parts that decide what a source shows without touching the index or the disk: the
 // order a kind implies, and how favorites are read. The loading itself goes through the service pipe
@@ -53,4 +54,20 @@ public sealed class QuickPanelSourceLoaderTests
     public void Order_MaxItemsZero_KeepsEverything()
         => Assert.HasCount(3, QuickPanelSourceLoader.Order(Sample(), QuickPanelSourceKind.Launcher, maxItems: 0));
 
+    [TestMethod]
+    public void Order_SortByModifiedTrue_IsNewestFirst()
+    {
+        var ordered = QuickPanelSourceLoader.Order(Sample(), QuickPanelSourceKind.All, sortByModified: true, maxItems: 0);
+
+        CollectionAssert.AreEqual(new[] { "a.mp4", "b.mp4", "c.mp4" }, ordered.Select(r => r.Name).ToList());
+        Assert.AreEqual(new DateTime(2026, 1, 3), ordered[0].Metadata.Modified);
+    }
+
+    [TestMethod]
+    public void Order_SortByModifiedFalse_IsByName()
+    {
+        var ordered = QuickPanelSourceLoader.Order(Sample(), QuickPanelSourceKind.All, sortByModified: false, maxItems: 0);
+
+        CollectionAssert.AreEqual(new[] { "a.mp4", "b.mp4", "c.mp4" }, ordered.Select(r => r.Name).ToList());
+    }
 }
