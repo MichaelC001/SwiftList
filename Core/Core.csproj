@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SwiftList.Core</AssemblyName>
     <RootNamespace>SwiftList.Core</RootNamespace>
-    <Version>2.3.5</Version>
+    <Version>2.3.6</Version>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <!-- IndexV2 reads its memory-mapped snapshot through typed spans over a raw view pointer. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
