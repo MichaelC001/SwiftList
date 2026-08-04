@@ -35,7 +35,6 @@ public sealed class SearchQuerySortParserTests
     [TestMethod]
     public void Strip_SuffixInMiddleOfQuery_IsNotTreatedAsSuffix()
     {
-        // ":a,b" must be the LAST whitespace-separated token to count as the suffix.
         var result = SearchQuerySortParser.Strip(":a,b readme", out var tokens);
 
         Assert.AreEqual(":a,b readme", result);
@@ -45,7 +44,6 @@ public sealed class SearchQuerySortParserTests
     [TestMethod]
     public void Strip_EmptyTokenInSuffix_IsRejectedAsNotASuffix()
     {
-        // "readme :a,,c" has an empty token between the commas -- Strip.Any(p => p.Length == 0) rejects it.
         var result = SearchQuerySortParser.Strip("readme :a,,c", out var tokens);
 
         Assert.AreEqual("readme :a,,c", result);
@@ -68,6 +66,45 @@ public sealed class SearchQuerySortParserTests
 
         Assert.AreEqual("readme", result);
         CollectionAssert.AreEqual(new[] { "a", "b", "c" }, tokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Strip_QuotedTokenWithSpaces_ExtractsTokenAndUnquotes()
+    {
+        var result = SearchQuerySortParser.Strip("file :\"hello world\"", out var tokens);
+
+        Assert.AreEqual("file", result);
+        CollectionAssert.AreEqual(new[] { "hello world" }, tokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Strip_WildcardQuotedTokenWithSpaces_ExtractsTokenWithPrefix()
+    {
+        var result = SearchQuerySortParser.Strip("file ::\"hello world\"", out var tokens);
+
+        Assert.AreEqual("file", result);
+        CollectionAssert.AreEqual(new[] { ":hello world" }, tokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Strip_MultipleQuotedTokensWithSpaces_ExtractsAllTokens()
+    {
+        var result = SearchQuerySortParser.Strip("file :\"first token\",\"second token\",simple", out var tokens);
+
+        Assert.AreEqual("file", result);
+        CollectionAssert.AreEqual(new[] { "first token", "second token", "simple" }, tokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Strip_PathOrTimeWithColon_IsIgnored()
+    {
+        var resultPath = SearchQuerySortParser.Strip(@"C:\path\file", out var tokensPath);
+        Assert.AreEqual(@"C:\path\file", resultPath);
+        Assert.IsEmpty(tokensPath);
+
+        var resultTime = SearchQuerySortParser.Strip("12:30", out var tokensTime);
+        Assert.AreEqual("12:30", resultTime);
+        Assert.IsEmpty(tokensTime);
     }
 
     [TestMethod]
