@@ -19,8 +19,13 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Grid.IsSharedSizeScope="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
             <TextBlock Style="{StaticResource SettingsSectionTitle}"
                         Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[General_Title]}"/>
             <TextBlock Style="{StaticResource SettingsHintText}"
@@ -188,90 +193,94 @@
             </StackPanel>
             </ctrl:TabStripScrollView>
             <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,15"/>
-
-            <!-- Tab: System (extracted; see GeneralSettingsSystemTab.xaml) -->
-            <local:GeneralSettingsSystemTab x:Name="TabSystem">
-                <local:GeneralSettingsSystemTab.Style>
-                    <Style TargetType="local:GeneralSettingsSystemTab">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding General.SelectedTab}" Value="System">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </local:GeneralSettingsSystemTab.Style>
-            </local:GeneralSettingsSystemTab>
-
-            <!-- Tab: Layout (extracted; see GeneralSettingsLayoutTab.xaml) -->
-            <local:GeneralSettingsLayoutTab x:Name="TabLayout">
-                <local:GeneralSettingsLayoutTab.Style>
-                    <Style TargetType="local:GeneralSettingsLayoutTab">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding General.SelectedTab}" Value="Layout">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </local:GeneralSettingsLayoutTab.Style>
-            </local:GeneralSettingsLayoutTab>
-
-            <!-- Tab: Search Window (extracted; see GeneralSettingsSearchWindowTab.xaml) -->
-            <local:GeneralSettingsSearchWindowTab x:Name="TabSearchWindow">
-                <local:GeneralSettingsSearchWindowTab.Style>
-                    <Style TargetType="local:GeneralSettingsSearchWindowTab">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding General.SelectedTab}" Value="SearchWindow">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </local:GeneralSettingsSearchWindowTab.Style>
-            </local:GeneralSettingsSearchWindowTab>
-
-            <!-- Tab: Preview Window (extracted; see GeneralSettingsPreviewWindowTab.xaml) -->
-            <local:GeneralSettingsPreviewWindowTab x:Name="TabPreviewWindow">
-                <local:GeneralSettingsPreviewWindowTab.Style>
-                    <Style TargetType="local:GeneralSettingsPreviewWindowTab">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding General.SelectedTab}" Value="PreviewWindow">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </local:GeneralSettingsPreviewWindowTab.Style>
-            </local:GeneralSettingsPreviewWindowTab>
-
-            <!-- Tab: Quick Navigation (extracted; see GeneralSettingsQuickNavigationTab.xaml) -->
-            <local:GeneralSettingsQuickNavigationTab x:Name="TabQuickNavigation">
-                <local:GeneralSettingsQuickNavigationTab.Style>
-                    <Style TargetType="local:GeneralSettingsQuickNavigationTab">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding General.SelectedTab}" Value="QuickNavigation">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </local:GeneralSettingsQuickNavigationTab.Style>
-            </local:GeneralSettingsQuickNavigationTab>
-
-            <!-- Tab: Preview Providers (see GeneralSettingsPreviewProvidersTab.xaml) -->
-            <local:GeneralSettingsPreviewProvidersTab x:Name="TabPreviewProviders">
-                <local:GeneralSettingsPreviewProvidersTab.Style>
-                    <Style TargetType="local:GeneralSettingsPreviewProvidersTab">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding General.SelectedTab}" Value="PreviewProviders">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </local:GeneralSettingsPreviewProvidersTab.Style>
-            </local:GeneralSettingsPreviewProvidersTab>
         </StackPanel>
-    </ScrollViewer>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Grid.IsSharedSizeScope="True">
+                <!-- Tab: System (extracted; see GeneralSettingsSystemTab.xaml) -->
+                <local:GeneralSettingsSystemTab x:Name="TabSystem">
+                    <local:GeneralSettingsSystemTab.Style>
+                        <Style TargetType="local:GeneralSettingsSystemTab">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding General.SelectedTab}" Value="System">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:GeneralSettingsSystemTab.Style>
+                </local:GeneralSettingsSystemTab>
+
+                <!-- Tab: Layout (extracted; see GeneralSettingsLayoutTab.xaml) -->
+                <local:GeneralSettingsLayoutTab x:Name="TabLayout">
+                    <local:GeneralSettingsLayoutTab.Style>
+                        <Style TargetType="local:GeneralSettingsLayoutTab">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding General.SelectedTab}" Value="Layout">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:GeneralSettingsLayoutTab.Style>
+                </local:GeneralSettingsLayoutTab>
+
+                <!-- Tab: Search Window (extracted; see GeneralSettingsSearchWindowTab.xaml) -->
+                <local:GeneralSettingsSearchWindowTab x:Name="TabSearchWindow">
+                    <local:GeneralSettingsSearchWindowTab.Style>
+                        <Style TargetType="local:GeneralSettingsSearchWindowTab">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding General.SelectedTab}" Value="SearchWindow">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:GeneralSettingsSearchWindowTab.Style>
+                </local:GeneralSettingsSearchWindowTab>
+
+                <!-- Tab: Preview Window (extracted; see GeneralSettingsPreviewWindowTab.xaml) -->
+                <local:GeneralSettingsPreviewWindowTab x:Name="TabPreviewWindow">
+                    <local:GeneralSettingsPreviewWindowTab.Style>
+                        <Style TargetType="local:GeneralSettingsPreviewWindowTab">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding General.SelectedTab}" Value="PreviewWindow">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:GeneralSettingsPreviewWindowTab.Style>
+                </local:GeneralSettingsPreviewWindowTab>
+
+                <!-- Tab: Quick Navigation (extracted; see GeneralSettingsQuickNavigationTab.xaml) -->
+                <local:GeneralSettingsQuickNavigationTab x:Name="TabQuickNavigation">
+                    <local:GeneralSettingsQuickNavigationTab.Style>
+                        <Style TargetType="local:GeneralSettingsQuickNavigationTab">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding General.SelectedTab}" Value="QuickNavigation">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:GeneralSettingsQuickNavigationTab.Style>
+                </local:GeneralSettingsQuickNavigationTab>
+
+                <!-- Tab: Preview Providers (see GeneralSettingsPreviewProvidersTab.xaml) -->
+                <local:GeneralSettingsPreviewProvidersTab x:Name="TabPreviewProviders">
+                    <local:GeneralSettingsPreviewProvidersTab.Style>
+                        <Style TargetType="local:GeneralSettingsPreviewProvidersTab">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding General.SelectedTab}" Value="PreviewProviders">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </local:GeneralSettingsPreviewProvidersTab.Style>
+                </local:GeneralSettingsPreviewProvidersTab>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>
