@@ -178,8 +178,6 @@ public static class SettingsSearchIndex
         new("QuickPanel_Enabled", "QuickPanel", TargetElementName: "RowQuickPanelEnabled"),
         new("QuickPanel_Workspaces", "QuickPanel", vm => { vm.QuickPanel.SelectedSection = "Workspaces"; vm.QuickPanel.SelectedSubTab = "Sources"; }),
         new("QuickPanel_WorkspaceName", "QuickPanel", vm => { vm.QuickPanel.SelectedSection = "Workspaces"; vm.QuickPanel.SelectedSubTab = "Sources"; }, TargetElementName: "RowQuickPanelWorkspaceName"),
-        new("QuickPanel_TabSources", "QuickPanel", vm => { vm.QuickPanel.SelectedSection = "Workspaces"; vm.QuickPanel.SelectedSubTab = "Sources"; }, TabLabelKey: "QuickPanel_Workspaces"),
-        new("QuickPanel_TabProcesses", "QuickPanel", vm => { vm.QuickPanel.SelectedSection = "Workspaces"; vm.QuickPanel.SelectedSubTab = "Processes"; }, TargetElementName: "RowQuickPanelProcesses", TabLabelKey: "QuickPanel_Workspaces"),
         new("QuickPanel_ProcessesDesc", "QuickPanel", vm => { vm.QuickPanel.SelectedSection = "Workspaces"; vm.QuickPanel.SelectedSubTab = "Processes"; }, TargetElementName: "RowQuickPanelProcesses", TabLabelKey: "QuickPanel_Workspaces"),
         new("QuickPanel_PluginTabs", "QuickPanel", vm => vm.QuickPanel.SelectedSection = "PluginTabs"),
 
