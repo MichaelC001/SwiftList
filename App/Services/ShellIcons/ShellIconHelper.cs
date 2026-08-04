@@ -12,8 +12,13 @@ namespace SwiftList.App.Services.ShellIcons;
 public static class ShellIconHelper
 {
     private static readonly ConcurrentDictionary<string, ImageSource> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, ImageSource> _hashToIcon = new();
 
-    public static void ClearCache() => _iconCache.Clear();
+    public static void ClearCache()
+    {
+        _iconCache.Clear();
+        _hashToIcon.Clear();
+    }
 
     private const int MaxIconCacheEntries = 2000;
 
@@ -22,7 +27,26 @@ public static class ShellIconHelper
     private static void EnforceCacheLimit()
     {
         if (_iconCache.Count > MaxIconCacheEntries)
+        {
             _iconCache.Clear();
+            _hashToIcon.Clear();
+        }
+    }
+
+    private static ImageSource CacheAndDeduplicateIcon(string cacheKey, ImageSource icon)
+    {
+        var hash = ShellIconImageHash.GetHashFromImage(icon);
+        if (hash != null)
+        {
+            if (_hashToIcon.TryGetValue(hash, out var existingIcon))
+            {
+                _iconCache[cacheKey] = existingIcon;
+                return existingIcon;
+            }
+            _hashToIcon[hash] = icon;
+        }
+        _iconCache[cacheKey] = icon;
+        return icon;
     }
 
     public static ImageSource? GetIconFromCacheOnly(string path, bool isDir, out bool needsLoad)
@@ -39,15 +63,11 @@ public static class ShellIconHelper
         }
 
         var isVirtualItem = path.StartsWith("::") || path.StartsWith("shell:");
+        var isPhysicalPath = !isVirtualItem && (File.Exists(path) || Directory.Exists(path));
         var hasThumbnailProvider = !isDir && PluginManager.Instance.ThumbnailProviders.Any(p => p.CanProvideThumbnail(path, isDir));
-        // Determine if it is a unique icon type
-        var isUniqueIconType = (!isDir && (
-            ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
-            ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase) ||
-            ext.Equals(".ico", StringComparison.OrdinalIgnoreCase) ||
-            ext.Equals(".msc", StringComparison.OrdinalIgnoreCase)
-        )) || isDir || isVirtualItem || hasThumbnailProvider;
 
+        // All real physical files on disk, virtual items, and thumbnail provider targets use full path as cache key
+        var isUniqueIconType = isPhysicalPath || isVirtualItem || hasThumbnailProvider;
         var cacheKey = isUniqueIconType ? path : ext;
 
         if (_iconCache.TryGetValue(cacheKey, out var cachedIcon))
@@ -92,7 +112,7 @@ public static class ShellIconHelper
         }
         else
         {
-            // Non-unique types can be resolved synchronously (fast path, no disk access)
+            // Non-physical/fallback types can be resolved synchronously
             return GetIconForPath(path, isDir);
         }
     }
@@ -114,19 +134,12 @@ public static class ShellIconHelper
             ext = "::unknown::";
         }
 
-        // EXE, LNK, ICO, MSC, etc. have unique icons per file.
-        // We use FullPath as cacheKey for these to avoid caching them under a single generic ".exe" key.
-        // Also treat existing directories as unique icon types to extract their customized folder icons.
         var checkPath = path;
         var isVirtualItem = checkPath.StartsWith("::") || checkPath.StartsWith("shell:");
+        var isPhysicalPath = !isVirtualItem && (File.Exists(checkPath) || Directory.Exists(checkPath));
         var hasThumbnailProvider = !isDir && PluginManager.Instance.ThumbnailProviders.Any(p => p.CanProvideThumbnail(path, isDir));
-        var isUniqueIconType = (!isDir && (
-            ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
-            ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase) ||
-            ext.Equals(".ico", StringComparison.OrdinalIgnoreCase) ||
-            ext.Equals(".msc", StringComparison.OrdinalIgnoreCase)
-        )) || (isDir && Directory.Exists(checkPath)) || isVirtualItem || hasThumbnailProvider;
 
+        var isUniqueIconType = isPhysicalPath || isVirtualItem || hasThumbnailProvider;
         var cacheKey = isUniqueIconType ? path : ext;
 
         if (_iconCache.TryGetValue(cacheKey, out var cachedIcon))
@@ -143,8 +156,7 @@ public static class ShellIconHelper
                 var thumb = thumbnailProvider.GetThumbnail(path, ShellImageListInterop.PreferredPixels());
                 if (thumb != null)
                 {
-                    _iconCache[cacheKey] = thumb;
-                    return thumb;
+                    return CacheAndDeduplicateIcon(cacheKey, thumb);
                 }
             }
             catch (Exception ex)
@@ -162,8 +174,7 @@ public static class ShellIconHelper
                 var shortcutIcon = ShellIconShortcutResolver.TryGetShortcutTargetIcon(checkPath);
                 if (shortcutIcon != null)
                 {
-                    _iconCache[cacheKey] = shortcutIcon;
-                    return shortcutIcon;
+                    return CacheAndDeduplicateIcon(cacheKey, shortcutIcon);
                 }
             }
 
@@ -172,20 +183,17 @@ public static class ShellIconHelper
                 var mscIcon = ShellIconShortcutResolver.TryGetMscIcon(checkPath);
                 if (mscIcon != null)
                 {
-                    _iconCache[cacheKey] = mscIcon;
-                    return mscIcon;
+                    return CacheAndDeduplicateIcon(cacheKey, mscIcon);
                 }
             }
 
-            if (isVirtualItem || (isUniqueIconType && isDir && Directory.Exists(checkPath)))
+            if (isVirtualItem || (isDir && Directory.Exists(checkPath)))
             {
                 // Safely load system shell icon by path instead of dangerous PIDL extraction
-                // which triggers crashy third-party Shell extensions (e.g. CIconAndThumbnailOplockWrapper)
                 var hiRes = ShellImageListInterop.TryGetIcon(checkPath, 0, 0);
                 if (hiRes != null)
                 {
-                    _iconCache[cacheKey] = hiRes;
-                    return hiRes;
+                    return CacheAndDeduplicateIcon(cacheKey, hiRes);
                 }
             }
 
@@ -194,34 +202,32 @@ public static class ShellIconHelper
                 var exeIcon = ShellImageListInterop.ExtractHiRes(checkPath, 0);
                 if (exeIcon != null)
                 {
-                    _iconCache[cacheKey] = exeIcon;
-                    return exeIcon;
+                    return CacheAndDeduplicateIcon(cacheKey, exeIcon);
                 }
             }
 
-            if (isUniqueIconType && (File.Exists(checkPath) || Directory.Exists(checkPath)))
+            if (isPhysicalPath)
             {
-                // For existing EXE/LNK/ICO (or folder fallback), load the actual unique embedded icon from the file path
+                // For real files/folders existing on disk, load the actual icon via real path
+                // to avoid crashy third-party Shell extensions (Issue #222)
                 var hiRes = ShellImageListInterop.TryGetIcon(checkPath, 0, 0);
                 if (hiRes != null)
                 {
-                    _iconCache[cacheKey] = hiRes;
-                    return hiRes;
+                    return CacheAndDeduplicateIcon(cacheKey, hiRes);
                 }
 
-                // Fallback using USEFILEATTRIBUTES to avoid crashy physical-path SHGetFileInfoW
+                // Fallback using USEFILEATTRIBUTES if real-path fetch returned null
                 var fallbackPath = isDir ? "dummy_folder" : ext;
                 var fallbackAttr = isDir ? ShellIconNativeMethods.FILE_ATTRIBUTE_DIRECTORY : ShellIconNativeMethods.FILE_ATTRIBUTE_NORMAL;
                 var fallbackHiRes = ShellImageListInterop.TryGetIcon(fallbackPath, fallbackAttr, ShellIconNativeMethods.SHGFI_USEFILEATTRIBUTES);
                 if (fallbackHiRes != null)
                 {
-                    _iconCache[cacheKey] = fallbackHiRes;
-                    return fallbackHiRes;
+                    return CacheAndDeduplicateIcon(cacheKey, fallbackHiRes);
                 }
             }
             else
             {
-                // Generic fallback for common extensions (highly performant, zero disk I/O)
+                // Generic fallback for non-existent paths or virtual items
                 var flags = ShellIconNativeMethods.SHGFI_ICON | ShellIconNativeMethods.SHGFI_LARGEICON | ShellIconNativeMethods.SHGFI_USEFILEATTRIBUTES;
                 var attributes = isDir ? ShellIconNativeMethods.FILE_ATTRIBUTE_DIRECTORY : ShellIconNativeMethods.FILE_ATTRIBUTE_NORMAL;
                 var lookupPath = isDir ? "dummy_folder" : ext;
@@ -229,8 +235,7 @@ public static class ShellIconHelper
                 var hiRes = ShellImageListInterop.TryGetIcon(lookupPath, attributes, ShellIconNativeMethods.SHGFI_USEFILEATTRIBUTES);
                 if (hiRes != null)
                 {
-                    _iconCache[cacheKey] = hiRes;
-                    return hiRes;
+                    return CacheAndDeduplicateIcon(cacheKey, hiRes);
                 }
 
                 var res = ShellIconNativeMethods.SHGetFileInfoW(lookupPath, attributes, ref shfi, (uint)Marshal.SizeOf(shfi), flags);
@@ -243,8 +248,7 @@ public static class ShellIconHelper
                             Int32Rect.Empty,
                             BitmapSizeOptions.FromEmptyOptions());
                         bitmapSource.Freeze();
-                        _iconCache[cacheKey] = bitmapSource;
-                        return bitmapSource;
+                        return CacheAndDeduplicateIcon(cacheKey, bitmapSource);
                     }
                     finally
                     {
