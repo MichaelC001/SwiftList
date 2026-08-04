@@ -475,6 +475,7 @@
   "Plugins_DevGuideTooltip": "按一下查看開發手冊",
   "Plugins_DevGuideUrl": "https://swiftlist.github.io/zh-CN/dev-guide/",
   "Plugins_ConfigurationTitle": "外掛程式設定",
+  "Plugins_SaveConfig": "儲存設定",
   "Plugins_NoPlugins": "未安裝任何外掛程式。",
   "Plugins_Version": "版本",
   "Plugins_DllSource": "來源檔案",

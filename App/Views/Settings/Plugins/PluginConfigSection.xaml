@@ -35,24 +35,19 @@
          the widest editor currently on screen, so their editors all start at the same X instead of each
          row sizing its own independently. Scoped to this control rather than the page, so one plugin's
          wide editor cannot push another plugin's rows across. -->
-    <StackPanel Grid.IsSharedSizeScope="True" Margin="0,12,0,0">
-        <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
+    <Grid Grid.IsSharedSizeScope="True" Margin="0,4,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <!-- Any fields outside a Group render directly, same as always.
-             No ScrollViewer around these lists: one that can scroll sideways hands its content an
-             unbounded width, which is the width a field row's wrapping description then measures
-             itself against, so nothing wraps and the row grows instead. Bounding the width here is
-             what lets the descriptions wrap to the pane. -->
-        <ItemsControl ItemsSource="{Binding NonGroupConfigFields}"/>
+        <!-- Global NonGroup fields (e.g. 设置搜索触发词), positioned ABOVE sub-tabs -->
+        <ItemsControl Grid.Row="0" ItemsSource="{Binding NonGroupConfigFields}"/>
 
-        <!-- 2+ top-level Groups: render as tabs (like the Hotkeys page) instead of stacking every
-             group's contents down the page -->
-        <StackPanel Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource BoolToVis}}">
-            <!-- TabStripScrollView, not a bare horizontal panel: a plugin decides how many config groups
-                 it has and how long their labels are, so this strip can overflow the pane. Same control
-                 the Index and Hotkeys pages use for their own tab rows, which is where its left/right
-                 arrows come from. -->
-            <ctrl:TabStripScrollView Margin="0,0,0,16">
+        <!-- Fixed Sub-tab Header Bar and Hairline Divider Line (when 2+ groups exist) -->
+        <StackPanel Grid.Row="1" Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource BoolToVis}}">
+            <ctrl:TabStripScrollView Margin="0,12,0,16">
                 <ItemsControl ItemsSource="{Binding ConfigGroups}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -104,25 +99,21 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ctrl:TabStripScrollView>
-            <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,15"/>
-
-            <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"/>
+            <Border Height="1" Background="{DynamicResource SettingsRowBorderBrush}" Margin="0,0,0,12"/>
         </StackPanel>
 
-        <!-- 0 or 1 Groups: not worth a tab bar, fall back to the flat rendering used everywhere else
-             (a lone Group still renders its own bold title inline) -->
-        <ItemsControl ItemsSource="{Binding ConfigGroups}"
-                      Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}"/>
+        <!-- Scrollable Sub-tab Content Area: scrollbar starts right below the sub-tab hairline divider -->
+        <ScrollViewer Grid.Row="2" Margin="0,4,0,0"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <!-- 2+ top-level Groups: active group's children -->
+                <ItemsControl ItemsSource="{Binding SelectedConfigGroup.Children}"
+                              Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource BoolToVis}}"/>
 
-        <!-- The modal's OK button, kept rather than switching to save-as-you-type: this page's other
-             sections commit immediately, but a plugin's fields are free-form text that is only valid
-             once, and the modal's contract was always "nothing is written until OK". Collapsing the
-             section without pressing it rolls the fields back, which is what closing the window did. -->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Style="{StaticResource PrimarySettingsButton}" MinWidth="80"
-                    Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_OK]}"
-                    Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType={x:Type local:PluginManagementSettingsPage}}}"
-                    CommandParameter="{Binding}"/>
-        </StackPanel>
-    </StackPanel>
+                <!-- 0 or 1 Groups: flat group rendering -->
+                <ItemsControl ItemsSource="{Binding ConfigGroups}"
+                              Visibility="{Binding HasMultipleConfigGroups, Converter={StaticResource InvertBoolToVis}}"/>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

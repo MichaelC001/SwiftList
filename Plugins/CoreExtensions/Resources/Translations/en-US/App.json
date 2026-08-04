@@ -475,6 +475,7 @@
   "Plugins_DevGuideTooltip": "Click to view the Developer Guide",
   "Plugins_DevGuideUrl": "https://swiftlist.github.io/dev-guide/",
   "Plugins_ConfigurationTitle": "Plugin Configuration",
+  "Plugins_SaveConfig": "Save Configuration",
   "Plugins_NoPlugins": "No plugins installed.",
   "Plugins_Version": "Version",
   "Plugins_DllSource": "Source File",

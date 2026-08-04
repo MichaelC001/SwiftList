@@ -190,19 +190,14 @@
 
             <Border Grid.Column="1" Width="1" Background="{DynamicResource BorderColor}"/>
 
-            <!-- Vertical only. Sideways scrolling belongs to the config fields alone (PluginConfigSection
-                 has its own scroller for them); putting it here dragged the plugin's name, description
-                 and tab strip off to the side along with them. -->
-            <ScrollViewer Grid.Column="2" Margin="8,0,0,0"
-                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ContentControl Content="{Binding SelectedPlugin}">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <local:PluginCard/>
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-            </ScrollViewer>
+            <!-- The detail pane (PluginCard) handles header fixing and internal content scrolling on its own. -->
+            <ContentControl Grid.Column="2" Margin="8,0,0,0" Content="{Binding SelectedPlugin}" Focusable="False">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate>
+                        <local:PluginCard/>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
         </Grid>
     </Grid>
 </UserControl>
