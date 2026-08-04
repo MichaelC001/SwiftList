@@ -89,8 +89,6 @@ internal static class MftIndexScanner
                     UInt128 owner = isExtension
                         ? baseRef
                         : ((ulong)seq << 48) | ((ulong)idx & 0xFFFFFFFFFFFF);
-                    var isDir = !isExtension && (headerFlags & 0x02) != 0;
-
                     names.Clear();
                     var stdAttrs = MftParser.CollectNames(buf, r, (int)recordSize, names,
                         out var creationTimeUtc, out var lastWriteTimeUtc, out var lastAccessTimeUtc);
@@ -98,6 +96,7 @@ internal static class MftIndexScanner
                     if (names.Count == 0)
                         continue;
 
+                    var isDir = (headerFlags & 0x02) != 0 || (stdAttrs & (uint)FileAttributes.Directory) != 0;
                     var attrs = (FileAttributes)stdAttrs;
                     if (isDir)
                         attrs |= FileAttributes.Directory;

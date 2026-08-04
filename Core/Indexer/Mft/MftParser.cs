@@ -109,6 +109,10 @@ internal static class MftParser
                 var vp = recOff + a + vo;
                 if (vp + 0x42 <= recOff + recLen)
                 {
+                    var fnAttrs = BitConverter.ToUInt32(buf, vp + 0x38);
+                    if ((fnAttrs & (uint)FileAttributes.Directory) != 0)
+                        stdAttrs |= (uint)FileAttributes.Directory;
+
                     var ns = buf[vp + 0x41]; // 0=POSIX 1=Win32 2=DOS 3=Win32&DOS
                     UInt128 parent = (ulong)BitConverter.ToInt64(buf, vp);
                     var size = BitConverter.ToInt64(buf, vp + 0x30); // real (logical) size -- may be stale, see dataSize above

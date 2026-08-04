@@ -22,13 +22,10 @@ internal enum SnapshotSection
 internal static class SnapshotFormat
 {
     public const ulong Magic = 0x0000005844494C53; // "SLIDX\0\0\0" little-endian
-    // Bumped 4 -> 5: MftParser.CollectNames now falls back to DOS 8.3 names when no Win32/POSIX name
-    // exists for a record (see the fix's commit). RestoreOrRebuild only reuses an on-disk snapshot
-    // as-is via incremental USN catch-up -- it never re-parses the MFT for a drive that already
-    // has a cache -- so bumping this is what actually forces every existing snapshot to rebuild
-    // once and pick up missing DOS-only parent directory nodes (e.g. read-only/migrated drives),
-    // restoring orphaned subtrees instead of stale caches persisting across restarts.
-    public const int Version = 5;
+    // Bumped 5 -> 6: Resolves DOS 8.3 short paths to Win32 long paths via GetLongPathName,
+    // stitches MFT extension records for large directories, and falls back to 48-bit Record Index
+    // matching when 64-bit parent FRNs mismatch, ensuring all orphaned subtrees are restored.
+    public const int Version = 6;
     public const int SectionAlignment = 16;
 
     internal sealed class Meta

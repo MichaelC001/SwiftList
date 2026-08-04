@@ -129,13 +129,14 @@ public static class SnapshotWriter
         // delta (or the next compaction) can heal them once the parent appears.
         var orphanRows = new List<int>();
         var orphanFrns = new List<UInt128>();
+        Dictionary<ulong, int>? recordIndexMap = null;
         for (var n = 0; n < count; n++)
         {
             var record = records[order[n]];
             var parentIndex = -1;
             if (record.ParentId != record.Id)
             {
-                parentIndex = FirstRowForId(ids, record.ParentId);
+                parentIndex = SnapshotWriterOps.ResolveParentIndexWithRecordIndexFallback(ids, record.ParentId, ref recordIndexMap);
                 if (parentIndex < 0)
                 {
                     orphanRows.Add(n);
@@ -229,86 +230,34 @@ public static class SnapshotWriter
                 SnapshotFormat.FinishHeader(stream, meta);
                 var offsets = SnapshotFormat.ComputeSectionOffsets(meta, out var totalLength);
 
-                WriteSection(stream, offsets, SnapshotSection.NameIds, MemoryMarshal.AsBytes(nameIds));
-                WriteSection(stream, offsets, SnapshotSection.Flags, MemoryMarshal.AsBytes(flags));
-                WriteSection(stream, offsets, SnapshotSection.ParentIndexes, MemoryMarshal.AsBytes(parentIndexes));
-                WriteSection(stream, offsets, SnapshotSection.UniqueMasks, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(masks)));
-                WriteSection(stream, offsets, SnapshotSection.NameOffsets, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(nameOffsets)));
-                WriteSection(stream, offsets, SnapshotSection.NameBlob, nameBlob.GetBuffer().AsSpan(0, (int)nameBlob.Length));
-                WriteSection(stream, offsets, SnapshotSection.Ids, MemoryMarshal.AsBytes(ids));
-                WriteSection(stream, offsets, SnapshotSection.Sizes, MemoryMarshal.AsBytes(sizes));
-                WriteSection(stream, offsets, SnapshotSection.CreationTimes, MemoryMarshal.AsBytes(creation));
-                WriteSection(stream, offsets, SnapshotSection.LastWriteTimes, MemoryMarshal.AsBytes(lastWrite));
-                WriteSection(stream, offsets, SnapshotSection.LastAccessTimes, MemoryMarshal.AsBytes(lastAccess));
-                WriteSection(stream, offsets, SnapshotSection.ChildStarts, MemoryMarshal.AsBytes(childStarts));
-                WriteSection(stream, offsets, SnapshotSection.Children, MemoryMarshal.AsBytes(children));
-                WriteSection(stream, offsets, SnapshotSection.UidStarts, MemoryMarshal.AsBytes(uidStarts));
-                WriteSection(stream, offsets, SnapshotSection.UidRows, MemoryMarshal.AsBytes(uidRows));
-                WriteSection(stream, offsets, SnapshotSection.AliasStarts, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(aliasStarts)));
-                WriteSection(stream, offsets, SnapshotSection.AliasEntryOffsets, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(aliasEntryOffsets)));
-                WriteSection(stream, offsets, SnapshotSection.AliasProviderIds, CollectionsMarshal.AsSpan(aliasProviderIds));
-                WriteSection(stream, offsets, SnapshotSection.AliasBlob, aliasBlob.GetBuffer().AsSpan(0, (int)aliasBlob.Length));
-                WriteSection(stream, offsets, SnapshotSection.OrphanRows, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(orphanRows)));
-                WriteSection(stream, offsets, SnapshotSection.OrphanFrns, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(orphanFrns)));
-                WriteSection(stream, offsets, SnapshotSection.UniqueAsciiBits, MemoryMarshal.AsBytes(asciiBits));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.NameIds, MemoryMarshal.AsBytes(nameIds));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.Flags, MemoryMarshal.AsBytes(flags));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.ParentIndexes, MemoryMarshal.AsBytes(parentIndexes));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.UniqueMasks, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(masks)));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.NameOffsets, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(nameOffsets)));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.NameBlob, nameBlob.GetBuffer().AsSpan(0, (int)nameBlob.Length));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.Ids, MemoryMarshal.AsBytes(ids));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.Sizes, MemoryMarshal.AsBytes(sizes));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.CreationTimes, MemoryMarshal.AsBytes(creation));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.LastWriteTimes, MemoryMarshal.AsBytes(lastWrite));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.LastAccessTimes, MemoryMarshal.AsBytes(lastAccess));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.ChildStarts, MemoryMarshal.AsBytes(childStarts));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.Children, MemoryMarshal.AsBytes(children));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.UidStarts, MemoryMarshal.AsBytes(uidStarts));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.UidRows, MemoryMarshal.AsBytes(uidRows));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.AliasStarts, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(aliasStarts)));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.AliasEntryOffsets, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(aliasEntryOffsets)));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.AliasProviderIds, CollectionsMarshal.AsSpan(aliasProviderIds));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.AliasBlob, aliasBlob.GetBuffer().AsSpan(0, (int)aliasBlob.Length));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.OrphanRows, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(orphanRows)));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.OrphanFrns, MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(orphanFrns)));
+                SnapshotWriterOps.WriteSection(stream, offsets, SnapshotSection.UniqueAsciiBits, MemoryMarshal.AsBytes(asciiBits));
                 stream.SetLength(totalLength);
             }
 
-            FileRecordStoreReplaceHelper.ReplaceWithRetry(temp, path, TryDelete);
+            FileRecordStoreReplaceHelper.ReplaceWithRetry(temp, path, SnapshotWriterOps.TryDelete);
         }
     }
 
-    // First (lowest) row holding this id, or -1 -- hard-link duplicates sit adjacent after the sort.
-    internal static int FirstRowForId(UInt128[] ids, UInt128 id)
-    {
-        int low = 0, high = ids.Length - 1, found = -1;
-        while (low <= high)
-        {
-            var mid = low + ((high - low) >> 1);
-            if (ids[mid] >= id)
-            {
-                if (ids[mid] == id)
-                    found = mid;
-                high = mid - 1;
-            }
-            else
-            {
-                low = mid + 1;
-            }
-        }
-        return found;
-    }
-
-    private static void WriteSection(FileStream stream, long[] offsets, SnapshotSection section, ReadOnlySpan<byte> bytes)
-    {
-        stream.Position = offsets[(int)section];
-        stream.Write(bytes);
-    }
-
-    // Best-effort cleanup of File.Replace's own backup file -- a few retries, not just one, since a
-    // just-renamed file can still be transiently held (e.g. real-time AV scanning it, or the OS not
-    // having fully torn down a just-disposed memory mapping the instant Dispose() returns) for a brief
-    // moment right after the rename. A single failed attempt used to leave that .bak file orphaned
-    // forever (nothing else ever revisits it) even though it was never actually stuck -- it would have
-    // deleted fine a few milliseconds later.
-    private static void TryDelete(string path)
-    {
-        const int maxAttempts = 3;
-        for (var attempt = 1; attempt <= maxAttempts; attempt++)
-        {
-            try
-            {
-                if (File.Exists(path))
-                    File.Delete(path);
-                return;
-            }
-            catch when (attempt < maxAttempts)
-            {
-                Thread.Sleep(25 * attempt);
-            }
-            catch
-            {
-            }
-        }
-    }
+    internal static int FirstRowForId(UInt128[] ids, UInt128 id) => SnapshotWriterOps.FirstRowForId(ids, id);
 }

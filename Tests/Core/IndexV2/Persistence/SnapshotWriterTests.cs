@@ -41,6 +41,39 @@ public sealed class SnapshotWriterTests
         CollectionAssert.Contains(expectedCounts.ToList(), snapshot.Count);
     }
 
+    [TestMethod]
+    public void Write_ParentSequenceNumberMismatch_ResolvesParentVia48BitRecordIndexFallback()
+    {
+        using var dir = new TempDirectory();
+        var path = Path.Combine(dir.Path, "sequence_mismatch.idx");
+
+        var store = new FileRecordStore
+        {
+            SourceKey = "D",
+            SourceKind = FileRecordSourceKind.LocalMft,
+            IdKind = FileRecordIdKind.MftFrn,
+            RootId = 1,
+        };
+
+        // Root
+        store.Records.Add(new FileRecord(1, 1, string.Empty, FileRecordFlags.Directory | FileRecordFlags.SourceRoot));
+
+        // Parent directory with FRN index 10 and sequence 2: 0x000200000000000A
+        UInt128 parentDirectoryFrn = ((ulong)2 << 48) | 10;
+        store.Records.Add(new FileRecord(parentDirectoryFrn, 1, "WorkDir", FileRecordFlags.Directory));
+
+        // Child file with ParentId having FRN index 10 but OLD sequence 1: 0x000100000000000A
+        UInt128 childMismatchedParentFrn = ((ulong)1 << 48) | 10;
+        UInt128 childFrn = ((ulong)1 << 48) | 20;
+        store.Records.Add(new FileRecord(childFrn, childMismatchedParentFrn, "ChildFile.txt", FileRecordFlags.None));
+
+        SnapshotWriter.Write(store, path);
+
+        using var snapshot = Snapshot.Open(path);
+        Assert.AreEqual(0, snapshot.Meta.OrphanCount, "Child file should be resolved via 48-bit Record Index fallback, not orphaned.");
+        Assert.AreEqual(3, snapshot.Count);
+    }
+
     private static FileRecordStore BuildStore(int fileCount)
     {
         var store = new FileRecordStore
