@@ -162,6 +162,16 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
                         DefaultValue = "@",
                         MaxLength = 1,
                         RequireNonEmpty = true
+                    },
+                    new PluginConfigField
+                    {
+                        Key = Providers.QueryTokens.WildcardQueryTokenProvider.PrefixSettingKey,
+                        LabelKey = "CoreExtensions_Config_WildcardFilterPrefixLabel",
+                        DescriptionKey = "CoreExtensions_Config_WildcardFilterPrefixDesc",
+                        FieldType = ConfigFieldType.Text,
+                        DefaultValue = "?",
+                        MaxLength = 1,
+                        RequireNonEmpty = true
                     }
                 }
             },

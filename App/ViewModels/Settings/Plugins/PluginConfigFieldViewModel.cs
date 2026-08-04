@@ -23,6 +23,10 @@ public class PluginConfigFieldViewModel : ViewModelBase
     public string GroupName => string.IsNullOrEmpty(GroupKey) ? string.Empty : TranslationService.Get(GroupKey);
     public ConfigFieldType FieldType => SchemaField.FieldType;
     public List<string>? Choices => SchemaField.Choices?.Select(c => TranslationService.Get(c)).ToList();
+    public int MaxLength => SchemaField.MaxLength > 0 ? SchemaField.MaxLength : int.MaxValue;
+    public bool IsSingleChar => SchemaField.MaxLength == 1;
+    public double EditorWidth => IsSingleChar ? 48 : 180;
+    public System.Windows.TextAlignment TextAlignment => IsSingleChar ? System.Windows.TextAlignment.Center : System.Windows.TextAlignment.Left;
 
     public void NotifyLanguageChanged()
     {

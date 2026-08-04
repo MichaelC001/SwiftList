@@ -67,14 +67,14 @@
 
     <DataTemplate x:Key="FilePathFieldTemplate">
         <StackPanel Orientation="Horizontal">
-            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="150" Height="26"/>
+            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" MaxLength="{Binding MaxLength}" Width="150" Height="26"/>
             <Button Content="..." Style="{StaticResource SettingsButton}" MinWidth="0" Padding="4,0" Width="28" Height="26" Margin="4,0,0,0" Tag="File" Click="BrowsePath_Click"/>
         </StackPanel>
     </DataTemplate>
 
     <DataTemplate x:Key="FolderPathFieldTemplate">
         <StackPanel Orientation="Horizontal">
-            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="150" Height="26"/>
+            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" MaxLength="{Binding MaxLength}" Width="150" Height="26"/>
             <Button Content="..." Style="{StaticResource SettingsButton}" MinWidth="0" Padding="4,0" Width="28" Height="26" Margin="4,0,0,0" Tag="Folder" Click="BrowsePath_Click"/>
         </StackPanel>
     </DataTemplate>
@@ -110,7 +110,11 @@
                     <Setter.Value>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="180" Height="26"/>
+                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                         MaxLength="{Binding MaxLength}"
+                                         Width="{Binding EditorWidth}"
+                                         TextAlignment="{Binding TextAlignment}"
+                                         Height="26"/>
                                 <!-- Spacer for non-icon fields to align them with the icon field preview -->
                                 <Border Width="24" Height="24" Margin="8,0,0,0" CornerRadius="4"
                                         Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
@@ -136,7 +140,7 @@
                 <Setter Property="ContentTemplate">
                     <Setter.Value>
                         <DataTemplate>
-                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" MaxLength="{Binding MaxLength}"
                                      Width="260" Height="80" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
                                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                                      VerticalContentAlignment="Top" Padding="6,4" FontFamily="Cascadia Mono, Consolas"/>

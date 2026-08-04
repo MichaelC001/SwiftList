@@ -223,5 +223,8 @@
   "CoreExtensions_Config_PathExclusionPrefixLabel": "Path Exclusion Prefix",
   "CoreExtensions_Config_PathExclusionPrefixDesc": "Prefix character for path fuzzy-matching tokens (default :).",
   "CoreExtensions_Config_CustomFilterPrefixLabel": "Custom Filter Prefix",
-  "CoreExtensions_Config_CustomFilterPrefixDesc": "Prefix character for custom filter tokens (default @)."
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "Prefix character for custom filter tokens (default @).",
+  "CoreExtensions_WildcardFilterProvider_Name": "Wildcard Filter (?expression)",
+  "CoreExtensions_Config_WildcardFilterPrefixLabel": "Wildcard Filter Prefix",
+  "CoreExtensions_Config_WildcardFilterPrefixDesc": "Prefix character to trigger wildcard secondary filtering (default ?)."
 }

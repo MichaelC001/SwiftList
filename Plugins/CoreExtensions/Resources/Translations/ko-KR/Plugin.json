@@ -223,5 +223,8 @@
   "CoreExtensions_Config_PathExclusionPrefixLabel": "경로 제외 접두사 문자",
   "CoreExtensions_Config_PathExclusionPrefixDesc": "경로 부분 일치 토큰의 접두사 문자 (기본값: :).",
   "CoreExtensions_Config_CustomFilterPrefixLabel": "카테고리 필터 접두사 문자",
-  "CoreExtensions_Config_CustomFilterPrefixDesc": "사용자 지정 카테고리 필터의 접두사 문자 (기본값: @)."
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "사용자 지정 카테고리 필터의 접두사 문자 (기본값: @).",
+  "CoreExtensions_WildcardFilterProvider_Name": "와일드카드 2차 필터 (?표현식)",
+  "CoreExtensions_Config_WildcardFilterPrefixLabel": "와일드카드 필터 트리거 접두사",
+  "CoreExtensions_Config_WildcardFilterPrefixDesc": "와일드카드 2차 필터를 트리거하는 접두사 문자 (기본값 ?)."
 }

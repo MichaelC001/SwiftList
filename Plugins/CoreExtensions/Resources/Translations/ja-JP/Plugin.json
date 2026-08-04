@@ -223,5 +223,8 @@
   "CoreExtensions_Config_PathExclusionPrefixLabel": "パス除外プレフィックス文字",
   "CoreExtensions_Config_PathExclusionPrefixDesc": "パス部分一致トークンのプレフィックス文字（デフォルト: :）。",
   "CoreExtensions_Config_CustomFilterPrefixLabel": "カテゴリフィルタープレフィックス文字",
-  "CoreExtensions_Config_CustomFilterPrefixDesc": "カスタムカテゴリフィルターのプレフィックス文字（デフォルト: @）。"
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "カスタムカテゴリフィルターのプレフィックス文字（デフォルト: @）。",
+  "CoreExtensions_WildcardFilterProvider_Name": "ワイルドカード二次フィルター (?表現)",
+  "CoreExtensions_Config_WildcardFilterPrefixLabel": "ワイルドカードフィルターのプレフィックス",
+  "CoreExtensions_Config_WildcardFilterPrefixDesc": "ワイルドカード二次フィルターをトリガーするプレフィックス文字 (デフォルトは ?)。"
 }

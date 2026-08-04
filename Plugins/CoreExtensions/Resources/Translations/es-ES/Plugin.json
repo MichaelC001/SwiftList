@@ -223,5 +223,8 @@
   "CoreExtensions_Config_PathExclusionPrefixLabel": "Prefijo de exclusión de ruta",
   "CoreExtensions_Config_PathExclusionPrefixDesc": "Carácter de prefijo para tokens de coincidencia difusa de ruta (predeterminado :).",
   "CoreExtensions_Config_CustomFilterPrefixLabel": "Prefijo de filtro personalizado",
-  "CoreExtensions_Config_CustomFilterPrefixDesc": "Carácter de prefijo para tokens de filtro de categoría personalizados (predeterminado @)."
+  "CoreExtensions_Config_CustomFilterPrefixDesc": "Carácter de prefijo para tokens de filtro de categoría personalizados (predeterminado @).",
+  "CoreExtensions_WildcardFilterProvider_Name": "Filtro comodín secundario (?expresión)",
+  "CoreExtensions_Config_WildcardFilterPrefixLabel": "Prefijo del filtro comodín",
+  "CoreExtensions_Config_WildcardFilterPrefixDesc": "Carácter de prefijo para activar el filtro comodín secundario (predeterminado ?)."
 }
