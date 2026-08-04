@@ -97,22 +97,29 @@ internal static class SettingsWindowSearchExtensions
             }
 
             var configTabLabel = TranslationManager.Instance["Common_Configure"];
-            void RevealPluginConfig(SettingsViewModel settings)
-            {
-                settings.Plugins.SelectedPlugin = capturedPlugin;
-                capturedPlugin.IsConfigTab = true;
-            }
 
-            void AddConfigFields(IEnumerable<PluginConfigFieldViewModel> fields, string parentBreadcrumb)
+            void AddConfigFields(IEnumerable<PluginConfigFieldViewModel> fields, string parentBreadcrumb, PluginConfigFieldViewModel? ownerGroup = null)
             {
                 foreach (var field in fields)
                 {
+                    var currentGroup = field.IsGroup ? field : ownerGroup;
                     var label = field.Label;
                     if (!string.IsNullOrWhiteSpace(label))
                     {
-                        var breadcrumb = string.IsNullOrWhiteSpace(field.GroupName)
+                        var breadcrumb = string.IsNullOrWhiteSpace(field.GroupName) || field.IsGroup
                             ? parentBreadcrumb
                             : $"{parentBreadcrumb} › {field.GroupName}";
+
+                        var capturedGroup = currentGroup;
+                        void RevealPluginConfig(SettingsViewModel settings)
+                        {
+                            settings.Plugins.SelectedPlugin = capturedPlugin;
+                            capturedPlugin.IsConfigTab = true;
+                            if (capturedGroup != null && capturedPlugin.ConfigGroups.Contains(capturedGroup))
+                            {
+                                capturedPlugin.SelectedConfigGroup = capturedGroup;
+                            }
+                        }
 
                         results.Add(new SettingsSearchResultItem(label, breadcrumb, "Plugins", RevealPluginConfig,
                             Reveal: new SettingsSearchDynamicReveal(string.Empty, field)));
@@ -120,7 +127,7 @@ internal static class SettingsWindowSearchExtensions
 
                     if (field.Children is { Count: > 0 })
                     {
-                        AddConfigFields(field.Children, parentBreadcrumb);
+                        AddConfigFields(field.Children, parentBreadcrumb, currentGroup);
                     }
                 }
             }
