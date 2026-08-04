@@ -81,6 +81,7 @@ internal static class MftParser
         // touched again. $DATA's own real-size field (read here from the same already-loaded record,
         // no extra I/O) is the one NTFS keeps authoritative, so it wins whenever present.
         long? dataSize = null;
+        (UInt128 parent, string name, long size)? dosFallbackName = null;
         int a = BitConverter.ToUInt16(buf, recOff + 0x14);
         while (a + 8 <= recLen)
         {
@@ -109,13 +110,20 @@ internal static class MftParser
                 if (vp + 0x42 <= recOff + recLen)
                 {
                     var ns = buf[vp + 0x41]; // 0=POSIX 1=Win32 2=DOS 3=Win32&DOS
-                    if (ns != 2)
+                    UInt128 parent = (ulong)BitConverter.ToInt64(buf, vp);
+                    var size = BitConverter.ToInt64(buf, vp + 0x30); // real (logical) size -- may be stale, see dataSize above
+                    int nameLen = buf[vp + 0x40];
+                    if (vp + 0x42 + nameLen * 2 <= recOff + recLen)
                     {
-                        UInt128 parent = (ulong)BitConverter.ToInt64(buf, vp);
-                        var size = BitConverter.ToInt64(buf, vp + 0x30); // real (logical) size -- may be stale, see dataSize above
-                        int nameLen = buf[vp + 0x40];
-                        if (vp + 0x42 + nameLen * 2 <= recOff + recLen)
-                            names.Add((parent, Encoding.Unicode.GetString(buf, vp + 0x42, nameLen * 2), size));
+                        var parsedName = Encoding.Unicode.GetString(buf, vp + 0x42, nameLen * 2);
+                        if (ns != 2)
+                        {
+                            names.Add((parent, parsedName, size));
+                        }
+                        else
+                        {
+                            dosFallbackName ??= (parent, parsedName, size);
+                        }
                     }
                 }
             }
@@ -133,6 +141,11 @@ internal static class MftParser
                 }
             }
             a += (int)len;
+        }
+
+        if (names.Count == 0 && dosFallbackName.HasValue)
+        {
+            names.Add(dosFallbackName.Value);
         }
 
         if (dataSize.HasValue)

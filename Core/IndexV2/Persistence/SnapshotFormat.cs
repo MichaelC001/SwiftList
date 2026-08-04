@@ -22,13 +22,13 @@ internal enum SnapshotSection
 internal static class SnapshotFormat
 {
     public const ulong Magic = 0x0000005844494C53; // "SLIDX\0\0\0" little-endian
-    // Bumped 3 -> 4: MftParser.CollectNames now reads Size from $DATA's real-size field instead of
-    // $FILE_NAME's stale duplicated copy (see the fix's commit). RestoreOrRebuild only reuses an
-    // on-disk snapshot as-is via incremental USN catch-up -- it never re-parses the MFT for a drive
-    // that already has a cache -- so bumping this is what actually forces every existing snapshot to
-    // rebuild once and pick up correct sizes, instead of the fix silently never applying to files
-    // that were indexed before it and haven't been touched (renamed/moved/rewritten) since.
-    public const int Version = 4;
+    // Bumped 4 -> 5: MftParser.CollectNames now falls back to DOS 8.3 names when no Win32/POSIX name
+    // exists for a record (see the fix's commit). RestoreOrRebuild only reuses an on-disk snapshot
+    // as-is via incremental USN catch-up -- it never re-parses the MFT for a drive that already
+    // has a cache -- so bumping this is what actually forces every existing snapshot to rebuild
+    // once and pick up missing DOS-only parent directory nodes (e.g. read-only/migrated drives),
+    // restoring orphaned subtrees instead of stale caches persisting across restarts.
+    public const int Version = 5;
     public const int SectionAlignment = 16;
 
     internal sealed class Meta

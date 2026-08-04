@@ -112,7 +112,7 @@ public sealed class MftParserTests
     }
 
     [TestMethod]
-    public void CollectNames_DosOnlyShortName_IsExcluded()
+    public void CollectNames_DosOnlyShortName_UsesFallback()
     {
         const int a = 32;
         const int vo = 24;
@@ -129,13 +129,14 @@ public sealed class MftParserTests
         WriteInt64(buf, vp, 1); // parent
         WriteInt64(buf, vp + 0x30, 1); // size
         buf[vp + 0x40] = (byte)name.Length;
-        buf[vp + 0x41] = 2; // DOS-only namespace -> must be excluded
+        buf[vp + 0x41] = 2; // DOS-only namespace -> fallback as last resort when no Win32 name
         WriteBytes(buf, vp + 0x42, Encoding.Unicode.GetBytes(name));
 
         var names = new List<(UInt128 parent, string name, long size)>();
         MftParser.CollectNames(buf, 0, buf.Length, names, out _, out _, out _);
 
-        Assert.IsEmpty(names);
+        Assert.HasCount(1, names);
+        Assert.AreEqual(name, names[0].name);
     }
 
     private static byte[] BuildFullRecord(out string expectedName)
