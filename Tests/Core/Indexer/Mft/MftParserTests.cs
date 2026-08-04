@@ -54,7 +54,7 @@ public sealed class MftParserTests
     }
 
     [TestMethod]
-    public void ParseDataRuns_MultipleRuns_AccumulatesLcnAndHandlesNegativeDelta()
+    public void ParseDataRuns_MultipleDataAttributes_AccumulatesExtentsFromAllDataAttributes()
     {
         var rec = BuildRecordWithDataRuns((runLen: 5, delta: 10), (runLen: 3, delta: -4));
 
@@ -62,8 +62,43 @@ public sealed class MftParserTests
 
         Assert.HasCount(2, extents);
         Assert.AreEqual((10L, 5L), extents[0]);
-        Assert.AreEqual((6L, 3L), extents[1]); // lcn accumulates: 10 + (-4) = 6
+        Assert.AreEqual((6L, 3L), extents[1]);
     }
+
+    [TestMethod]
+    public void ParseAttributeListRecordIndexes_ResidentAttributeList_ExtractsTargetAttributeRecordIndexes()
+    {
+        const int a = 32;
+        const int vo = 24;
+        var vp = a + vo;
+        var entry1Len = 0x18;
+        var recLen = vp + entry1Len * 2;
+        var buf = new byte[recLen];
+
+        WriteUInt16(buf, 0x14, a);
+        WriteUInt32(buf, a, 0x20); // $ATTRIBUTE_LIST
+        WriteUInt32(buf, a + 4, (uint)(recLen - a));
+        buf[a + 8] = 0; // resident
+        WriteUInt32(buf, a + 0x10, (uint)(entry1Len * 2)); // value length
+        WriteUInt16(buf, a + 0x14, vo);
+
+        // Entry 1: $DATA (0x80), mftRef = 15
+        WriteUInt32(buf, vp, 0x80);
+        WriteUInt16(buf, vp + 4, (ushort)entry1Len);
+        WriteInt64(buf, vp + 0x10, 15);
+
+        // Entry 2: $DATA (0x80), mftRef = 28
+        WriteUInt32(buf, vp + entry1Len, 0x80);
+        WriteUInt16(buf, vp + entry1Len + 4, (ushort)entry1Len);
+        WriteInt64(buf, vp + entry1Len + 0x10, 28);
+
+        var indexes = MftParser.ParseAttributeListRecordIndexes(buf, 0x80);
+
+        Assert.HasCount(2, indexes);
+        Assert.AreEqual(15uL, indexes[0]);
+        Assert.AreEqual(28uL, indexes[1]);
+    }
+
 
     [TestMethod]
     public void ParseDataRuns_NoDataAttribute_ReturnsEmpty()

@@ -38,6 +38,23 @@ internal static class MftIndexScanner
             return null;
         MftParser.ApplyFixup(rec0, bytesPerSector, 0, (int)recordSize);
         var extents = MftParser.ParseDataRuns(rec0);
+
+        // Check if $MFT has an $ATTRIBUTE_LIST pointing to extension records containing more $DATA runs
+        var extRecIndexes = MftParser.ParseAttributeListRecordIndexes(rec0, 0x80);
+        foreach (var extRecIdx in extRecIndexes)
+        {
+            var extRecOff = GetMftRecordVolumeOffset(extRecIdx, extents, bytesPerCluster, recordSize);
+            if (extRecOff >= 0)
+            {
+                var extRec = new byte[recordSize];
+                if (ReadAt(handle, extRecOff, extRec, (int)recordSize))
+                {
+                    MftParser.ApplyFixup(extRec, bytesPerSector, 0, (int)recordSize);
+                    MftParser.ParseDataRunsInto(extRec, extents);
+                }
+            }
+        }
+
         if (extents.Count == 0)
         {
             Logger.Log($"[MftIndexScanner] Could not parse $MFT runlist on {drive}.", LogLevel.Error);
@@ -82,13 +99,14 @@ internal static class MftIndexScanner
 
                     var baseRef = (ulong)BitConverter.ToInt64(buf, r + 0x20);
                     var isExtension = (baseRef & 0xFFFFFFFFFFFF) != 0;
-                    if (!isExtension && idx == NtfsRootRecordIndex)
+                    if (isExtension)
+                        continue; // Primary $FILE_NAME attributes reside in the base record; skip extension records.
+
+                    if (idx == NtfsRootRecordIndex)
                         continue; // root already present via CreateEmptyStore
 
                     var seq = BitConverter.ToUInt16(buf, r + 0x10);
-                    UInt128 owner = isExtension
-                        ? baseRef
-                        : ((ulong)seq << 48) | ((ulong)idx & 0xFFFFFFFFFFFF);
+                    UInt128 owner = ((ulong)seq << 48) | ((ulong)idx & 0xFFFFFFFFFFFF);
                     names.Clear();
                     var stdAttrs = MftParser.CollectNames(buf, r, (int)recordSize, names,
                         out var creationTimeUtc, out var lastWriteTimeUtc, out var lastAccessTimeUtc);
@@ -148,5 +166,22 @@ internal static class MftIndexScanner
             done += (int)got;
         }
         return true;
+    }
+
+    private static long GetMftRecordVolumeOffset(ulong recordIndex, List<(long lcn, long clusters)> extents, uint bytesPerCluster, uint recordSize)
+    {
+        var targetStreamOffset = (long)recordIndex * recordSize;
+        long currentStreamOffset = 0;
+        foreach (var (lcn, clusters) in extents)
+        {
+            var extentBytes = clusters * bytesPerCluster;
+            if (targetStreamOffset >= currentStreamOffset && targetStreamOffset < currentStreamOffset + extentBytes)
+            {
+                var offsetInExtent = targetStreamOffset - currentStreamOffset;
+                return (lcn * bytesPerCluster) + offsetInExtent;
+            }
+            currentStreamOffset += extentBytes;
+        }
+        return -1;
     }
 }

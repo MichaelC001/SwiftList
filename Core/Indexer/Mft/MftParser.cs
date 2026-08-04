@@ -25,6 +25,12 @@ internal static class MftParser
     internal static List<(long lcn, long clusters)> ParseDataRuns(byte[] rec)
     {
         var extents = new List<(long, long)>();
+        ParseDataRunsInto(rec, extents);
+        return extents;
+    }
+
+    internal static void ParseDataRunsInto(byte[] rec, List<(long lcn, long clusters)> extents)
+    {
         int a = BitConverter.ToUInt16(rec, 0x14);
         while (a + 8 <= rec.Length)
         {
@@ -55,12 +61,55 @@ internal static class MftParser
                     lcn += runOff;
                     extents.Add((lcn, runLen));
                 }
-                break;
             }
             a += (int)len;
         }
-        return extents;
     }
+
+    /// <summary>Parses resident $ATTRIBUTE_LIST (0x20) entries to find record indexes of extension records holding <paramref name="targetAttrType"/>.</summary>
+    internal static List<ulong> ParseAttributeListRecordIndexes(byte[] rec, uint targetAttrType)
+    {
+        var records = new List<ulong>();
+        int a = BitConverter.ToUInt16(rec, 0x14);
+        while (a + 8 <= rec.Length)
+        {
+            var type = BitConverter.ToUInt32(rec, a);
+            if (type == 0xFFFFFFFF)
+                break;
+            var len = BitConverter.ToUInt32(rec, a + 4);
+            if (len < 16 || a + len > rec.Length)
+                break;
+            if (type == 0x20) // $ATTRIBUTE_LIST
+            {
+                var resident = rec[a + 8] == 0;
+                if (resident)
+                {
+                    var vo = BitConverter.ToUInt16(rec, a + 0x14);
+                    var vl = BitConverter.ToUInt32(rec, a + 0x10);
+                    var p = a + vo;
+                    var end = p + (int)vl;
+                    while (p + 0x18 <= end && p + 0x18 <= rec.Length)
+                    {
+                        var entryType = BitConverter.ToUInt32(rec, p);
+                        var entryLen = BitConverter.ToUInt16(rec, p + 0x04);
+                        if (entryLen < 0x18)
+                            break;
+                        if (entryType == targetAttrType)
+                        {
+                            var mftRef = BitConverter.ToUInt64(rec, p + 0x10);
+                            var recIdx = mftRef & 0xFFFFFFFFFFFF;
+                            if (recIdx > 0 && !records.Contains(recIdx))
+                                records.Add(recIdx);
+                        }
+                        p += entryLen;
+                    }
+                }
+            }
+            a += (int)len;
+        }
+        return records;
+    }
+
 
     /// <summary>
     /// Walks a FILE record's attributes: collects every resident $FILE_NAME (excluding DOS-only 8.3

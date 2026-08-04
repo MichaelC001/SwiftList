@@ -22,10 +22,9 @@ internal enum SnapshotSection
 internal static class SnapshotFormat
 {
     public const ulong Magic = 0x0000005844494C53; // "SLIDX\0\0\0" little-endian
-    // Bumped 5 -> 6: Resolves DOS 8.3 short paths to Win32 long paths via GetLongPathName,
-    // stitches MFT extension records for large directories, and falls back to 48-bit Record Index
-    // matching when 64-bit parent FRNs mismatch, ensuring all orphaned subtrees are restored.
-    public const int Version = 6;
+    // Bumped 6 -> 7: Parses multi-$DATA extents and $ATTRIBUTE_LIST entries for $MFT itself,
+    // ensuring full volume MFT scanning without truncation on fragmented drives.
+    public const int Version = 7;
     public const int SectionAlignment = 16;
 
     internal sealed class Meta
