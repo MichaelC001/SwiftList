@@ -146,9 +146,12 @@
                              above it, so the block reads as belonging to the row rather than to the list.
                              A plugin source keeps only the display switch: what it shows is its own
                              decision, so it has no folder, no kind, no filter and no cap to offer. -->
-                        <Grid Margin="54,8,0,6">
-                            <Grid.Style>
-                                <Style TargetType="Grid">
+                        <ScrollViewer Margin="54,8,0,6" Focusable="False"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      conv:ScrollViewerHelper.ShiftWheelScrollsHorizontally="True">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsExpanded}" Value="True">
@@ -156,28 +159,28 @@
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Grid.Style>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                            </ScrollViewer.Style>
 
-                            <TextBlock Style="{StaticResource SourceFieldLabel}"
-                                       Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"
-                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceKind]}"/>
-                            <!-- ItemsSource of value+label pairs, like every other Settings dropdown:
-                                 declared items whose Content was a translation binding left the box
-                                 blank (the selection matched on identity, not on the value) and would
-                                 have had to be rebuilt on a language switch anyway. -->
-                            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
-                                          conv:ScrollViewerHelper.ShiftWheelScrollsHorizontally="True" Focusable="False" Margin="0,0,0,6">
-                                <StackPanel Orientation="Horizontal">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Style="{StaticResource SourceFieldLabel}"
+                                           Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"
+                                           Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourceKind]}"/>
+                                <!-- ItemsSource of value+label pairs, like every other Settings dropdown:
+                                     declared items whose Content was a translation binding left the box
+                                     blank (the selection matched on identity, not on the value) and would
+                                     have had to be rebuilt on a language switch anyway. -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
                                     <ComboBox HorizontalAlignment="Left" MinWidth="200"
                                               Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}"
                                               Style="{StaticResource SettingsComboBox}"
@@ -204,47 +207,47 @@
                                               ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AcceptsDropsTooltip]}"
                                               Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_AcceptsDrops]}"/>
                                 </StackPanel>
-                            </ScrollViewer>
 
-                            <TextBlock Grid.Row="1" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}" Style="{StaticResource SourceFieldLabel}"
-                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourcePath]}"/>
-                            <!-- The same "..." browse button the plugin config's own folder field uses,
-                                 and the same shape: the box keeps the width and the button takes what it
-                                 needs off the right. -->
-                            <DockPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
-                                <Button DockPanel.Dock="Right" Content="..." Style="{StaticResource SettingsButton}"
-                                        MinWidth="0" Padding="4,0" Width="28" Height="26" Margin="4,0,0,0"
-                                        Command="{Binding BrowseCommand}"/>
-                                <TextBox Style="{StaticResource RuleTextBox}"
-                                         Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </DockPanel>
+                                <TextBlock Grid.Row="1" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}" Style="{StaticResource SourceFieldLabel}"
+                                           Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_SourcePath]}"/>
+                                <!-- The same "..." browse button the plugin config's own folder field uses,
+                                     and the same shape: the box keeps the width and the button takes what it
+                                     needs off the right. -->
+                                <DockPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
+                                    <Button DockPanel.Dock="Right" Content="..." Style="{StaticResource SettingsButton}"
+                                            MinWidth="0" Padding="4,0" Width="28" Height="26" Margin="4,0,0,0"
+                                            Command="{Binding BrowseCommand}"/>
+                                    <TextBox Style="{StaticResource RuleTextBox}"
+                                             Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DockPanel>
 
-                            <TextBlock Grid.Row="2" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}" Style="{StaticResource SourceFieldLabel}"
-                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPattern]}"/>
-                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
-                                <TextBox Width="150" Style="{StaticResource RuleTextBox}"
-                                         ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPatternTooltip]}"
-                                         Text="{Binding FilterPattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                <CheckBox Margin="14,0,0,0" VerticalAlignment="Center"
-                                          Visibility="{Binding IsRecentFiles, Converter={StaticResource InvertBoolToVis}}"
-                                          IsChecked="{Binding Recursive, Mode=TwoWay}"
-                                          Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Recursive]}"/>
-                            </StackPanel>
+                                <TextBlock Grid.Row="2" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}" Style="{StaticResource SourceFieldLabel}"
+                                           Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPattern]}"/>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
+                                    <TextBox Width="150" Style="{StaticResource RuleTextBox}"
+                                             ToolTip="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_FilterPatternTooltip]}"
+                                             Text="{Binding FilterPattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <CheckBox Margin="14,0,0,0" VerticalAlignment="Center"
+                                              Visibility="{Binding IsRecentFiles, Converter={StaticResource InvertBoolToVis}}"
+                                              IsChecked="{Binding Recursive, Mode=TwoWay}"
+                                              Content="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_Recursive]}"/>
+                                </StackPanel>
 
-                            <TextBlock Grid.Row="3" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}" Style="{StaticResource SourceFieldLabel}"
-                                       Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxItems]}"/>
-                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
-                                <TextBox Width="64" Style="{StaticResource RuleTextBox}"
-                                         Text="{Binding MaxItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
-                                <TextBlock Margin="14,0,10,0" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextSecondary}"
-                                           Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxAge]}"
-                                           Visibility="{Binding IsRecentFiles, Converter={StaticResource BoolToVis}}"/>
-                                <TextBox Width="64" Style="{StaticResource RuleTextBox}"
-                                         Visibility="{Binding IsRecentFiles, Converter={StaticResource BoolToVis}}"
-                                         Text="{Binding MaxAgeMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
-                            </StackPanel>
-                        </Grid>
+                                <TextBlock Grid.Row="3" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}" Style="{StaticResource SourceFieldLabel}"
+                                           Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxItems]}"/>
+                                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Visibility="{Binding IsFolderSource, Converter={StaticResource BoolToVis}}">
+                                    <TextBox Width="64" Style="{StaticResource RuleTextBox}"
+                                             Text="{Binding MaxItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
+                                    <TextBlock Margin="14,0,10,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_MaxAge]}"
+                                               Visibility="{Binding IsRecentFiles, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBox Width="64" Style="{StaticResource RuleTextBox}"
+                                             Visibility="{Binding IsRecentFiles, Converter={StaticResource BoolToVis}}"
+                                             Text="{Binding MaxAgeMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, NotifyOnValidationError=True, ValidatesOnExceptions=True}"/>
+                                </StackPanel>
+                            </Grid>
+                        </ScrollViewer>
                     </StackPanel>
                 </Border>
             </DataTemplate>
