@@ -84,42 +84,44 @@
             </StackPanel>
         </StackPanel>
 
-        <Grid>
-            <!-- The wrapper carries the visibility trigger, not the section itself: the section sets its
-                 own DataContext to the selected workspace, and SelectedSubTab lives a level up. -->
-            <Border>
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedSubTab}" Value="Sources">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <local:QuickPanelSourcesSection DataContext="{Binding SelectedTab}"/>
-            </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <!-- The wrapper carries the visibility trigger, not the section itself: the section sets its
+                     own DataContext to the selected workspace, and SelectedSubTab lives a level up. -->
+                <Border>
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="Sources">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <local:QuickPanelSourcesSection DataContext="{Binding SelectedTab}"/>
+                </Border>
 
-            <StackPanel>
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedSubTab}" Value="Processes">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </StackPanel.Style>
-                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ProcessesDesc]}"
-                           Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <!-- The same editor the hotkey blacklist uses: same job, so the same type-and-add list
-                     rather than a bare text box. -->
-                <ContentControl x:Name="RowQuickPanelProcesses" Focusable="False"
-                                Content="{Binding SelectedTab.Processes}"
-                                ContentTemplate="{StaticResource ProcessListEditorTemplate}"/>
-            </StackPanel>
-        </Grid>
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="Processes">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_ProcessesDesc]}"
+                               Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <!-- The same editor the hotkey blacklist uses: same job, so the same type-and-add list
+                         rather than a bare text box. -->
+                    <ContentControl x:Name="RowQuickPanelProcesses" Focusable="False"
+                                    Content="{Binding SelectedTab.Processes}"
+                                    ContentTemplate="{StaticResource ProcessListEditorTemplate}"/>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
     </DockPanel>
 </UserControl>

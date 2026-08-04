@@ -57,8 +57,13 @@
     <!-- Horizontal explicitly Disabled, not left at the default: Hidden still measures the content
          with unbounded width, so a long path in a source row resolved its Star column to the full
          path length and pushed that row's buttons off the right edge with no bar to reach them. -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="0,0,10,0">
+    <Grid Margin="0,0,10,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
             <TextBlock Style="{StaticResource SettingsSectionTitle}"
                        Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[Settings_QuickPanel]}"/>
 
@@ -127,9 +132,10 @@
                     </Border>
                 </StackPanel>
             </StackPanel>
+        </StackPanel>
 
-            <!-- No MinHeight: with one workspace and its sources collapsed, a floor left a slab of
-                 empty card under the list. The page scrolls when the content outgrows it instead. -->
+        <Grid Grid.Row="1">
+            <!-- Section 1: Workspaces -->
             <Border>
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource SettingsCard}">
@@ -180,7 +186,7 @@
                         <ListBox x:Name="ListQuickPanelWorkspaces" ItemsSource="{Binding Tabs}"
                                  SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
                                  ItemContainerStyle="{StaticResource WorkspaceItemStyle}"
-                                 VerticalAlignment="Top" MaxHeight="260"
+                                 VerticalAlignment="Top"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.CanContentScroll="False"
@@ -279,14 +285,10 @@
                 </Grid>
             </Border>
 
-            <!-- Its own section, not inside a workspace: a plugin's list is a whole collection,
-                 orthogonal to whichever folders a workspace gathers, so it is a tab beside the
-                 workspaces rather than a group inside one. Present unless closed, which is the opposite
-                 of how a folder works and is deliberate: a folder is something the user went and added,
-                 while this is something a plugin they installed already offers. -->
-            <StackPanel>
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
+            <!-- Section 2: Plugin Tabs -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding SelectedSection}" Value="PluginTabs">
@@ -294,9 +296,7 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </StackPanel.Style>
-                <TextBlock Text="{Binding Source={x:Static services:TranslationManager.Instance}, Path=[QuickPanel_PluginTabsDesc]}"
-                           Style="{StaticResource SettingsHintText}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                </ScrollViewer.Style>
 
                 <Border Style="{StaticResource SettingsCard}">
                     <ItemsControl x:Name="QuickPanelPluginTabsList" ItemsSource="{Binding PluginTabs}">
@@ -322,8 +322,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </Border>
-            </StackPanel>
-
-        </StackPanel>
-    </ScrollViewer>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>
