@@ -208,5 +208,15 @@
   "Plugins_TypeDesc_IQuickPanelTabProvider": "Aporta una pestaña al Panel Rápido, mostrada junto a los espacios de trabajo en su franja",
   "Plugins_TypeDesc_IFileDialogAdapter": "Adaptador de cuadro de diálogo de archivos: intercepta y mejora los cuadros de diálogo para abrir/guardar archivos.",
   "Plugins_TypeDesc_IAliasProvider": "Proveedor de alias: genera automáticamente alias por pinyin/personalizados para optimizar la búsqueda en texto no ASCII.",
-  "Plugins_TypeDesc_IDynamicActionProvider": "Proveedor de acciones dinámicas: inyecta menús dinámicos del shell de Windows o acciones personalizadas en el menú contextual."
+  "Plugins_TypeDesc_IDynamicActionProvider": "Proveedor de acciones dinámicas: Carga acciones del menú contextual dinámicamente.",
+  "CoreExtensions_CustomFilterProvider_Name": "Filtros personalizados (:@palabra_clave)",
+  "CoreExtensions_Config_CustomFiltersGroupLabel": "Filtros personalizados",
+  "CoreExtensions_Config_CustomFiltersLabel": "Reglas de filtro",
+  "CoreExtensions_Config_CustomFiltersDesc": "Use :@<palabra_clave> en el cuadro de búsqueda para aplicar reglas de filtro personalizadas.",
+  "CoreExtensions_Config_CustomFilters_EnabledLabel": "Habilitado",
+  "CoreExtensions_Config_CustomFilters_KeywordLabel": "Palabra clave",
+  "CoreExtensions_Config_CustomFilters_KeywordDesc": "Anteponga :@ en la búsqueda para aplicar esta regla de filtro.",
+  "CoreExtensions_Config_CustomFilters_RuleLabel": "Regla de filtro",
+  "CoreExtensions_Config_CustomFilters_RuleDesc": "Admite extensiones o comodines (ej. *.doc; *.pdf o doc,docx,pdf).",
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": "Analiza tokens de filtro personalizados que comienzan con :@ y filtra resultados de búsqueda."
 }

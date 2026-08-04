@@ -208,5 +208,15 @@
   "Plugins_TypeDesc_IQuickPanelTabProvider": "向快速面板貢獻一個標籤,與工作區並排顯示在標籤列上",
   "Plugins_TypeDesc_IFileDialogAdapter": "檔案對話方塊介面卡：為系統的開啟/儲存檔案對話方塊提供底層的接管與增強功能。",
   "Plugins_TypeDesc_IAliasProvider": "別名提供器：為搜尋項生成別名（如拼音首字母或自訂別名）以加速非 ASCII 文字的檢索。",
-  "Plugins_TypeDesc_IDynamicActionProvider": "動態動作提供器：在搜尋結果右鍵選單中動態載入第三方選單或操作項。"
+  "Plugins_TypeDesc_IDynamicActionProvider": "動態動作提供者：在搜尋結果右鍵功能表中動態載入第三方功能表或操作項。",
+  "CoreExtensions_CustomFilterProvider_Name": "自訂篩選器 (:@關鍵字)",
+  "CoreExtensions_Config_CustomFiltersGroupLabel": "自訂篩選器",
+  "CoreExtensions_Config_CustomFiltersLabel": "篩選器規則清單",
+  "CoreExtensions_Config_CustomFiltersDesc": "在搜尋方塊中使用 :@<關鍵字> 套用對應的篩選規則（例如 :@doc 篩選文件）。",
+  "CoreExtensions_Config_CustomFilters_EnabledLabel": "是否啟用",
+  "CoreExtensions_Config_CustomFilters_KeywordLabel": "觸發關鍵字",
+  "CoreExtensions_Config_CustomFilters_KeywordDesc": "搜尋時使用 :@加此關鍵字套用篩選規則（例如輸入 doc，則用 :@doc 呼出）。",
+  "CoreExtensions_Config_CustomFilters_RuleLabel": "篩選規則",
+  "CoreExtensions_Config_CustomFilters_RuleDesc": "支援副檔名或萬用字元規則（如 *.doc; *.pdf 或 doc,docx,pdf），支援分號或逗號分割。",
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": "解析以 :@ 開頭的自訂篩選器標記，按照設定的萬用字元與副檔名規則篩選搜尋結果。"
 }

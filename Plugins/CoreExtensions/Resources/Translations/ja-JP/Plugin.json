@@ -208,5 +208,15 @@
   "Plugins_TypeDesc_IQuickPanelTabProvider": "クイックパネルにタブを提供し、ワークスペースと並んでストリップに表示します",
   "Plugins_TypeDesc_IFileDialogAdapter": "ファイルダイアログアダプター: ファイルを開く/保存するダイアログをハイジャックして拡張します。",
   "Plugins_TypeDesc_IAliasProvider": "エイリアスプロバイダー: 非 ASCII テキストの検索を最適化するために、ピンインやカスタムエイリアスを自動生成します。",
-  "Plugins_TypeDesc_IDynamicActionProvider": "動的アクションプロバイダー: コンテキストメニューに動的な Windows シェルメニューまたはカスタムアクションを挿入します。"
+  "Plugins_TypeDesc_IDynamicActionProvider": "動的アクションプロバイダー：右クリックメニュー項目を動的に読み込みます。",
+  "CoreExtensions_CustomFilterProvider_Name": "カスタムフィルター (:@キーワード)",
+  "CoreExtensions_Config_CustomFiltersGroupLabel": "カスタムフィルター",
+  "CoreExtensions_Config_CustomFiltersLabel": "フィルタールール一覧",
+  "CoreExtensions_Config_CustomFiltersDesc": "検索ボックスで :@<キーワード> を使用して対応するフィルタールールを適用します。",
+  "CoreExtensions_Config_CustomFilters_EnabledLabel": "有効化",
+  "CoreExtensions_Config_CustomFilters_KeywordLabel": "トリガーキーワード",
+  "CoreExtensions_Config_CustomFilters_KeywordDesc": "検索時に :@キーワード の形式で入力してフィルタールールを適用します。",
+  "CoreExtensions_Config_CustomFilters_RuleLabel": "フィルタールール",
+  "CoreExtensions_Config_CustomFilters_RuleDesc": "拡張子またはワイルドカードルール（例: *.doc; *.pdf または doc,docx,pdf）に対応します。",
+  "Plugin_Comp_Desc_CustomFilterQueryTokenProvider": ":@ で始まるカスタムフィルター文字を解析し、ワイルドカードと拡張子ルールに基づいて結果を絞り込みます。"
 }

@@ -135,6 +135,49 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
                         DefaultValue = true
                     }
                 }
+            },
+            new PluginConfigField
+            {
+                Key = "CustomFiltersGroup",
+                LabelKey = "CoreExtensions_Config_CustomFiltersGroupLabel",
+                FieldType = ConfigFieldType.Group,
+                SubFields = new List<PluginConfigField>
+                {
+                    new PluginConfigField
+                    {
+                        Key = Providers.QueryTokens.CustomFilterQueryTokenProvider.SettingKey,
+                        LabelKey = "CoreExtensions_Config_CustomFiltersLabel",
+                        DescriptionKey = "CoreExtensions_Config_CustomFiltersDesc",
+                        FieldType = ConfigFieldType.Array,
+                        DefaultValue = Providers.QueryTokens.CustomFilterQueryTokenProvider.DefaultFiltersSchema(),
+                        SubFields = new List<PluginConfigField>
+                        {
+                            new PluginConfigField
+                            {
+                                Key = "Enabled",
+                                LabelKey = "CoreExtensions_Config_CustomFilters_EnabledLabel",
+                                FieldType = ConfigFieldType.Boolean,
+                                DefaultValue = true
+                            },
+                            new PluginConfigField
+                            {
+                                Key = "Keyword",
+                                LabelKey = "CoreExtensions_Config_CustomFilters_KeywordLabel",
+                                DescriptionKey = "CoreExtensions_Config_CustomFilters_KeywordDesc",
+                                FieldType = ConfigFieldType.Text,
+                                DefaultValue = ""
+                            },
+                            new PluginConfigField
+                            {
+                                Key = "Rule",
+                                LabelKey = "CoreExtensions_Config_CustomFilters_RuleLabel",
+                                DescriptionKey = "CoreExtensions_Config_CustomFilters_RuleDesc",
+                                FieldType = ConfigFieldType.Text,
+                                DefaultValue = ""
+                            }
+                        }
+                    }
+                }
             }
         }
     };
