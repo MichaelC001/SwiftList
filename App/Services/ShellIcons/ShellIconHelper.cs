@@ -189,6 +189,16 @@ public static class ShellIconHelper
                 }
             }
 
+            if (!isDir && (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) || ext.Equals(".ico", StringComparison.OrdinalIgnoreCase)) && File.Exists(checkPath))
+            {
+                var exeIcon = ShellImageListInterop.ExtractHiRes(checkPath, 0);
+                if (exeIcon != null)
+                {
+                    _iconCache[cacheKey] = exeIcon;
+                    return exeIcon;
+                }
+            }
+
             if (isUniqueIconType && (File.Exists(checkPath) || Directory.Exists(checkPath)))
             {
                 // For existing EXE/LNK/ICO (or folder fallback), load the actual unique embedded icon from the file path
@@ -199,24 +209,14 @@ public static class ShellIconHelper
                     return hiRes;
                 }
 
-                var flags = ShellIconNativeMethods.SHGFI_ICON | ShellIconNativeMethods.SHGFI_LARGEICON;
-                var res = ShellIconNativeMethods.SHGetFileInfoW(checkPath, 0, ref shfi, (uint)Marshal.SizeOf(shfi), flags);
-                if (res != IntPtr.Zero && shfi.hIcon != IntPtr.Zero)
+                // Fallback using USEFILEATTRIBUTES to avoid crashy physical-path SHGetFileInfoW
+                var fallbackPath = isDir ? "dummy_folder" : ext;
+                var fallbackAttr = isDir ? ShellIconNativeMethods.FILE_ATTRIBUTE_DIRECTORY : ShellIconNativeMethods.FILE_ATTRIBUTE_NORMAL;
+                var fallbackHiRes = ShellImageListInterop.TryGetIcon(fallbackPath, fallbackAttr, ShellIconNativeMethods.SHGFI_USEFILEATTRIBUTES);
+                if (fallbackHiRes != null)
                 {
-                    try
-                    {
-                        var bitmapSource = Imaging.CreateBitmapSourceFromHIcon(
-                            shfi.hIcon,
-                            Int32Rect.Empty,
-                            BitmapSizeOptions.FromEmptyOptions());
-                        bitmapSource.Freeze();
-                        _iconCache[cacheKey] = bitmapSource;
-                        return bitmapSource;
-                    }
-                    finally
-                    {
-                        ShellIconNativeMethods.DestroyIcon(shfi.hIcon);
-                    }
+                    _iconCache[cacheKey] = fallbackHiRes;
+                    return fallbackHiRes;
                 }
             }
             else
