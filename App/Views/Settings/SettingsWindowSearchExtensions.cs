@@ -95,6 +95,40 @@ internal static class SettingsWindowSearchExtensions
                 results.Add(new SettingsSearchResultItem(component.DisplayName, $"{pluginsSectionLabel} › {plugin.Name}", "Plugins", RevealPlugin,
                     Reveal: new SettingsSearchDynamicReveal(string.Empty, component)));
             }
+
+            var configTabLabel = TranslationManager.Instance["Common_Configure"];
+            void RevealPluginConfig(SettingsViewModel settings)
+            {
+                settings.Plugins.SelectedPlugin = capturedPlugin;
+                capturedPlugin.IsConfigTab = true;
+            }
+
+            void AddConfigFields(IEnumerable<PluginConfigFieldViewModel> fields, string parentBreadcrumb)
+            {
+                foreach (var field in fields)
+                {
+                    var label = field.Label;
+                    if (!string.IsNullOrWhiteSpace(label))
+                    {
+                        var breadcrumb = string.IsNullOrWhiteSpace(field.GroupName)
+                            ? parentBreadcrumb
+                            : $"{parentBreadcrumb} › {field.GroupName}";
+
+                        results.Add(new SettingsSearchResultItem(label, breadcrumb, "Plugins", RevealPluginConfig,
+                            Reveal: new SettingsSearchDynamicReveal(string.Empty, field)));
+                    }
+
+                    if (field.Children is { Count: > 0 })
+                    {
+                        AddConfigFields(field.Children, parentBreadcrumb);
+                    }
+                }
+            }
+
+            if (plugin.ConfigFields is { Count: > 0 })
+            {
+                AddConfigFields(plugin.ConfigFields, $"{pluginsSectionLabel} › {plugin.Name} › {configTabLabel}");
+            }
         }
 
         var hotkeysSectionLabel = TranslationManager.Instance["Settings_Hotkeys"];
