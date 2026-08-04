@@ -72,7 +72,7 @@ public sealed class RelayCommandOfTTests
     [TestMethod]
     public void Execute_ReferenceTypeWithNullParameter_Invokes()
     {
-        string? received = "unset";
+        var received = "unset";
         new RelayCommand<string?>(s => received = s).Execute(null);
 
         Assert.IsNull(received);

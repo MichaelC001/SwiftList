@@ -7,10 +7,7 @@ namespace SwiftList.App.Tests.Helpers.Visuals;
 public sealed class WindowMaximizedDragHelperTests
 {
     [StaTestMethod]
-    public void DragMoveOrRestore_NullWindowOrArgs_ThrowsArgumentNullException()
-    {
-        Assert.ThrowsExactly<ArgumentNullException>(() => WindowMaximizedDragHelper.DragMoveOrRestore(null!, null!));
-    }
+    public void DragMoveOrRestore_NullWindowOrArgs_ThrowsArgumentNullException() => Assert.ThrowsExactly<ArgumentNullException>(() => WindowMaximizedDragHelper.DragMoveOrRestore(null!, null!));
 
     [StaTestMethod]
     public void DragMoveOrRestore_RestoredWindow_KeepsStateAsRestored()

@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SwiftList.App.Helpers.App;
 
 namespace SwiftList.App.Tests.Helpers.App;

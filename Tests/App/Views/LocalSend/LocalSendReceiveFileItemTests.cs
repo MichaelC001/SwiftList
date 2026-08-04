@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SwiftList.App.Views.LocalSend;
 
 namespace SwiftList.App.Tests.Views.LocalSend;

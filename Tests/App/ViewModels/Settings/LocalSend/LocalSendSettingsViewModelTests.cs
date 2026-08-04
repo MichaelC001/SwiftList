@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SwiftList.App.ViewModels.Settings.LocalSend;
 using SwiftList.Core;
 using SwiftList.Core.Services.LocalSend.Models;

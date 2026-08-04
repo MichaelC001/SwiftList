@@ -7,10 +7,7 @@ namespace SwiftList.App.Tests.Helpers.Visuals;
 public sealed class MaximizeBoundsHelperTests
 {
     [StaTestMethod]
-    public void Attach_NullWindow_ThrowsArgumentNullException()
-    {
-        Assert.ThrowsExactly<ArgumentNullException>(() => MaximizeBoundsHelper.Attach(null!));
-    }
+    public void Attach_NullWindow_ThrowsArgumentNullException() => Assert.ThrowsExactly<ArgumentNullException>(() => MaximizeBoundsHelper.Attach(null!));
 
     [StaTestMethod]
     public void Attach_UnloadedWindow_AttachesOnLoaded()
