@@ -43,6 +43,19 @@ public static class ScrollViewerHelper
             }
             e.Handled = true;
         }
+        else if (scrollViewer.VerticalScrollBarVisibility == ScrollBarVisibility.Disabled)
+        {
+            if (VisualTreeHelper.GetParent(scrollViewer) is UIElement parent)
+            {
+                e.Handled = true;
+                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                    Source = sender
+                };
+                parent.RaiseEvent(eventArg);
+            }
+        }
     }
 
     public static readonly DependencyProperty BubbleMouseWheelProperty =

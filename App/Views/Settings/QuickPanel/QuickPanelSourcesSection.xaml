@@ -151,7 +151,7 @@
                                       VerticalScrollBarVisibility="Disabled"
                                       conv:ScrollViewerHelper.ShiftWheelScrollsHorizontally="True">
                             <ScrollViewer.Style>
-                                <Style TargetType="ScrollViewer">
+                                <Style TargetType="ScrollViewer" BasedOn="{StaticResource SleekScrollViewerStyle}">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsExpanded}" Value="True">
