@@ -22,6 +22,7 @@ Seis pestañas: **Sistema**, **Ventana de búsqueda rápida**, **Ventana de bús
   término normal debe aparecer como subcadena contigua en su lugar (`abc` deja de coincidir con `a-b-c`) — ver
   [Sintaxis de búsqueda](../search-syntax#coincidencia-difusa-predeterminada) para lo que cambia y lo que no. Se
   aplica de inmediato, sin necesidad de reiniciar.
+- **Carácter de prefijo global de tokens** — cuadro de texto (máximo 1 carácter, predeterminado `:`). Define el carácter de prefijo global para dividir expresiones de tokens al final del cuadro de búsqueda. Los prefijos de filtrado de rutas y filtros personalizados se pueden configurar de forma independiente en **Configuración → Plugins → CoreExtensions**.
 - **Nivel de registro** — desplegable: Error / Warn / Info (predeterminado) / Debug. Controla el nivel de detalle
   en los registros de la App, el Servicio y el Hook (ver [Estado del Servicio](./service-status)).
 - **Idioma de interfaz** — desplegable, poblado a partir de cada proveedor de traducción instalado (idiomas

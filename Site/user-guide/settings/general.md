@@ -22,6 +22,7 @@ Navigation**, and **Preview & Thumbnails**.
   a bare term to appear as a contiguous substring instead (`abc` no longer matches `a-b-c`) — see
   [Search Syntax](../search-syntax#fuzzy-matching-default) for what does and doesn't change.
   Applies immediately, no restart needed.
+- **Global query token prefix** — text box (1 character max, default `:`). Sets the lead prefix character used to split query token expressions at the trailing position of the search box. Dynamic path filtering and custom filter providers also configure their prefix characters under **Settings → Plugins → CoreExtensions**.
 - **Log level** — dropdown: Error / Warn / Info (default) / Debug. Controls verbosity across the
   App, Service, and Hook logs (see [Service Status](./service-status)).
 - **Interface language** — dropdown, populated from every installed translation provider (built-in
