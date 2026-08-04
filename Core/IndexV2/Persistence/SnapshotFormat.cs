@@ -22,9 +22,8 @@ internal enum SnapshotSection
 internal static class SnapshotFormat
 {
     public const ulong Magic = 0x0000005844494C53; // "SLIDX\0\0\0" little-endian
-    // Bumped 7 -> 8: Parses non-resident $ATTRIBUTE_LIST entries and scans all allocated MFT extents,
-    // ensuring full MFT volume indexing on fragmented drives without mftValidLen truncation.
-    public const int Version = 8;
+    // Bumped 8 -> 9: Sector-aligned read for non-resident $ATTRIBUTE_LIST entries and full MFT extent scanning.
+    public const int Version = 9;
     public const int SectionAlignment = 16;
 
     internal sealed class Meta

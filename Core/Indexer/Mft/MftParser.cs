@@ -107,13 +107,14 @@ internal static class MftParser
                         {
                             var bytesToRead = (int)Math.Min(clusters * bytesPerCluster, realSize - readOffset);
                             if (bytesToRead <= 0) break;
-                            var tempBuf = new byte[bytesToRead];
-                            if (!readAt(lcn * bytesPerCluster, tempBuf, bytesToRead))
+                            var alignedReadBytes = (int)(clusters * bytesPerCluster);
+                            var tempBuf = new byte[alignedReadBytes];
+                            if (!readAt(lcn * bytesPerCluster, tempBuf, alignedReadBytes))
                             {
                                 success = false;
                                 break;
                             }
-                            Array.Copy(tempBuf, 0, attrBuf, readOffset, bytesToRead);
+                            Buffer.BlockCopy(tempBuf, 0, attrBuf, (int)readOffset, bytesToRead);
                             readOffset += bytesToRead;
                         }
                         if (success && readOffset > 0)
