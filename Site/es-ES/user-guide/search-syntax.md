@@ -97,18 +97,13 @@ D:\Projects\SwiftList
 
 Un separador final (`D:\Projects\`) busca en el *contenido* de esa carpeta exacta.
 
-## Filtrar por nombre de carpeta
+## Filtrar por nombre de carpeta y comodines (Query Tokens)
 
-Añade un `::<texto>` al final de una consulta para exigir además que el propio nombre del resultado o el de una de
-sus carpetas antecesoras coincida con `<texto>` (de forma difusa, la misma coincidencia — incluido el pinyin — que
-en cualquier otro lugar):
+SwiftList admite encadenar tokens de consulta después de sus palabras clave principales (con el prefijo `:` de forma predeterminada o mediante prefijos de token dedicados) para realizar un filtrado secundario:
 
-```
-1080 ::wallpapers
-```
-
-encuentra archivos con `1080` en el nombre que vivan en algún lugar bajo una carpeta que coincida con `wallpapers`,
-sin necesidad de saber o escribir la ruta exacta. Combina varios filtros con una coma: `report ::2024,:final`.
+- **Filtro comodín secundario (`:?<expresión-comodín>` o `?<expresión-comodín>`)**: Utiliza la sintaxis comodín estándar de Windows (`?` para cualquier carácter individual, `*` para cero o más caracteres) para filtrar los resultados de la búsqueda principal. Por ejemplo, `mp4 :?(2026???????????)` o `mp4 ?(2026???????????)` filtra archivos con la etiqueta 2026 y una marca de tiempo de 11 dígitos. Utilice `|` o `;` para especificar múltiples condiciones comodín OR (ej. `?(2026*)|*.png`).
+- **Coincidencia de ruta (`::<expresión-ruta>`)**: Requiere que el nombre del resultado o la carpeta antecesora coincida con el texto especificado (ej. `1080 ::wallpapers` o `report ::2024`).
+- **Filtros de categoría personalizados (`:@<palabra-clave>`)**: Aplica reglas de extensión de archivo o categoría preconfiguradas (ej. `:@doc` o `:@video`).
 
 ## Cuando un término describe la carpeta, no el archivo
 

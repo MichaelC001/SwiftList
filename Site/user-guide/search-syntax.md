@@ -95,19 +95,13 @@ D:\Projects\SwiftList
 
 A trailing separator (`D:\Projects\`) searches the *contents* of that exact folder.
 
-## Filtering by folder name
+## Filtering by folder name and wildcards (Query Tokens)
 
-Add a trailing `::<text>` to a query to additionally require that the result's own name or one of
-its ancestor folders matches `<text>` (fuzzy, same matching — including pinyin — as everywhere
-else):
+SwiftList supports chaining query tokens after your primary search keywords (prefixed by `:` by default or by dedicated token prefixes) to perform secondary filtering on primary search results:
 
-```
-1080 ::wallpapers
-```
-
-finds files with `1080` in the name that live somewhere under a folder matching `wallpapers`,
-without needing to know or type the exact path. Combine multiple filters with a comma:
-`report ::2024,:final`.
+- **Wildcard Secondary Filter (`:?<wildcard-expression>` or `?<wildcard-expression>`)**: Uses standard Windows wildcard syntax (`?` for any single character, `*` for zero or more characters) to filter primary search results. For example, `mp4 :?(2026???????????)` or `mp4 ?(2026???????????)` filters files with 2026 and 11-digit timestamp tags. Use `|` or `;` to specify multiple OR wildcard conditions (e.g., `?(2026*)|*.png`).
+- **Path Match (`::<path-expression>`)**: Requires result name or ancestor folder to match the specified text (e.g. `1080 ::wallpapers` or `report ::2024`).
+- **Custom Filter Categories (`:@<keyword>`)**: Applies pre-configured file extension or category rules (e.g. `:@doc` or `:@video`).
 
 ## When a term describes the folder, not the file
 
