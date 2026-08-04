@@ -1,7 +1,7 @@
 namespace SwiftList.Core.SearchIndex.Query;
 
-// Splits an optional trailing "<query> :a,b,c" or "<query> ::\"hello world\"" suffix off a raw 
-// search query into raw tokens -- deliberately dumb: it has no idea what a token means 
+// Splits an optional trailing "<query> :a,b,c" or "<query> ::\"hello world\"" or "<query> ::'hello world'"
+// suffix off a raw search query into raw tokens -- deliberately dumb: it has no idea what a token means 
 // (that's up to whichever IQueryTokenProvider plugin claims it).
 public static class SearchQuerySortParser
 {
@@ -33,17 +33,24 @@ public static class SearchQuerySortParser
     {
         // Scan backwards for a prefixChar (e.g. ':') that starts a trailing token segment.
         // The prefixChar must be preceded by start-of-string or whitespace.
-        var inQuotes = false;
+        var activeQuote = '\0';
         var candidateIndex = -1;
 
         for (var i = query.Length - 1; i >= 0; i--)
         {
             var c = query[i];
-            if (c == '"')
+            if (activeQuote != '\0')
             {
-                inQuotes = !inQuotes;
+                if (c == activeQuote)
+                {
+                    activeQuote = '\0';
+                }
             }
-            else if (!inQuotes && c == prefixChar)
+            else if (c == '"' || c == '\'')
+            {
+                activeQuote = c;
+            }
+            else if (c == prefixChar)
             {
                 if (i == 0 || char.IsWhiteSpace(query[i - 1]))
                 {
@@ -90,13 +97,13 @@ public static class SearchQuerySortParser
     private static bool HasUnquotedSpaces(string token)
     {
         var trimmed = token.Trim();
-        if (trimmed.StartsWith('"') && trimmed.EndsWith('"') && trimmed.Length >= 2)
+        if (IsQuoted(trimmed))
         {
             return false;
         }
 
-        var firstQuote = trimmed.IndexOf('"');
-        var lastQuote = trimmed.LastIndexOf('"');
+        var firstQuote = IndexOfQuote(trimmed);
+        var lastQuote = LastIndexOfQuote(trimmed);
         if (firstQuote >= 0 && lastQuote > firstQuote)
         {
             var outside = trimmed[..firstQuote] + trimmed[(lastQuote + 1)..];
@@ -106,21 +113,49 @@ public static class SearchQuerySortParser
         return trimmed.Any(char.IsWhiteSpace);
     }
 
+    private static bool IsQuoted(string s) =>
+        (s.StartsWith('"') && s.EndsWith('"') && s.Length >= 2) ||
+        (s.StartsWith('\'') && s.EndsWith('\'') && s.Length >= 2);
+
+    private static int IndexOfQuote(string s)
+    {
+        var q1 = s.IndexOf('"');
+        var q2 = s.IndexOf('\'');
+        if (q1 < 0) return q2;
+        if (q2 < 0) return q1;
+        return Math.Min(q1, q2);
+    }
+
+    private static int LastIndexOfQuote(string s)
+    {
+        var q1 = s.LastIndexOf('"');
+        var q2 = s.LastIndexOf('\'');
+        return Math.Max(q1, q2);
+    }
+
     private static List<string> SplitByCommaRespectingQuotes(string text)
     {
         var result = new List<string>();
         var current = new System.Text.StringBuilder();
-        var inQuotes = false;
+        var activeQuote = '\0';
 
         for (var i = 0; i < text.Length; i++)
         {
             var c = text[i];
-            if (c == '"')
+            if (activeQuote != '\0')
             {
-                inQuotes = !inQuotes;
+                if (c == activeQuote)
+                {
+                    activeQuote = '\0';
+                }
                 current.Append(c);
             }
-            else if (c == ',' && !inQuotes)
+            else if (c == '"' || c == '\'')
+            {
+                activeQuote = c;
+                current.Append(c);
+            }
+            else if (c == ',' && activeQuote == '\0')
             {
                 result.Add(current.ToString());
                 current.Clear();
@@ -142,13 +177,13 @@ public static class SearchQuerySortParser
     private static string UnquoteToken(string token)
     {
         var trimmed = token.Trim();
-        if (trimmed.StartsWith('"') && trimmed.EndsWith('"') && trimmed.Length >= 2)
+        if (IsQuoted(trimmed))
         {
             return trimmed[1..^1];
         }
 
-        var firstQuoteIndex = trimmed.IndexOf('"');
-        var lastQuoteIndex = trimmed.LastIndexOf('"');
+        var firstQuoteIndex = IndexOfQuote(trimmed);
+        var lastQuoteIndex = LastIndexOfQuote(trimmed);
         if (firstQuoteIndex > 0 && lastQuoteIndex > firstQuoteIndex)
         {
             var prefix = trimmed[..firstQuoteIndex];

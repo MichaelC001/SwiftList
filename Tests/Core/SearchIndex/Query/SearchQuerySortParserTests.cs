@@ -69,7 +69,7 @@ public sealed class SearchQuerySortParserTests
     }
 
     [TestMethod]
-    public void Strip_QuotedTokenWithSpaces_ExtractsTokenAndUnquotes()
+    public void Strip_DoubleQuotedTokenWithSpaces_ExtractsTokenAndUnquotes()
     {
         var result = SearchQuerySortParser.Strip("file :\"hello world\"", out var tokens);
 
@@ -78,9 +78,18 @@ public sealed class SearchQuerySortParserTests
     }
 
     [TestMethod]
-    public void Strip_WildcardQuotedTokenWithSpaces_ExtractsTokenWithPrefix()
+    public void Strip_SingleQuotedTokenWithSpaces_ExtractsTokenAndUnquotes()
     {
-        var result = SearchQuerySortParser.Strip("file ::\"hello world\"", out var tokens);
+        var result = SearchQuerySortParser.Strip("file :'hello world'", out var tokens);
+
+        Assert.AreEqual("file", result);
+        CollectionAssert.AreEqual(new[] { "hello world" }, tokens.ToArray());
+    }
+
+    [TestMethod]
+    public void Strip_WildcardSingleQuotedTokenWithSpaces_ExtractsTokenWithPrefix()
+    {
+        var result = SearchQuerySortParser.Strip("file ::'hello world'", out var tokens);
 
         Assert.AreEqual("file", result);
         CollectionAssert.AreEqual(new[] { ":hello world" }, tokens.ToArray());
@@ -89,7 +98,7 @@ public sealed class SearchQuerySortParserTests
     [TestMethod]
     public void Strip_MultipleQuotedTokensWithSpaces_ExtractsAllTokens()
     {
-        var result = SearchQuerySortParser.Strip("file :\"first token\",\"second token\",simple", out var tokens);
+        var result = SearchQuerySortParser.Strip("file :'first token',\"second token\",simple", out var tokens);
 
         Assert.AreEqual("file", result);
         CollectionAssert.AreEqual(new[] { "first token", "second token", "simple" }, tokens.ToArray());
