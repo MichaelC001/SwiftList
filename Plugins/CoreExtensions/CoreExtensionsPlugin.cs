@@ -118,6 +118,23 @@ public class CoreExtensionsPlugin : IPlugin, IActionProvider, IConfigurable
                 DescriptionKey = "CoreExtensions_Config_SearchSettingsTriggerDesc",
                 FieldType = ConfigFieldType.Text,
                 DefaultValue = "set"
+            },
+            new PluginConfigField
+            {
+                Key = "InlineSearchGroup",
+                LabelKey = "CoreExtensions_Config_InlineSearchGroupLabel",
+                FieldType = ConfigFieldType.Group,
+                SubFields = new List<PluginConfigField>
+                {
+                    new PluginConfigField
+                    {
+                        Key = "InlineSearchAlwaysOpen",
+                        LabelKey = "CoreExtensions_Config_InlineSearchAlwaysOpenLabel",
+                        DescriptionKey = "CoreExtensions_Config_InlineSearchAlwaysOpenDesc",
+                        FieldType = ConfigFieldType.Boolean,
+                        DefaultValue = true
+                    }
+                }
             }
         }
     };

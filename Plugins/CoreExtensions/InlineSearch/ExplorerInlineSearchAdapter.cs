@@ -76,14 +76,14 @@ public class ExplorerInlineSearchAdapter : IInlineSearchAdapter
             var className = sbClass.ToString();
 
             var isDesktop = className.Equals("Progman", StringComparison.OrdinalIgnoreCase) ||
-
                              className.Equals("WorkerW", StringComparison.OrdinalIgnoreCase);
 
-            // The desktop isn't an Explorer pane to navigate within -- there's no "reuse this window,
-            // navigate it, select the item" concept when you're already looking at the desktop, so acting
-            // on an item from there means opening it directly: a folder opens/navigates into it, a file
-            // runs it, same as double-clicking either would on the desktop itself.
-            if (isDesktop)
+            var alwaysOpen = PluginSettingsService.GetSetting("SwiftList.Plugins.CoreExtensions", "InlineSearchAlwaysOpen", true);
+
+            // The desktop isn't an Explorer pane to navigate within -- acting on an item from there means
+            // opening it directly. If InlineSearchAlwaysOpen is enabled, files open directly while folders
+            // still navigate in-place in the active Explorer window.
+            if (isDesktop || (!isDir && alwaysOpen))
             {
                 Process.Start(new ProcessStartInfo { FileName = cleanPath, UseShellExecute = true });
                 return true;
