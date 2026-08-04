@@ -6,6 +6,7 @@ using SwiftList.App.Helpers;
 using SwiftList.App.Services;
 using SwiftList.App.ViewModels.Settings;
 using SwiftList.App.ViewModels.Settings.Plugins;
+using SwiftList.App.ViewModels.Settings.QuickPanel;
 using SwiftList.Core;
 
 using SwiftList.Core.SearchIndex;
@@ -158,6 +159,18 @@ internal static class SettingsWindowSearchExtensions
                 results.Add(new SettingsSearchResultItem(action.DisplayName, $"{hotkeysSectionLabel} › {pluginActionsTabLabel} › {group.PluginName}", "Hotkeys", SelectPluginActionsTab,
                     Reveal: new SettingsSearchDynamicReveal("PluginActionGroupsList", capturedGroup, action)));
             }
+        }
+
+        var quickPanelSectionLabel = TranslationManager.Instance["Settings_QuickPanel"];
+        var quickPanelPluginTabsLabel = TranslationManager.Instance["QuickPanel_PluginTabs"];
+        var quickPanelPluginTabs = vm?.QuickPanel.PluginTabs ?? QuickPanelPluginTabCatalog.Available(UserSettings.Load().QuickPanel);
+        foreach (var pluginTab in quickPanelPluginTabs)
+        {
+            var capturedTab = pluginTab;
+            void SelectPluginTabSection(SettingsViewModel v) => v.QuickPanel.SelectedSection = "PluginTabs";
+
+            results.Add(new SettingsSearchResultItem(capturedTab.Name, $"{quickPanelSectionLabel} › {quickPanelPluginTabsLabel}", "QuickPanel", SelectPluginTabSection,
+                Reveal: new SettingsSearchDynamicReveal("QuickPanelPluginTabsList", capturedTab)));
         }
 
         return results;
