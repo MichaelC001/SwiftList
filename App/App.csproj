@@ -13,7 +13,7 @@
     <RetainVM>false</RetainVM>
     <AssemblyName>SwiftList.App</AssemblyName>
     <RootNamespace>SwiftList.App</RootNamespace>
-    <Version>4.1.0</Version>
+    <Version>4.1.1</Version>
     <GenerateDependencyFile>false</GenerateDependencyFile>
   </PropertyGroup>
 
