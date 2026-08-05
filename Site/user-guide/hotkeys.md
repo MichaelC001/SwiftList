@@ -8,7 +8,7 @@ here. See [Settings → Hotkeys page](./settings/hotkeys-page) for the settings 
 | Action | Default | Notes |
 |---|---|---|
 | Toggle quick window | Double-tap `Ctrl` | Can also be set to a full combo (e.g. `Alt+Space`) instead of a double-tap. |
-| Quick switch | `Ctrl+G` | Switches between the inline (embedded-in-Explorer) search bar and the main window. |
+| Quick switch | `Ctrl+G` | In a supported file dialog, navigates to the last folder captured from a supported file manager or the Quick Panel. An empty inline query also shows that destination as a result. |
 | Select next item | `Ctrl+N` | Also works as the literal Down arrow. In the [Quick Panel](./settings/quick-panel) it walks the whole tab rather than one group, carrying on into the next group at the end of the current one. |
 | Select previous item | `Ctrl+P` | Also works as the literal Up arrow. Same whole-tab walk in the Quick Panel. |
 | Jump to result 1–9 | `Ctrl` + digit | The modifier is configurable; the digit is always 1–9. The quick window shows each visible result's shortcut as a small badge next to it, so you don't have to count rows. |

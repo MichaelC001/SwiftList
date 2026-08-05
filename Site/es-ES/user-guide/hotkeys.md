@@ -9,7 +9,7 @@ atajos](./settings/hotkeys-page) para la propia interfaz de configuración.
 | Acción | Predeterminado | Notas |
 |---|---|---|
 | Mostrar/ocultar ventana rápida | Doble pulsación de `Ctrl` | También se puede configurar como una combinación completa (por ejemplo, `Alt+Espacio`) en lugar de una doble pulsación. |
-| Cambio rápido | `Ctrl+G` | Alterna entre la barra de búsqueda en línea (incrustada en el Explorador) y la ventana principal. |
+| Cambio rápido | `Ctrl+G` | En un diálogo de archivos compatible, navega a la última carpeta obtenida de un gestor de archivos compatible o del Panel Rápido. Una consulta en línea vacía también muestra ese destino como resultado. |
 | Seleccionar elemento siguiente | `Ctrl+N` | También funciona como la flecha Abajo literal. En el [Panel Rápido](./settings/quick-panel) recorre la pestaña entera y no un solo grupo: al final de uno continúa en el siguiente. |
 | Seleccionar elemento anterior | `Ctrl+P` | También funciona como la flecha Arriba literal. En el Panel Rápido recorre igualmente la pestaña entera, cruzando de un grupo al siguiente. |
 | Saltar al resultado 1–9 | `Ctrl` + dígito | El modificador es configurable; el dígito siempre es 1–9. La ventana rápida muestra el atajo de cada resultado visible como una pequeña insignia junto a él, así no tienes que contar filas. |

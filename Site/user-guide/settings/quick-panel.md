@@ -1,5 +1,7 @@
 # Quick Panel
 
+While the panel is open, the folder shown in the selected group's heading is also treated as the current directory. It does not matter whether the selected tile is a file or a folder: when that heading has a path, open a supported file dialog and use Quick switch (`Ctrl+G` by default) to navigate there.
+
 A floating panel summoned by a hotkey and docked into the bottom-right corner of whatever window is
 in front, at half the height and half the width of it. It shows folders you nominate, and lists your
 plugins contribute — as thumbnail tiles or as a list — so files can be reached, dragged out of, or

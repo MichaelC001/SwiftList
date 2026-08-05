@@ -1,5 +1,7 @@
 # Panel Rápido
 
+Mientras el panel está abierto, la carpeta mostrada en el encabezado del grupo seleccionado también se trata como el directorio actual. No importa si el elemento seleccionado es un archivo o una carpeta: si la ruta del encabezado no está vacía, abre un diálogo de archivos compatible y usa Cambio rápido (por defecto, `Ctrl+G`) para ir allí.
+
 Un panel flotante que se invoca con una tecla y se acopla en la esquina inferior derecha de la ventana que esté en
 primer plano, con la mitad de su alto y la mitad de su ancho. Muestra las carpetas que le indiques, y las listas que
 aportan tus plugins — como miniaturas o como lista — para llegar a archivos, arrastrarlos fuera o soltarlos dentro sin salir de la ventana en la que estás
