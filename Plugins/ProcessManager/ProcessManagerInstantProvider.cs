@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using SwiftList.PluginSdk.Abstractions.Plugins;
 using SwiftList.PluginSdk.Services;
 
@@ -9,20 +10,11 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
 {
     public string Name => TranslationService.Get("ProcessManager_Name");
 
-    // Process.MainWindowTitle internally calls GetWindowText on the main window handle, which despite
-    // its documentation can still block on an unresponsive target (same well-established lore behind
-    // the identical fix already applied to WindowSwitcher's WindowEnumerator.cs). GetInstantResults runs
-    // synchronously on the UI thread for every process on the system when "ps" is typed, so one hung
-    // window anywhere on the desktop must not be able to freeze the whole app. Process.MainWindowHandle
-    // itself only does window enumeration + GetWindowThreadProcessId/IsWindowVisible checks (no message
-    // passing), so it's safe to keep using; only the title read needs the SendMessageTimeout guard.
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam, uint flags, uint timeoutMs, out IntPtr result);
+    private static extern int GetWindowTextLength(IntPtr hWnd);
 
-    private const uint WM_GETTEXTLENGTH = 0x000E;
-    private const uint WM_GETTEXT = 0x000D;
-    private const uint SMTO_ABORTIFHUNG = 0x0002;
-    private const uint GetTextTimeoutMs = 150;
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
 
     private static string GetSafeMainWindowTitle(Process proc)
     {
@@ -39,25 +31,13 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
         if (hWnd == IntPtr.Zero)
             return string.Empty;
 
-        if (SendMessageTimeout(hWnd, WM_GETTEXTLENGTH, IntPtr.Zero, IntPtr.Zero, SMTO_ABORTIFHUNG, GetTextTimeoutMs, out var lengthResult) == IntPtr.Zero)
-            return string.Empty;
-
-        var titleLength = lengthResult.ToInt32();
+        var titleLength = GetWindowTextLength(hWnd);
         if (titleLength == 0)
             return string.Empty;
 
         var capacity = titleLength + 1;
-        var buffer = Marshal.AllocHGlobal(capacity * sizeof(char));
-        try
-        {
-            if (SendMessageTimeout(hWnd, WM_GETTEXT, new IntPtr(capacity), buffer, SMTO_ABORTIFHUNG, GetTextTimeoutMs, out var textResult) == IntPtr.Zero)
-                return string.Empty;
-            return Marshal.PtrToStringUni(buffer, textResult.ToInt32()) ?? string.Empty;
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
+        var text = new StringBuilder(capacity);
+        return GetWindowText(hWnd, text, capacity) == 0 ? string.Empty : text.ToString();
     }
 
     // Falls back to the default even if an empty string was already persisted before RequireNonEmpty
