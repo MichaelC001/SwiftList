@@ -1,9 +1,10 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:services="clr-namespace:SwiftList.App.Services"
                     xmlns:local="clr-namespace:SwiftList.App.Views.QuickPanel"
-                    xmlns:conv="clr-namespace:SwiftList.App.Converters"
-                    xmlns:app="clr-namespace:SwiftList.App">
+                     xmlns:conv="clr-namespace:SwiftList.App.Converters"
+                     xmlns:helpers="clr-namespace:SwiftList.App.Helpers.Visuals"
+                     xmlns:app="clr-namespace:SwiftList.App">
     <!-- Split out of QuickPanelWindow.xaml purely to keep that file under the repo's per-file line
          limit; these are the panel's own row, tile and group-header styles, and nothing else uses them.
          Merged last by the window, so they still win over the shared dictionaries above them there.
@@ -71,6 +72,8 @@
 
 
     <local:ModifiedTimeConverter x:Key="ModifiedTime"/>
+    <local:QuickPanelDisplayNameConverter x:Key="DisplayNameWithParent"/>
+    <local:QuickPanelRelativeDirectoryConverter x:Key="RelativeDirectory"/>
 
     <!-- The detail row. Not the shared SearchResultTemplate, which draws the path underneath the
          name: the path is already in the group's own header, once, and repeating it on every row
@@ -91,16 +94,28 @@
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <!-- Lit through the same attached behaviour every other result list uses: it asks the
                      row for the mask, so exactly the characters the fzf match aligned to light up. -->
-                <TextBlock FontSize="12"
-                           conv:TextHighlighter.Text="{Binding Name}"
-                           conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
-                           conv:TextHighlighter.HighlightBrush="{DynamicResource AccentBlue}"
-                           Foreground="{DynamicResource TextPrimary}"
-                           TextTrimming="CharacterEllipsis"/>
-                <TextBlock Text="{Binding DateModified, Converter={StaticResource ModifiedTime}}"
-                           FontSize="10" Margin="0,1,0,0"
-                           Foreground="{DynamicResource TextSecondary2}"
-                           TextTrimming="CharacterEllipsis"/>
+                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Focusable="False"
+                              conv:ScrollViewerHelper.BubbleMouseWheel="True">
+                    <TextBlock FontSize="12"
+                               conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
+                               conv:TextHighlighter.HighlightBrush="{DynamicResource AccentBlue}"
+                               Foreground="{DynamicResource TextPrimary}"
+                               helpers:MarqueeBehavior.EnableMarquee="True">
+                        <conv:TextHighlighter.Text>
+                            <MultiBinding Converter="{StaticResource DisplayNameWithParent}">
+                                <Binding/>
+                                <Binding Path="DataContext.FolderPath" RelativeSource="{RelativeSource AncestorType=ListBox}"/>
+                            </MultiBinding>
+                        </conv:TextHighlighter.Text>
+                    </TextBlock>
+                </ScrollViewer>
+                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Focusable="False" Margin="0,1,0,0"
+                              conv:ScrollViewerHelper.BubbleMouseWheel="True">
+                    <TextBlock Text="{Binding DateModified, Converter={StaticResource ModifiedTime}}"
+                               FontSize="10"
+                               Foreground="{DynamicResource TextSecondary2}"
+                               helpers:MarqueeBehavior.EnableMarquee="True"/>
+                </ScrollViewer>
             </StackPanel>
         </Grid>
     </DataTemplate>
@@ -188,13 +203,16 @@
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
             </Border>
-            <TextBlock FontSize="11" Margin="0,6,0,0"
-                       conv:TextHighlighter.Text="{Binding Name}"
-                       conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
-                       conv:TextHighlighter.HighlightBrush="{DynamicResource AccentBlue}"
-                       Foreground="{DynamicResource TextPrimary}"
-                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
-                       MaxHeight="30" TextAlignment="Center"/>
+            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" Focusable="False" Margin="0,6,0,0"
+                          conv:ScrollViewerHelper.BubbleMouseWheel="True">
+                <TextBlock FontSize="11"
+                           conv:TextHighlighter.Text="{Binding Name}"
+                           conv:TextHighlighter.HighlightText="{Binding DataContext.SearchQuery, RelativeSource={RelativeSource AncestorType=Window}}"
+                           conv:TextHighlighter.HighlightBrush="{DynamicResource AccentBlue}"
+                           Foreground="{DynamicResource TextPrimary}"
+                           TextAlignment="Center"
+                           helpers:MarqueeBehavior.EnableMarquee="True"/>
+            </ScrollViewer>
         </StackPanel>
     </DataTemplate>
 
@@ -205,6 +223,14 @@
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Margin" Value="0"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="ToolTip">
+            <Setter.Value>
+                <MultiBinding Converter="{StaticResource RelativeDirectory}">
+                    <Binding/>
+                    <Binding Path="DataContext.FolderPath" RelativeSource="{RelativeSource AncestorType=ListBox}"/>
+                </MultiBinding>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
