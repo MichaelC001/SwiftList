@@ -113,6 +113,10 @@ public sealed partial class QuickPanelManager : IDisposable
 
     private async Task ShowCoreAsync(IntPtr host, string? process)
     {
+        // As early as possible, before Show() -- Windows' Power Throttling operates at the process
+        // scheduling level, so lifting it only after this window has already started painting would miss
+        // the very first frame the user is waiting on. See PowerThrottlingHelper's own comment.
+        PowerThrottlingHelper.WindowShowing("quickpanel");
         // Cancels a trim that is armed but has not fired, before anything else runs: emptying the
         // working set moments before a summon is strictly worse than never emptying it.
         IdleWorkingSetTrimmer.WindowShowing();
@@ -128,6 +132,7 @@ public sealed partial class QuickPanelManager : IDisposable
         // and flashing an empty shell over it would only be in the way.
         if (!_viewModel.HasContent)
         {
+            PowerThrottlingHelper.WindowHidden("quickpanel");
             Core.Logger.Log("[QuickPanel] Nothing to show, so not opening.", Core.LogLevel.Debug);
             return;
         }
@@ -178,6 +183,7 @@ public sealed partial class QuickPanelManager : IDisposable
             // help from here. Nor is the icon cache touched: it is shared with the quick window, and
             // dropping it here would make both re-resolve every icon.
             IdleWorkingSetTrimmer.WindowHidden();
+            PowerThrottlingHelper.WindowHidden("quickpanel");
         };
 
         // Losing the foreground dismisses the panel, the way the inline window goes when the user clicks
