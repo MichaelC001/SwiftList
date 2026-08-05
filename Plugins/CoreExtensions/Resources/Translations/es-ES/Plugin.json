@@ -72,6 +72,7 @@
   "Command_NormalDesc": "Abre una ventana del Símbolo del Sistema y ejecuta este comando",
   "SearchSettings_Name": "Búsqueda de Configuración",
   "Plugins_ExplorerTargetName": "Explorador de Archivos de Windows",
+  "Plugins_QuickPanelTargetName": "Panel rápido de SwiftList",
   "Plugins_StandardFileDialogAdapterName": "Cuadro de Diálogo Moderno de Windows para Archivos (Carpetas)",
   "Plugins_FolderBrowserDialogAdapterName": "Cuadro de Diálogo Clásico de Windows para Selección de Carpetas",
   "Plugins_ClassicFileDialogAdapterName": "Cuadro de Diálogo Clásico de Windows para Archivos",

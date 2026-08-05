@@ -94,7 +94,7 @@ internal sealed class ExplorerWindowClassifier
                 {
                     try
                     {
-                        if (collector.CanHandle(windowClassName))
+                        if (collector.CanHandle(rootHwnd, windowClassName, processName))
                         {
                             var activePath = collector.TryGetPath(focusedHwnd, activeClassName, rootHwnd, windowClassName, processName);
                             handledByPlugin = true;
@@ -172,7 +172,7 @@ internal sealed class ExplorerWindowClassifier
                         if (_tracker.IsActiveWindowDialog && _tracker.ActiveHwnd != IntPtr.Zero)
                         {
                             var fgHwnd = ExplorerNativeHooks.GetForegroundWindow();
-                            if (IsDescendantOrOwned(_tracker.ActiveHwnd, fgHwnd) || IsImeWindow(fgHwnd))
+                            if (ExplorerWindowRelationshipHelper.IsDescendantOrOwned(_tracker.ActiveHwnd, fgHwnd) || IsImeWindow(fgHwnd))
                             {
                                 return;
                             }
@@ -198,6 +198,11 @@ internal sealed class ExplorerWindowClassifier
         if (activePid == Environment.ProcessId || (activePid != 0 && activePid == _tracker.AppProcessId))
         {
             if (className.Equals("#32770", StringComparison.OrdinalIgnoreCase)) return false;
+            var rootHwnd = ExplorerNativeHooks.GetAncestor(hwnd, ExplorerNativeHooks.GA_ROOTOWNER);
+            if (rootHwnd == IntPtr.Zero) rootHwnd = hwnd;
+            var processName = _tracker.GetProcessName(rootHwnd);
+            if (ActivePathCollectorRegistry.GetCollectors()
+                .Any(collector => collector.CanHandle(rootHwnd, className, processName))) return false;
             return true;
         }
         if (_tracker.ActiveHwnd != IntPtr.Zero)
@@ -278,21 +283,6 @@ internal sealed class ExplorerWindowClassifier
 
         adapter = null;
         return IntPtr.Zero;
-    }
-
-    private bool IsDescendantOrOwned(IntPtr parent, IntPtr child)
-    {
-        if (parent == IntPtr.Zero || child == IntPtr.Zero) return false;
-        if (parent == child) return true;
-        var current = child;
-        while (current != IntPtr.Zero)
-        {
-            if (current == parent) return true;
-            var temp = ExplorerNativeHooks.GetParent(current);
-            if (temp == IntPtr.Zero || temp == current) break;
-            current = temp;
-        }
-        return ExplorerNativeHooks.GetAncestor(child, ExplorerNativeHooks.GA_ROOTOWNER) == parent;
     }
 
     private bool IsImeWindow(IntPtr hwnd)

@@ -72,6 +72,7 @@
   "Command_NormalDesc": "打开命令提示符窗口并执行该命令",
   "SearchSettings_Name": "设置搜索",
   "Plugins_ExplorerTargetName": "Windows 资源管理器",
+  "Plugins_QuickPanelTargetName": "SwiftList 快速面板",
   "Plugins_StandardFileDialogAdapterName": "现代Windows文件(夹)选择器",
   "Plugins_FolderBrowserDialogAdapterName": "经典Windows 文件夹选择器",
   "Plugins_ClassicFileDialogAdapterName": "经典Windows 文件选择器",

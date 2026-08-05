@@ -72,6 +72,7 @@
   "Command_NormalDesc": "명령 프롬프트 창을 열고 이 명령을 실행합니다",
   "SearchSettings_Name": "설정 검색",
   "Plugins_ExplorerTargetName": "Windows 파일 탐색기",
+  "Plugins_QuickPanelTargetName": "SwiftList 빠른 패널",
   "Plugins_StandardFileDialogAdapterName": "최신 Windows 파일(폴더) 대화 상자",
   "Plugins_FolderBrowserDialogAdapterName": "클래식 Windows 폴더 찾아보기 대화 상자",
   "Plugins_ClassicFileDialogAdapterName": "클래식 Windows 파일 대화 상자",

@@ -72,6 +72,7 @@
   "Command_NormalDesc": "開啟命令提示字元視窗並執行該命令",
   "SearchSettings_Name": "設定搜尋",
   "Plugins_ExplorerTargetName": "Windows 檔案總管",
+  "Plugins_QuickPanelTargetName": "SwiftList 快速面板",
   "Plugins_StandardFileDialogAdapterName": "新式 Windows 檔案（資料夾）選擇器",
   "Plugins_FolderBrowserDialogAdapterName": "傳統 Windows 資料夾選擇器",
   "Plugins_ClassicFileDialogAdapterName": "傳統 Windows 檔案選擇器",

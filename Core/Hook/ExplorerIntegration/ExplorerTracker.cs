@@ -19,6 +19,7 @@ public class ExplorerTracker : IDisposable
     public IntPtr LastActiveHwnd { get; set; }
     public string? LastActiveExplorerPath => _dialogTracker.LastActiveExplorerPath;
     public string? LastActiveExplorerClassName { get; set; }
+    public string? LastActiveExplorerWindowTitle { get; set; }
     public bool IsExplorerOrDesktopActive { get; set; }
     public bool IsDesktop { get; set; }
     private bool _isActiveWindowDialog;
@@ -107,7 +108,11 @@ public class ExplorerTracker : IDisposable
         IsExplorerOrDesktopActive = true;
         IsDesktop = isDesktop;
         IsActiveWindowExplorer = ActiveInlineAdapter?.IsFileExplorer ?? false;
-        if (!IsActiveWindowDialog) LastActiveExplorerClassName = className;
+        if (!IsActiveWindowDialog)
+        {
+            LastActiveExplorerClassName = className;
+            LastActiveExplorerWindowTitle = title;
+        }
         RaiseExplorerActivated(hwnd, title, className, isDesktop);
     }
     public void DeactivateWindow() => Deactivate();

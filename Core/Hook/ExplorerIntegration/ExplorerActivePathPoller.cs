@@ -54,7 +54,9 @@ internal sealed class ExplorerActivePathPoller : IDisposable
             var className = sbClass.ToString();
             var processName = tracker.GetProcessName(currentFg);
             if (FileDialogAdapterRegistry.GetMatchingAdapter(currentFg, className, processName) != null ||
-                InlineSearchAdapterRegistry.GetMatchingAdapter(currentFg, className, processName) != null)
+                InlineSearchAdapterRegistry.GetMatchingAdapter(currentFg, className, processName) != null ||
+                ActivePathCollectorRegistry.GetCollectors()
+                    .Any(collector => collector.CanHandle(currentFg, className, processName)))
             {
                 _classifier.CheckActiveWindow(currentFg);
             }
@@ -77,7 +79,7 @@ internal sealed class ExplorerActivePathPoller : IDisposable
             var collectors = ActivePathCollectorRegistry.GetCollectors();
             foreach (var collector in collectors)
             {
-                if (collector.CanHandle(activeClass))
+                if (collector.CanHandle(tracker.ActiveHwnd, activeClass, tracker.GetProcessName(tracker.ActiveHwnd)))
                 {
                     polledByCollector = true;
                     var focused = IntPtr.Zero;

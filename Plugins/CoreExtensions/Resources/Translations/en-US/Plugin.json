@@ -72,6 +72,7 @@
   "Command_NormalDesc": "Opens a Command Prompt window and runs this command",
   "SearchSettings_Name": "Settings Search",
   "Plugins_ExplorerTargetName": "Windows File Explorer",
+  "Plugins_QuickPanelTargetName": "SwiftList Quick Panel",
   "Plugins_StandardFileDialogAdapterName": "Modern Windows File (Folder) Dialog",
   "Plugins_FolderBrowserDialogAdapterName": "Classic Windows Folder Browser Dialog",
   "Plugins_ClassicFileDialogAdapterName": "Classic Windows File Dialog",

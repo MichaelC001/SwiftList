@@ -72,6 +72,7 @@
   "Command_NormalDesc": "コマンドプロンプトウィンドウを開いてこのコマンドを実行します",
   "SearchSettings_Name": "設定検索",
   "Plugins_ExplorerTargetName": "Windows エクスプローラー",
+  "Plugins_QuickPanelTargetName": "SwiftList クイックパネル",
   "Plugins_StandardFileDialogAdapterName": "モダンな Windows ファイル（フォルダー）ダイアログ",
   "Plugins_FolderBrowserDialogAdapterName": "従来の Windows フォルダー参照ダイアログ",
   "Plugins_ClassicFileDialogAdapterName": "従来の Windows ファイルダイアログ",

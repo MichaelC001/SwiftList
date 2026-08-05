@@ -30,11 +30,12 @@ internal static class ExplorerJumpSuggestionHelper
 
         string? targetName = null;
         var className = tracker.LastActiveExplorerClassName;
-        if (className != null)
+        var windowTitle = tracker.LastActiveExplorerWindowTitle;
+        if (className != null && windowTitle != null)
         {
             foreach (var collector in PluginSdk.Registries.ActivePathCollectorRegistry.GetCollectors())
             {
-                if (collector.CanHandle(className))
+                if (collector.CanHandle(className, windowTitle))
                 {
                     targetName = collector.TargetName;
                     break;

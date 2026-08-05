@@ -17,6 +17,16 @@ public interface IActivePathCollector : IPluginComponent
     bool CanHandle(string className);
 
     /// <summary>
+    /// Checks whether this collector can handle a window identified by its class and title.
+    /// </summary>
+    bool CanHandle(string windowClassName, string windowTitle) => CanHandle(windowClassName);
+
+    /// <summary>
+    /// Checks whether this collector can handle a concrete window.
+    /// </summary>
+    bool CanHandle(IntPtr windowHwnd, string windowClassName, string processName) => CanHandle(windowClassName);
+
+    /// <summary>
     /// <param name="activeHwnd">The currently active foreground or focused control window handle.</param>
     /// <param name="activeClassName">The class name of the active window/control.</param>
     /// <param name="windowHwnd">The top-level root owner window handle.</param>

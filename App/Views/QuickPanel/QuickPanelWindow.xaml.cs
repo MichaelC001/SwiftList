@@ -64,6 +64,7 @@ public partial class QuickPanelWindow : Window,
             var exStyle = InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.GetWindowLongPtr(hwnd, InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.GWL_EXSTYLE);
             var newExStyle = new IntPtr(exStyle.ToInt64() | InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.WS_EX_TOOLWINDOW);
             InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.SetWindowLongPtr(hwnd, InlineSearchWindow.Helpers.InlineSearchWindowNativeMethods.GWL_EXSTYLE, newExStyle);
+            AttachPathRequestHandler(hwnd);
         }
     }
 
