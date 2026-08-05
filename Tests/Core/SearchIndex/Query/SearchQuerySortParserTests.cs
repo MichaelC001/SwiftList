@@ -110,6 +110,15 @@ public sealed class SearchQuerySortParserTests
     }
 
     [TestMethod]
+    public void Strip_EscapedBackslashInToken_UnescapesToSingleBackslash()
+    {
+        var result = SearchQuerySortParser.Strip(@"file ::""path\\folder""", out var tokens);
+
+        Assert.AreEqual("file", result);
+        CollectionAssert.AreEqual(new[] { @":path\folder" }, tokens.ToArray());
+    }
+
+    [TestMethod]
     public void Strip_MultipleQuotedTokensWithSpaces_ExtractsAllTokens()
     {
         var result = SearchQuerySortParser.Strip("file :'first token',\"second token\",simple", out var tokens);
