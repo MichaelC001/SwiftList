@@ -88,7 +88,7 @@ provider 轉寫的**來源**字元範圍(比如拼音對應的是 CJK 表意文�
 
 ### `IQueryTokenProvider`
 
-從查詢裡認領一個尾端 token(例如 `report :size`)，並對已經比對好的結果清單做轉換——排序、篩選，或者在一次一般搜尋之上做其他組合處理。
+從查詢裡認領一個尾端 token(例如 `report :size`、`report ::"hello world"` 或 `report ::hello\ world`)，並對已經比對好的結果清單做轉換——排序、篩選，或者在一次一般搜尋之上做其他組合處理。支援在雙引號 (`"..."`)、單引號 (`'...'`) 或使用轉義空格 (`\ `) 的 Token 中包含空格。
 
 ```csharp
 interface IQueryTokenProvider : IPluginComponent

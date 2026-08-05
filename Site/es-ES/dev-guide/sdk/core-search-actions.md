@@ -113,8 +113,7 @@ proveedores nunca necesitan tocarlos:
 
 ### `IQueryTokenProvider`
 
-Reclama un token final de la consulta (por ejemplo, `report :size`) y transforma la lista de resultados que ya ha
-coincidido — ordenando, filtrando o componiendo de algún otro modo sobre una búsqueda normal.
+Reclama un token final de la consulta (por ejemplo, `report :size`, `report ::"hello world"` o `report ::hello\ world`) y transforma la lista de resultados que ya ha coincidido — ordenando, filtrando o componiendo de algún otro modo sobre una búsqueda normal. Admite espacios en tokens envueltos entre comillas (`"..."`, `'...'`) o con espacios escapados (`\ `).
 
 ```csharp
 interface IQueryTokenProvider : IPluginComponent

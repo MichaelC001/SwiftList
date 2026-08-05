@@ -113,8 +113,7 @@ providers never need to touch them:
 
 ### `IQueryTokenProvider`
 
-Claims a trailing token from the query (e.g. `report :size`) and transforms the already-matched
-result list — sorting, filtering, or otherwise composing on top of a normal search.
+Claims a trailing token from the query (e.g. `report :size`, `report ::"hello world"`, or `report ::hello\ world`) and transforms the already-matched result list — sorting, filtering, or otherwise composing on top of a normal search. Supports spaces in tokens enclosed in double/single quotes (`"..."`, `'...'`) or with escaped spaces (`\ `).
 
 ```csharp
 interface IQueryTokenProvider : IPluginComponent

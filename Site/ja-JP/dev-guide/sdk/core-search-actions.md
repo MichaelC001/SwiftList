@@ -84,8 +84,7 @@ interface IAliasProvider
 
 ### `IQueryTokenProvider`
 
-クエリの末尾のトークン(例:`report :size`)を引き取り、すでにマッチ済みの結果リストを変換します
-——並べ替え、絞り込み、あるいは通常の検索の上に他の合成処理を行います。
+クエリの末尾のトークン（例：`report :size`、`report ::"hello world"`、`report ::hello\ world`）を取得し、一致した結果リストを変換（ソート、フィルタリングなど）します。ダブルクォーテーション（`"..."`）、シングルクォーテーション（`'...'`）、またはエスケープスペース（`\ `）を使用してトークン内にスペースを含めることができます。
 
 ```csharp
 interface IQueryTokenProvider : IPluginComponent

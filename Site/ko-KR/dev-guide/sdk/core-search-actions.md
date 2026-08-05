@@ -114,8 +114,7 @@ ASCII 여부를 추측하는 대신 제공자 자신의 입력/출력 알파벳�
 
 ### `IQueryTokenProvider`
 
-쿼리의 마지막 토큰(예: `report :size`)을 가져가서 이미 매칭된 결과 목록을 변형합니다 — 정렬, 필터링,
-또는 일반 검색 위에 다른 방식으로 구성하는 방식입니다.
+쿼리의 마지막 토큰(예: `report :size`, `report ::"hello world"`, `report ::hello\ world`)을 가져가서 이미 매칭된 결과 목록을 변형합니다 — 정렬, 필터링, 또는 일반 검색 위에 다른 방식으로 구성하는 방식입니다. 큰따옴표(`"..."`), 작은따옴표(`'...'`) 또는 이스케이프 공백(`\ `)을 사용하여 토큰 내에 공백을 포함할 수 있습니다.
 
 ```csharp
 interface IQueryTokenProvider : IPluginComponent
