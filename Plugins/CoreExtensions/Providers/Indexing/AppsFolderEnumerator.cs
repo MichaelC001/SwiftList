@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using SwiftList.PluginSdk;
-using SwiftList.PluginSdk.Helpers;
 
 namespace SwiftList.Plugins.CoreExtensions.Providers.Indexing;
 
@@ -21,9 +20,6 @@ public static class AppsFolderEnumerator
 
         /// <summary>FolderItem.Path: the AUMID for packaged apps (or a target path for classic ones).</summary>
         public string Aumid = string.Empty;
-
-        /// <summary>Pre-rendered icon as a GDI HBITMAP; the caller owns it and frees it with DeleteObject.</summary>
-        public IntPtr HBitmapIcon;
     }
 
     // Both spellings resolve to the Apps known folder; the plain "shell:AppsFolder" works on modern
@@ -38,14 +34,14 @@ public static class AppsFolderEnumerator
     /// Enumerates all apps in shell:AppsFolder. Runs the Shell COM work on a dedicated STA thread, so
     /// it is safe to call from a thread-pool / MTA context.
     /// </summary>
-    public static List<AppEntry> Enumerate(int iconSize = 96)
+    public static List<AppEntry> Enumerate()
     {
         var result = new List<AppEntry>();
         var thread = new Thread(() =>
         {
             try
             {
-                EnumerateCore(result, iconSize);
+                EnumerateCore(result);
             }
             catch (Exception ex)
             {
@@ -61,7 +57,7 @@ public static class AppsFolderEnumerator
         return result;
     }
 
-    private static void EnumerateCore(List<AppEntry> result, int iconSize)
+    private static void EnumerateCore(List<AppEntry> result)
     {
         var shellType = Type.GetTypeFromProgID("Shell.Application");
         if (shellType == null)
@@ -107,8 +103,7 @@ public static class AppsFolderEnumerator
                     if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(path))
                         continue;
 
-                    var hBitmap = iconSize > 0 ? ShellPathHelper.TryGetIconHBitmapForShellItem(item, iconSize) : IntPtr.Zero;
-                    result.Add(new AppEntry { Name = name!.Trim(), Aumid = path!, HBitmapIcon = hBitmap });
+                    result.Add(new AppEntry { Name = name!.Trim(), Aumid = path! });
                 }
                 catch (Exception ex)
                 {

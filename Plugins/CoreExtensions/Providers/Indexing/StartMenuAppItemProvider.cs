@@ -232,7 +232,7 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
         List<AppsFolderEnumerator.AppEntry> apps;
         try
         {
-            apps = AppsFolderEnumerator.Enumerate(iconSize: 0);
+            apps = AppsFolderEnumerator.Enumerate();
         }
         catch (Exception ex)
         {
@@ -256,7 +256,7 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
                 Title = app.Name,
                 Description = appDesc,
                 ResultKind = "Application",
-                HBitmapIcon = app.HBitmapIcon,
+                HBitmapIcon = IntPtr.Zero,
                 ActionType = "None",
                 ActionArgument = launchTarget,
                 OnExecute = () =>
