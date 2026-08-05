@@ -16,21 +16,56 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
 
-    private static string GetSafeMainWindowTitle(Process proc)
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    private static Dictionary<int, List<string>> GetVisibleWindowTitles()
     {
-        IntPtr hWnd;
+        var titles = new Dictionary<int, List<string>>();
         try
         {
-            hWnd = proc.MainWindowHandle;
+            EnumWindows((hWnd, _) =>
+            {
+                if (!IsWindowVisible(hWnd)) return true;
+
+                var title = GetWindowTitle(hWnd);
+                if (string.IsNullOrWhiteSpace(title)) return true;
+
+                GetWindowThreadProcessId(hWnd, out var processId);
+                if (processId != 0)
+                {
+                    var pid = (int)processId;
+                    if (!titles.TryGetValue(pid, out var processTitles))
+                    {
+                        processTitles = [];
+                        titles.Add(pid, processTitles);
+                    }
+
+                    if (!processTitles.Contains(title, StringComparer.Ordinal)) processTitles.Add(title);
+                }
+                return true;
+            }, IntPtr.Zero);
         }
         catch
         {
-            return string.Empty;
+            // A failed title snapshot only removes title matching; processes remain searchable by name and PID.
         }
 
-        if (hWnd == IntPtr.Zero)
-            return string.Empty;
+        return titles;
+    }
 
+    private static string GetWindowTitle(IntPtr hWnd)
+    {
         var titleLength = GetWindowTextLength(hWnd);
         if (titleLength == 0)
             return string.Empty;
@@ -85,6 +120,22 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
         return null;
     }
 
+    internal static int? GetMatchTier(string processName, string pid, IEnumerable<string> windowTitles, string searchTerm)
+    {
+        var nameOrPidTier = GetMatchTier(processName, pid, string.Empty, searchTerm);
+        if (nameOrPidTier.HasValue) return nameOrPidTier;
+
+        int? bestTitleTier = null;
+        foreach (var windowTitle in windowTitles)
+        {
+            var titleTier = GetMatchTier(processName, pid, windowTitle, searchTerm);
+            if (titleTier.HasValue && (!bestTitleTier.HasValue || titleTier.Value < bestTitleTier.Value))
+                bestTitleTier = titleTier;
+        }
+
+        return bestTitleTier;
+    }
+
     public IEnumerable<InstantResultItem> GetInstantResults(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -117,6 +168,7 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
             yield break;
         }
 
+        var windowTitles = GetVisibleWindowTitles();
         var matches = new List<(Process Process, int Tier)>();
 
         foreach (var proc in processes)
@@ -129,7 +181,8 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
                     continue;
                 }
 
-                var tier = GetMatchTier(proc.ProcessName, proc.Id.ToString(), GetSafeMainWindowTitle(proc), searchTerm);
+                var titles = windowTitles.GetValueOrDefault(proc.Id, []);
+                var tier = GetMatchTier(proc.ProcessName, proc.Id.ToString(), titles, searchTerm);
                 if (tier.HasValue)
                     matches.Add((proc, tier.Value));
             }
@@ -162,7 +215,7 @@ public class ProcessManagerInstantProvider : IInstantResultProvider
             {
                 pid = proc.Id;
                 processName = proc.ProcessName;
-                windowTitle = GetSafeMainWindowTitle(proc);
+                windowTitle = windowTitles.GetValueOrDefault(pid, [])?.FirstOrDefault() ?? string.Empty;
             }
             catch
             {

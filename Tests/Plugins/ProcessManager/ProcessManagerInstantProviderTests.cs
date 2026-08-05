@@ -35,6 +35,18 @@ public sealed class ProcessManagerInstantProviderTests
         // trivially match any search term if this weren't guarded, matching every backgrounded process
         // regardless of what was actually typed.
         => Assert.IsNull(ProcessManagerInstantProvider.GetMatchTier("svchost", "999", "", "notepad"));
+
+    [TestMethod]
+    public void GetMatchTier_AnyVisibleWindowTitleCanMatch()
+    {
+        var tier = ProcessManagerInstantProvider.GetMatchTier(
+            "FSViewer",
+            "1234",
+            ["Settings", "Fast image viewer"],
+            "fast");
+
+        Assert.AreEqual(2, tier);
+    }
 }
 
 // FuzzyMatchService.IsMatchFunc is a shared static delegate (null by default -- IsMatch always returns
