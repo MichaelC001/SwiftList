@@ -96,6 +96,15 @@ public sealed class SearchQuerySortParserTests
     }
 
     [TestMethod]
+    public void Strip_EscapedSpaceInUnquotedToken_ExtractsTokenAndUnescapesSpace()
+    {
+        var result = SearchQuerySortParser.Strip(@"file ::hello\ world", out var tokens);
+
+        Assert.AreEqual("file", result);
+        CollectionAssert.AreEqual(new[] { ":hello world" }, tokens.ToArray());
+    }
+
+    [TestMethod]
     public void Strip_EscapedQuotesInToken_UnescapesQuotesInResult()
     {
         var resultDouble = SearchQuerySortParser.Strip(@"file ::""hello \""world\""""", out var tokensDouble);

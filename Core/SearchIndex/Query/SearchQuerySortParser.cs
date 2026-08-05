@@ -1,6 +1,6 @@
 namespace SwiftList.Core.SearchIndex.Query;
 
-// Splits an optional trailing "<query> :a,b,c" or "<query> ::\"hello world\"" or "<query> ::'hello world'"
+// Splits an optional trailing "<query> :a,b,c" or "<query> ::\"hello world\"" or "<query> ::hello\\ world"
 // suffix off a raw search query into raw tokens -- deliberately dumb: it has no idea what a token means 
 // (that's up to whichever IQueryTokenProvider plugin claims it).
 public static class SearchQuerySortParser
@@ -31,6 +31,8 @@ public static class SearchQuerySortParser
 
     private static int FindTrailingTokenPrefixIndex(string query, char prefixChar)
     {
+        // Scan backwards for a prefixChar (e.g. ':') that starts a trailing token segment.
+        // The prefixChar must be preceded by start-of-string or unescaped whitespace.
         var activeQuote = '\0';
         var candidateIndex = -1;
 
@@ -55,11 +57,11 @@ public static class SearchQuerySortParser
             }
             else if (c == prefixChar)
             {
-                if (i == 0 || char.IsWhiteSpace(query[i - 1]))
+                if (i == 0 || (char.IsWhiteSpace(query[i - 1]) && !IsEscaped(query, i - 1)))
                 {
                     candidateIndex = i;
                     while (candidateIndex > 0 && query[candidateIndex - 1] == prefixChar &&
-                           (candidateIndex - 1 == 0 || char.IsWhiteSpace(query[candidateIndex - 2])))
+                           (candidateIndex - 1 == 0 || (char.IsWhiteSpace(query[candidateIndex - 2]) && !IsEscaped(query, candidateIndex - 2))))
                     {
                         candidateIndex--;
                     }
@@ -92,7 +94,7 @@ public static class SearchQuerySortParser
 
         var payload = segment[1..];
         var rawTokens = SplitByCommaRespectingQuotes(payload);
-        if (rawTokens.Count == 0 || rawTokens.Any(t => string.IsNullOrWhiteSpace(t) || HasUnquotedSpaces(t)))
+        if (rawTokens.Count == 0 || rawTokens.Any(t => string.IsNullOrWhiteSpace(t) || HasUnquotedUnescapedSpaces(t)))
         {
             return false;
         }
@@ -107,7 +109,7 @@ public static class SearchQuerySortParser
         return true;
     }
 
-    private static bool HasUnquotedSpaces(string token)
+    private static bool HasUnquotedUnescapedSpaces(string token)
     {
         var trimmed = token.Trim();
         if (IsQuoted(trimmed))
@@ -120,10 +122,23 @@ public static class SearchQuerySortParser
         if (firstQuote >= 0 && lastQuote > firstQuote)
         {
             var outside = trimmed[..firstQuote] + trimmed[(lastQuote + 1)..];
-            return outside.Any(char.IsWhiteSpace);
+            return ContainsUnescapedSpace(outside);
         }
 
-        return trimmed.Any(char.IsWhiteSpace);
+        return ContainsUnescapedSpace(trimmed);
+    }
+
+    private static bool ContainsUnescapedSpace(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (char.IsWhiteSpace(text[i]) && !IsEscaped(text, i))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsQuoted(string s) =>
