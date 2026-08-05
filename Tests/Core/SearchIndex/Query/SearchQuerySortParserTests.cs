@@ -96,6 +96,20 @@ public sealed class SearchQuerySortParserTests
     }
 
     [TestMethod]
+    public void Strip_EscapedQuotesInToken_UnescapesQuotesInResult()
+    {
+        var resultDouble = SearchQuerySortParser.Strip(@"file ::""hello \""world\""""", out var tokensDouble);
+
+        Assert.AreEqual("file", resultDouble);
+        CollectionAssert.AreEqual(new[] { ":hello \"world\"" }, tokensDouble.ToArray());
+
+        var resultSingle = SearchQuerySortParser.Strip(@"file ::'hello \'world\''", out var tokensSingle);
+
+        Assert.AreEqual("file", resultSingle);
+        CollectionAssert.AreEqual(new[] { ":hello 'world'" }, tokensSingle.ToArray());
+    }
+
+    [TestMethod]
     public void Strip_MultipleQuotedTokensWithSpaces_ExtractsAllTokens()
     {
         var result = SearchQuerySortParser.Strip("file :'first token',\"second token\",simple", out var tokens);

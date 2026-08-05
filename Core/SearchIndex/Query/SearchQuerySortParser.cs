@@ -31,14 +31,17 @@ public static class SearchQuerySortParser
 
     private static int FindTrailingTokenPrefixIndex(string query, char prefixChar)
     {
-        // Scan backwards for a prefixChar (e.g. ':') that starts a trailing token segment.
-        // The prefixChar must be preceded by start-of-string or whitespace.
         var activeQuote = '\0';
         var candidateIndex = -1;
 
         for (var i = query.Length - 1; i >= 0; i--)
         {
             var c = query[i];
+            if (IsEscaped(query, i))
+            {
+                continue;
+            }
+
             if (activeQuote != '\0')
             {
                 if (c == activeQuote)
@@ -55,7 +58,6 @@ public static class SearchQuerySortParser
                 if (i == 0 || char.IsWhiteSpace(query[i - 1]))
                 {
                     candidateIndex = i;
-                    // Keep scanning backwards in case of consecutive prefix chars like "::"
                     while (candidateIndex > 0 && query[candidateIndex - 1] == prefixChar &&
                            (candidateIndex - 1 == 0 || char.IsWhiteSpace(query[candidateIndex - 2])))
                     {
@@ -67,6 +69,17 @@ public static class SearchQuerySortParser
         }
 
         return candidateIndex;
+    }
+
+    private static bool IsEscaped(string text, int index)
+    {
+        var backslashCount = 0;
+        for (var i = index - 1; i >= 0 && text[i] == '\\'; i--)
+        {
+            backslashCount++;
+        }
+
+        return backslashCount % 2 != 0;
     }
 
     private static bool TryParseTokenSegment(string segment, char prefixChar, out IReadOnlyList<string> tokens)
@@ -102,8 +115,8 @@ public static class SearchQuerySortParser
             return false;
         }
 
-        var firstQuote = IndexOfQuote(trimmed);
-        var lastQuote = LastIndexOfQuote(trimmed);
+        var firstQuote = IndexOfUnescapedQuote(trimmed);
+        var lastQuote = LastIndexOfUnescapedQuote(trimmed);
         if (firstQuote >= 0 && lastQuote > firstQuote)
         {
             var outside = trimmed[..firstQuote] + trimmed[(lastQuote + 1)..];
@@ -114,23 +127,33 @@ public static class SearchQuerySortParser
     }
 
     private static bool IsQuoted(string s) =>
-        (s.StartsWith('"') && s.EndsWith('"') && s.Length >= 2) ||
-        (s.StartsWith('\'') && s.EndsWith('\'') && s.Length >= 2);
+        (s.StartsWith('"') && s.EndsWith('"') && s.Length >= 2 && !IsEscaped(s, s.Length - 1)) ||
+        (s.StartsWith('\'') && s.EndsWith('\'') && s.Length >= 2 && !IsEscaped(s, s.Length - 1));
 
-    private static int IndexOfQuote(string s)
+    private static int IndexOfUnescapedQuote(string s)
     {
-        var q1 = s.IndexOf('"');
-        var q2 = s.IndexOf('\'');
-        if (q1 < 0) return q2;
-        if (q2 < 0) return q1;
-        return Math.Min(q1, q2);
+        for (var i = 0; i < s.Length; i++)
+        {
+            if ((s[i] == '"' || s[i] == '\'') && !IsEscaped(s, i))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
-    private static int LastIndexOfQuote(string s)
+    private static int LastIndexOfUnescapedQuote(string s)
     {
-        var q1 = s.LastIndexOf('"');
-        var q2 = s.LastIndexOf('\'');
-        return Math.Max(q1, q2);
+        for (var i = s.Length - 1; i >= 0; i--)
+        {
+            if ((s[i] == '"' || s[i] == '\'') && !IsEscaped(s, i))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private static List<string> SplitByCommaRespectingQuotes(string text)
@@ -142,6 +165,12 @@ public static class SearchQuerySortParser
         for (var i = 0; i < text.Length; i++)
         {
             var c = text[i];
+            if (IsEscaped(text, i))
+            {
+                current.Append(c);
+                continue;
+            }
+
             if (activeQuote != '\0')
             {
                 if (c == activeQuote)
@@ -179,20 +208,56 @@ public static class SearchQuerySortParser
         var trimmed = token.Trim();
         if (IsQuoted(trimmed))
         {
-            return trimmed[1..^1];
+            return UnescapeString(trimmed[1..^1]);
         }
 
-        var firstQuoteIndex = IndexOfQuote(trimmed);
-        var lastQuoteIndex = LastIndexOfQuote(trimmed);
+        var firstQuoteIndex = IndexOfUnescapedQuote(trimmed);
+        var lastQuoteIndex = LastIndexOfUnescapedQuote(trimmed);
         if (firstQuoteIndex > 0 && lastQuoteIndex > firstQuoteIndex)
         {
             var prefix = trimmed[..firstQuoteIndex];
             var inner = trimmed[(firstQuoteIndex + 1)..lastQuoteIndex];
             var suffix = trimmed[(lastQuoteIndex + 1)..];
-            return prefix + inner + suffix;
+            return prefix + UnescapeString(inner) + suffix;
         }
 
-        return trimmed;
+        return UnescapeString(trimmed);
+    }
+
+    private static string UnescapeString(string s)
+    {
+        if (!s.Contains('\\'))
+        {
+            return s;
+        }
+
+        var sb = new System.Text.StringBuilder(s.Length);
+        var escaped = false;
+
+        for (var i = 0; i < s.Length; i++)
+        {
+            var c = s[i];
+            if (escaped)
+            {
+                sb.Append(c);
+                escaped = false;
+            }
+            else if (c == '\\')
+            {
+                escaped = true;
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+
+        if (escaped)
+        {
+            sb.Append('\\');
+        }
+
+        return sb.ToString();
     }
 
     // Strips a leading "*" -- the marker that opts one search out of the user's own exclusion rules
