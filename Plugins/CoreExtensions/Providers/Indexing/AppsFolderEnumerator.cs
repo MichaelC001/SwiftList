@@ -107,7 +107,7 @@ public static class AppsFolderEnumerator
                     if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(path))
                         continue;
 
-                    var hBitmap = ShellPathHelper.TryGetIconHBitmapForShellItem(item, iconSize);
+                    var hBitmap = iconSize > 0 ? ShellPathHelper.TryGetIconHBitmapForShellItem(item, iconSize) : IntPtr.Zero;
                     result.Add(new AppEntry { Name = name!.Trim(), Aumid = path!, HBitmapIcon = hBitmap });
                 }
                 catch (Exception ex)

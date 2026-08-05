@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SwiftList.Plugins.CoreExtensions.Actions;
 using SwiftList.PluginSdk.Abstractions;
 

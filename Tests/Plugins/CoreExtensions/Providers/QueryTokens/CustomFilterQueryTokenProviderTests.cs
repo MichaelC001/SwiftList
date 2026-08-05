@@ -1,5 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SwiftList.Plugins.CoreExtensions.Models;
 using SwiftList.Plugins.CoreExtensions.Providers.QueryTokens;
 using SwiftList.PluginSdk.Abstractions;
 using SwiftList.PluginSdk.Services;

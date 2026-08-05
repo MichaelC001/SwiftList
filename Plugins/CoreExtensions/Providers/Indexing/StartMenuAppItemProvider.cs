@@ -143,18 +143,12 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
                 ? TranslationService.Get("Search_ResultApp")
                 : string.Format(descTemplate, parentDir);
 
-            var hBitmap = ShellPathHelper.GetIconHBitmapForPath(targetPath, 96);
-            if (hBitmap == IntPtr.Zero && targetPath != capturedPath)
-            {
-                hBitmap = ShellPathHelper.GetIconHBitmapForPath(capturedPath, 96);
-            }
-
             list.Add(new SearchableItem
             {
                 Title = entry.Name,
                 Description = desc,
                 ResultKind = "Application",
-                HBitmapIcon = hBitmap,
+                HBitmapIcon = IntPtr.Zero,
                 ActionType = "None",
                 ActionArgument = capturedPath,
                 OnExecute = () =>
@@ -238,7 +232,7 @@ public class StartMenuAppItemProvider : ISearchableItemProvider, IDisposable
         List<AppsFolderEnumerator.AppEntry> apps;
         try
         {
-            apps = AppsFolderEnumerator.Enumerate(96);
+            apps = AppsFolderEnumerator.Enumerate(iconSize: 0);
         }
         catch (Exception ex)
         {

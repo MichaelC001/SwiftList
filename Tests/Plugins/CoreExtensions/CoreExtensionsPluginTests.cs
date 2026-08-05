@@ -1,4 +1,3 @@
-using SwiftList.Plugins.CoreExtensions;
 using SwiftList.PluginSdk.Abstractions;
 
 namespace SwiftList.Plugins.CoreExtensions.Tests;
